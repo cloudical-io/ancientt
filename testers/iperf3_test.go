@@ -21,7 +21,7 @@ import (
 )
 
 func TestIPerf3Plan(t *testing.T) {
-	tester, err := NewIPerf3Tester()
+	tester, err := NewIPerf3Tester(nil, &config.Test{})
 	assert.Nil(t, err)
 	assert.NotNil(t, tester)
 
@@ -34,6 +34,7 @@ func TestIPerf3Plan(t *testing.T) {
 	test := &config.Test{
 		Type: "iperf3",
 	}
+
 	plan, err := tester.Plan(env, test)
 	assert.Nil(t, err)
 	assert.NotNil(t, plan)

@@ -21,7 +21,7 @@ import (
 )
 
 // Factories contains the list of all available testers.
-var Factories = make(map[string]func() (Tester, error))
+var Factories = make(map[string]func(cfg *config.Config, test *config.Test) (Tester, error))
 
 // Tester is the interface a tester has to implement
 type Tester interface {

@@ -28,10 +28,14 @@ func init() {
 // IPerf3
 type IPerf3 struct {
 	Tester
+	config *config.IPerf3
 }
 
-func NewIPerf3Tester() (Tester, error) {
-	return IPerf3{}, nil
+// NewIPerf3Tester return a new IPerf3 tester instance
+func NewIPerf3Tester(cfg *config.Config, test *config.Test) (Tester, error) {
+	return IPerf3{
+		config: test.IPerf3,
+	}, nil
 }
 
 // Plan

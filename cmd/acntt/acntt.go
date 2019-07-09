@@ -71,7 +71,7 @@ func run(cmd *cobra.Command, args []string) error {
 	if !ok {
 		return fmt.Errorf("runner with name %s not found", runnerName)
 	}
-	if runner, err = runnerNewFunc(); err != nil {
+	if runner, err = runnerNewFunc(cfg); err != nil {
 		return err
 	}
 
@@ -83,7 +83,7 @@ func run(cmd *cobra.Command, args []string) error {
 		if !ok {
 			return fmt.Errorf("tester with name %s not found", testerName)
 		}
-		if tester, err = testerNewFunc(); err != nil {
+		if tester, err = testerNewFunc(cfg, &test); err != nil {
 			return err
 		}
 
