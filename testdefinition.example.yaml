@@ -1,0 +1,38 @@
+version: '0'
+runner:
+  name: kubernetes
+  kubernetes:
+    kubeconfig: .kube/config
+    image: quay.io/galexrt/toolbox-image
+targets:
+- name: same-server
+  random: true
+  count: 1
+- name: different-servers-1
+  random: true
+  count: 2 # when more than one servers is wanted,
+  hostSelector: # For Labels in K8s and Variables of hosts in Ansible
+    network-tests-run-here: "true"
+  antiAffinity:
+    - key: "openstack-region" # this makes sure servers with different "openstack-region" are picked
+- name: specific-servers
+  hosts:
+    - serverabc123
+    - serverxyz789
+tests:
+- type: iperf3
+  runOptions:
+    count: 3
+    interval: 5m
+  iperf3:
+    windowSizeCalculation:
+      auto: true
+    additionalFlags:
+      client:
+        - --udp
+      server: []
+- type: siege
+  siege:
+    runOptions:
+      count: 5
+      interval: 15m
