@@ -15,13 +15,12 @@ package config
 
 // Test
 type Test struct {
-	Type        string      `yaml:"type"`
-	RunOptions  RunOptions  `yaml:"runOptions"`
-	HostOptions HostOptions `yaml:"hostOptions"`
-	Hosts       TestHosts   `yaml:"hosts"`
-	IPerf       *IPerf      `yaml:"iperf"`
-	IPerf3      *IPerf3     `yaml:"iperf3"`
-	Siege       *Siege      `yaml:"siege"`
+	Type       string     `yaml:"type"`
+	RunOptions RunOptions `yaml:"runOptions"`
+	Hosts      TestHosts  `yaml:"hosts"`
+	IPerf      *IPerf     `yaml:"iperf"`
+	IPerf3     *IPerf3    `yaml:"iperf3"`
+	Siege      *Siege     `yaml:"siege"`
 }
 
 // RunOptions
@@ -30,15 +29,10 @@ type RunOptions struct {
 	Interval string `yaml:"interval"`
 }
 
-// HostOptions
-type HostOptions struct {
-	All bool `yaml:"all"`
-}
-
 // TestHosts
 type TestHosts struct {
-	Sources      []Hosts `yaml:"sources"`
-	Destinations []Hosts `yaml:"destinations"`
+	Clients []Hosts `yaml:"clients"`
+	Servers []Hosts `yaml:"servers"`
 }
 
 // IPerf

@@ -3,7 +3,7 @@ runner:
   name: kubernetes
   kubernetes:
     kubeconfig: .kube/config
-    image: quay.io/galexrt/toolbox-image
+    image: quay.io/galexrt/container-toolbox
 tests:
 - type: iperf3
   runOptions:
@@ -29,8 +29,6 @@ tests:
       hosts:
         - serverabc123
         - serverxyz789
-  hostOptions:
-    all: false
   iperf3:
     windowSizeCalculation:
       auto: true
@@ -42,6 +40,4 @@ tests:
   runOptions:
     rounds: 5
     interval: 15m
-  hostOptions:
-    all: false
   siege: {}
