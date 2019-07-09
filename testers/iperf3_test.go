@@ -11,18 +11,33 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package runners
+package testers
 
 import (
+	"testing"
+
 	"github.com/cloudical-io/acntt/pkg/config"
-	"github.com/cloudical-io/acntt/testers"
+	"github.com/stretchr/testify/assert"
 )
 
-// Factories contains the list of all available runners.
-var Factories = make(map[string]func(cfg *config.Config) (Runner, error))
+func TestIPerf3Plan(t *testing.T) {
+	tester, err := NewIPerf3Tester()
+	assert.Nil(t, err)
+	assert.NotNil(t, tester)
 
-// Runner is the interface a runner has to implement
-type Runner interface {
-	GetHostsForTest(test config.Test) (*testers.Hosts, error)
-	Execute(cmd, args []string) ([]byte, error)
+	env := &Environment{
+		Hosts: &Hosts{
+			Clients: map[string]Host{},
+			Servers: map[string]Host{},
+		},
+	}
+	test := &config.Test{
+		Type: "iperf3",
+	}
+	plan, err := tester.Plan(env, test)
+	assert.Nil(t, err)
+	assert.NotNil(t, plan)
+	assert.Equal(t, "iperf3", plan.Tester)
+	assert.Equal(t, 0, len(plan.AffectedServers))
+	assert.Equal(t, 0, len(plan.Commands))
 }

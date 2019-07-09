@@ -1,5 +1,7 @@
 # acntt
 
+Automated Continous network testing tool using existing projects like iperf3, siege, etc.
+
 ## Points to achieve
 
 * A bit like Prometheus blackbox exporter which contains "definitions" for probes. The "tests" would be pluggable through a Golang interface.

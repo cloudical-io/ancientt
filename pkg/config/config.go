@@ -25,3 +25,9 @@ type KeyValuePair struct {
 	Key   string `yaml:"key"`
 	Value string `yaml:"value"`
 }
+
+func New() *Config {
+	return &Config{
+		Version: "0",
+	}
+}

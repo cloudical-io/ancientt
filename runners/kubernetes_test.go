@@ -11,21 +11,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package testexecutor
+package runners
 
-// TestExecutor
-type TestExecutor struct {
-	DryRun bool
-}
-
-// New returns a TestExecutor instance
-func New() *TestExecutor {
-	return &TestExecutor{
-		DryRun: true,
-	}
-}
-
-func (te *TestExecutor) Run() error {
-
-	return nil
-}
+// TODO

@@ -23,13 +23,22 @@ type Test struct {
 	Siege      *Siege     `yaml:"siege"`
 }
 
-// RunOptions
+const (
+	// RunModeSequential run tasks in sequential / serial order
+	RunModeSequential = "sequential"
+	// RunModeParallel run tasks in parallel (WARNING! Be sure what you cause with this, e.g., 100 iperfs might not be good for a production environment)
+	RunModeParallel = "parallel"
+)
+
+// RunOptions options for running the tasks
 type RunOptions struct {
-	Rounds   int    `yaml:"rounds"`
-	Interval string `yaml:"interval"`
+	Rounds        int    `yaml:"rounds"`
+	Interval      string `yaml:"interval"`
+	Mode          string `yaml:"mode"`
+	ParallelCount int    `yaml:"parallelCount"`
 }
 
-// TestHosts
+// TestHosts list of clients and servers hosts for use in the test(s)
 type TestHosts struct {
 	Clients []Hosts `yaml:"clients"`
 	Servers []Hosts `yaml:"servers"`

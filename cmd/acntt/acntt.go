@@ -17,10 +17,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/cloudical-io/acntt/pkg/config"
-	_ "github.com/cloudical-io/acntt/runners"
-	_ "github.com/cloudical-io/acntt/testers"
+	"github.com/cloudical-io/acntt/runners"
+	"github.com/cloudical-io/acntt/testers"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
@@ -58,13 +59,51 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	cfg := &config.Config{}
+	cfg := config.New()
 
 	if err := yaml.Unmarshal(cfgContent, cfg); err != nil {
 		return err
 	}
 
-	fmt.Printf("TEST: %+v\n", cfg)
+	var runner runners.Runner
+	runnerName := strings.ToLower(cfg.Runner.Name)
+	runnerNewFunc, ok := runners.Factories[runnerName]
+	if !ok {
+		return fmt.Errorf("runner with name %s not found", runnerName)
+	}
+	if runner, err = runnerNewFunc(); err != nil {
+		return err
+	}
+
+	for _, test := range cfg.Tests {
+		// Get tester
+		var tester testers.Tester
+		testerName := strings.ToLower(test.Type)
+		testerNewFunc, ok := testers.Factories[testerName]
+		if !ok {
+			return fmt.Errorf("tester with name %s not found", testerName)
+		}
+		if tester, err = testerNewFunc(); err != nil {
+			return err
+		}
+
+		// Get hosts for the test
+		hosts, err := runner.GetHostsForTest(test)
+		if err != nil {
+			return err
+		}
+		// Create testers.Environment with the hosts
+		env := &testers.Environment{
+			Hosts: hosts,
+		}
+		// Get plan from testers.Plan()
+		plan, err := tester.Plan(env, &test)
+		if err != nil {
+			return err
+		}
+		// For now print the plan
+		plan.PrettyPrint()
+	}
 
 	return nil
 }
