@@ -4,26 +4,33 @@ runner:
   kubernetes:
     kubeconfig: .kube/config
     image: quay.io/galexrt/toolbox-image
-targets:
-- name: same-server
-  random: true
-  count: 1
-- name: different-servers-1
-  random: true
-  count: 2 # when more than one servers is wanted,
-  hostSelector: # For Labels in K8s and Variables of hosts in Ansible
-    network-tests-run-here: "true"
-  antiAffinity:
-    - key: "openstack-region" # this makes sure servers with different "openstack-region" are picked
-- name: specific-servers
-  hosts:
-    - serverabc123
-    - serverxyz789
 tests:
 - type: iperf3
   runOptions:
-    count: 3
+    rounds: 3
     interval: 5m
+  # This hosts section would cause iperf3 to be run from all servers to the servers selected in the `destinations` section
+  hosts:
+    sources:
+    - name: all-servers
+      all: true
+    destinations:
+    - name: one-randomly-selected-server
+      random: true
+      count: 1
+    - name: different-servers-1
+      random: true
+      count: 2 # when more than one servers is wanted,
+      hostSelector: # For Labels in K8s and Variables of hosts in Ansible
+        network-tests-run-here: "true"
+      antiAffinity:
+        - key: "openstack-region" # this makes sure servers with different "openstack-region" are picked
+    - name: specific-servers
+      hosts:
+        - serverabc123
+        - serverxyz789
+  hostOptions:
+    all: false
   iperf3:
     windowSizeCalculation:
       auto: true
@@ -32,7 +39,9 @@ tests:
         - --udp
       server: []
 - type: siege
-  siege:
-    runOptions:
-      count: 5
-      interval: 15m
+  runOptions:
+    rounds: 5
+    interval: 15m
+  hostOptions:
+    all: false
+  siege: {}

@@ -1,0 +1,8 @@
+graph TD;
+    Start((Start))-->TestDefinitions[Parse TestDefinitions];
+    TestDefinitions-->ForeachTest[Foreach TestDefinition];
+    ForeachTest-->GetConfigForTestDef[Get Config for test];
+    GetConfigForTestDef-->|Execute test|Runner
+    Runner-->ForeachTest
+    ForeachTest-->NoMoreTests
+    NoMoreTests(No more tests definitions?)-->End((End));
