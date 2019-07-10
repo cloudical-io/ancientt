@@ -45,12 +45,14 @@ func WaitForPodToRun(k8sclient *kubernetes.Clientset, namespace string, podName 
 	for i := 0; i < 10; i++ {
 		pod, err := k8sclient.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
 		if err != nil {
-			return false, err
+			if !errors.IsAlreadyExists(err) {
+				return false, err
+			}
 		}
 		if pod.Status.Phase == corev1.PodRunning {
 			return true, nil
 		}
-		time.Sleep(3)
+		time.Sleep(3 * time.Second)
 	}
 	return false, nil
 }
@@ -66,7 +68,7 @@ func WaitForPodToSucceed(k8sclient *kubernetes.Clientset, namespace string, podN
 		if pod.Status.Phase == corev1.PodSucceeded {
 			return true, nil
 		}
-		time.Sleep(3)
+		time.Sleep(3 * time.Second)
 	}
 	return false, nil
 }

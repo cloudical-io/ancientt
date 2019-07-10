@@ -56,9 +56,10 @@ type IPAddresses struct {
 
 // Plan contains the information needed to execute the plan
 type Plan struct {
-	AffectedServers map[string]*Host `json:"affectedServers"`
-	Commands        [][]Task         `json:"commands"`
-	Tester          string           `json:"tester"`
+	AffectedServers map[string]*Host  `json:"affectedServers"`
+	Commands        [][]Task          `json:"commands"`
+	Tester          string            `json:"tester"`
+	RunOptions      config.RunOptions `json:"runOptions"`
 }
 
 // PrettyPrint "pretty" prints a plan

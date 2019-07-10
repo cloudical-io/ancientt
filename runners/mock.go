@@ -141,7 +141,7 @@ func generateMockServers() []*testers.Host {
 }
 
 // Prepare NOOP because there is nothing to prepare because this is Mock.
-func (k Mock) Prepare(plan *testers.Plan) error {
+func (k Mock) Prepare(runOpts config.RunOptions, plan *testers.Plan) error {
 	return nil
 }
 

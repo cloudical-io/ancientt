@@ -13,13 +13,9 @@ limitations under the License.
 
 package k8sutil
 
-import (
-	"os"
-)
-
 // GetLabels return a default set of labels for "any" object acntt is going to create.
 func GetLabels() map[string]string {
-	name := os.Args[0]
+	name := "acntt"
 	return map[string]string{
 		"app.kubernetes.io/part-of":    name,
 		"app.kubernetes.io/managed-by": name,

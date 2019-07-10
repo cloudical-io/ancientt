@@ -20,33 +20,33 @@ import (
 	"github.com/cloudical-io/acntt/testers"
 )
 
-// Template template a given cmd and args with the given host information struct
-func Template(cmd string, args []string, host *testers.Host) (string, []string, error) {
-	// Anonymous variables structure for the command and args templating
-	variables := struct {
-		ServerAddress *testers.IPAddresses
-	}{
-		ServerAddress: host.Addresses,
-	}
+// Variables variables used for templating
+type Variables struct {
+	ServerAddress string
+	ServerPort    int32
+}
 
+// Template template a given cmd and args with the given host information struct
+func Template(task *testers.Task, variables Variables) error {
 	templatedArgs := []string{}
 
 	// TODO take care of what variables to give because,
 	// e.g., hosts with or without IPv6 must only get IPv4 addresses
 	var err error
-	cmd, err = templateString(cmd, variables)
+	task.Command, err = templateString(task.Command, variables)
 	if err != nil {
-		return "", nil, err
+		return err
 	}
 
-	for _, arg := range args {
+	for _, arg := range task.Args {
 		arg, err = templateString(arg, variables)
 		if err != nil {
-			return "", nil, err
+			return err
 		}
 		templatedArgs = append(templatedArgs, arg)
 	}
-	return cmd, templatedArgs, nil
+	task.Args = templatedArgs
+	return nil
 }
 
 func templateString(in string, variable interface{}) (string, error) {

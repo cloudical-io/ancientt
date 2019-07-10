@@ -115,8 +115,8 @@ func run(cmd *cobra.Command, args []string) error {
 		// For now print the plan
 		plan.PrettyPrint()
 
-		// Prepare the plan
-		if err = runner.Prepare(plan); err != nil {
+		// Prepare the runner for the plan
+		if err = runner.Prepare(test.RunOptions, plan); err != nil {
 			return err
 		}
 

@@ -14,12 +14,15 @@ limitations under the License.
 package runners
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"math/rand"
 	"sync"
 	"time"
 
 	"github.com/cloudical-io/acntt/parsers"
+	"github.com/cloudical-io/acntt/pkg/cmdtemplate"
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/cloudical-io/acntt/pkg/k8sutil"
 	"github.com/cloudical-io/acntt/pkg/util"
@@ -41,8 +44,9 @@ func init() {
 // Kubernetes Kubernetes runner struct
 type Kubernetes struct {
 	Runner
-	config    *config.RunnerKubernetes
-	k8sclient *kubernetes.Clientset
+	config     *config.RunnerKubernetes
+	k8sclient  *kubernetes.Clientset
+	runOptions config.RunOptions
 }
 
 // NewKubernetesRunner return a new Kubernetes Runner
@@ -53,13 +57,13 @@ func NewKubernetesRunner(cfg *config.Config) (Runner, error) {
 	// use the current context in kubeconfig
 	k8sconfig, err := clientcmd.BuildConfigFromFlags("", cfg.Runner.Kubernetes.Kubeconfig)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("kubeconfig configuration error. %+v", err)
 	}
 
 	// create the clientset
 	clientset, err := kubernetes.NewForConfig(k8sconfig)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("kubernetes client configuration error. %+v", err)
 	}
 
 	return Kubernetes{
@@ -143,7 +147,9 @@ func (k Kubernetes) k8sNodesToHosts() ([]*testers.Host, error) {
 }
 
 // Prepare prepare Kubernetes for usage with acntt, e.g., create Namespace.
-func (k Kubernetes) Prepare(plan *testers.Plan) error {
+func (k Kubernetes) Prepare(runOpts config.RunOptions, plan *testers.Plan) error {
+	k.runOptions = runOpts
+
 	if err := k.prepareKubernetes(); err != nil {
 		return err
 	}
@@ -161,12 +167,7 @@ func (k Kubernetes) Execute(plan *testers.Plan, parser parsers.Parser) error {
 			taskName := fmt.Sprintf("acntt-%d", time.Now().Unix())
 
 			// Create the Pods for the server task and client tasks
-			if err := k.createPodsForTasks(round, task, taskName); err != nil {
-				return err
-			}
-
-			// TODO Get log streams of Pods and "push" them to the parser
-			if err := k.pushLogsToParser(round, task, taskName, parser); err != nil {
+			if err := k.createPodsForTasks(round, task, taskName, parser); err != nil {
 				return err
 			}
 		}
@@ -190,36 +191,51 @@ func (k Kubernetes) prepareKubernetes() error {
 				},
 			}
 			if _, err := k.k8sclient.CoreV1().Namespaces().Create(ns); err != nil {
-				return err
+				return fmt.Errorf("failed to create namespace %s. %+v", k.config.Namespace, err)
 			}
 		} else {
-			return err
+			return fmt.Errorf("error while getting namespace %s. %+v", k.config.Namespace, err)
 		}
 	}
 	return nil
 }
 
 // createPodsForTasks create the Pods that are needed for the task(s)
-func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, taskName string) error {
+func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, taskName string, parser parsers.Parser) error {
 	var wg sync.WaitGroup
 	errs := make(chan error)
 
 	// Create server Pod first
 	pName := util.GetPNameFromTask(round, mainTask)
 
+	templateVars := cmdtemplate.Variables{
+		ServerPort: 5601,
+	}
+
+	if err := cmdtemplate.Template(&mainTask, templateVars); err != nil {
+		return fmt.Errorf("failed to template main task command and / or args. %+v", err)
+	}
+
 	pod := k.getPodSpec(pName, taskName, mainTask)
 
 	if err := k8sutil.PodRecreate(k.k8sclient, pod); err != nil {
-		return err
+		return fmt.Errorf("failed to create pod %s/%s. %+v", k.config.Namespace, pName, err)
 	}
 
-	running, err := k8sutil.WaitForPodToRun(k.k8sclient, pod.ObjectMeta.Namespace, pName)
+	running, err := k8sutil.WaitForPodToRun(k.k8sclient, k.config.Namespace, pName)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to wait for pod %s/%s. %+v", k.config.Namespace, pName, err)
 	}
 	if !running {
-		return fmt.Errorf("pod %s/%s not running after 10 tries", pod.ObjectMeta.Namespace, pName)
+		return fmt.Errorf("pod %s/%s not running after 10 tries", k.config.Namespace, pName)
 	}
+
+	// Get server Pod to have the server IP for each client task
+	pod, err = k.k8sclient.CoreV1().Pods(k.config.Namespace).Get(pName, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get pod %s/%s. %+v", k.config.Namespace, pName, err)
+	}
+	templateVars.ServerAddress = pod.Status.PodIP
 
 	tasks := []testers.Task{}
 	tasks = append(tasks, mainTask.SubTasks...)
@@ -229,25 +245,41 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, taskNam
 			defer wg.Done()
 			pName := util.GetPNameFromTask(round, task)
 
-			pod := k.getPodSpec(pName, taskName, task)
-
-			if err := k8sutil.PodRecreate(k.k8sclient, pod); err != nil {
-				errs <- err
+			if err := cmdtemplate.Template(&task, templateVars); err != nil {
+				errs <- fmt.Errorf("failed to template task command and / or args. %+v", err)
 				return
 			}
 
-			running, err := k8sutil.WaitForPodToRun(k.k8sclient, pod.ObjectMeta.Namespace, pName)
+			pod = k.getPodSpec(pName, taskName, task)
+
+			if err := k8sutil.PodRecreate(k.k8sclient, pod); err != nil {
+				errs <- fmt.Errorf("failed to create pod %s/%s. %+v", k.config.Namespace, pName, err)
+				return
+			}
+
+			running, err := k8sutil.WaitForPodToRun(k.k8sclient, k.config.Namespace, pName)
 			if err != nil {
-				errs <- err
+				errs <- fmt.Errorf("failed to wait for pod %s/%s. %+v", k.config.Namespace, pName, err)
 				return
 			}
 			if !running {
-				errs <- fmt.Errorf("pod %s/%s not running after 10 tries", pod.ObjectMeta.Namespace, pName)
+				errs <- fmt.Errorf("pod %s/%s not running after 10 tries", k.config.Namespace, pName)
 				return
 			}
+			if k.runOptions.Mode != config.RunModeParallel {
+				if err := k.pushLogsToParser(pName, parser); err != nil {
+					errs <- fmt.Errorf("failed to push pod %s/%s logs to parser. %+v", k.config.Namespace, pName, err)
+					return
+				}
+			}
 		}(task)
+		if k.runOptions.Mode != config.RunModeParallel {
+			wg.Wait()
+		}
 	}
-	wg.Wait()
+	if k.runOptions.Mode == config.RunModeParallel {
+		wg.Wait()
+	}
 
 	select {
 	case err := <-errs:
@@ -257,9 +289,34 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, taskNam
 	}
 }
 
-func (k Kubernetes) pushLogsToParser(round int, task testers.Task, taskName string, parser parsers.Parser) error {
-	//k8sutil.WaitForPodToSucceed()
-	return nil
+func (k Kubernetes) pushLogsToParser(podName string, parser parsers.Parser) error {
+	succeeded, err := k8sutil.WaitForPodToSucceed(k.k8sclient, k.config.Namespace, podName)
+	if err != nil {
+		return err
+	}
+	if succeeded {
+		req := k.k8sclient.CoreV1().Pods(k.config.Namespace).GetLogs(podName, &corev1.PodLogOptions{})
+		podLogs, err := req.Stream()
+		if err != nil {
+			return err
+		}
+
+		defer podLogs.Close()
+
+		buf := new(bytes.Buffer)
+		_, err = io.Copy(buf, podLogs)
+		if err != nil {
+			return fmt.Errorf("error in copy information from podLogs to buffer")
+		}
+
+		parsed, err := parser.Parse(buf)
+		_ = parsed
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return fmt.Errorf("pod %s/%s has not succeeded", k.config.Namespace, podName)
 }
 
 // Cleanup remove all (left behind) Kubernetes resources created for the given Plan.

@@ -27,5 +27,5 @@ var Factories = make(map[string]func(cfg *config.Config, test *config.Test) (Par
 type Parser interface {
 	// Parse returns parsed output of each runners task so it can then be saved
 	// for further visualization and / or analytics.
-	Parse(in bytes.Buffer) ([]byte, error)
+	Parse(in *bytes.Buffer) ([]byte, error)
 }

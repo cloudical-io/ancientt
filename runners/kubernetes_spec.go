@@ -23,8 +23,9 @@ import (
 func (k Kubernetes) getPodSpec(pName string, taskName string, task testers.Task) *corev1.Pod {
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: k8sutil.GetPodLabels(pName, taskName),
-			Name:   pName,
+			Labels:    k8sutil.GetPodLabels(pName, taskName),
+			Name:      pName,
+			Namespace: k.config.Namespace,
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{

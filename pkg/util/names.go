@@ -16,7 +16,6 @@ package util
 import (
 	"crypto/sha1"
 	"fmt"
-	"os"
 
 	"github.com/cloudical-io/acntt/testers"
 )
@@ -25,5 +24,5 @@ import (
 // This is done by calculating the checksums of the used names.
 func GetPNameFromTask(round int, task testers.Task) string {
 	data := fmt.Sprintf("%d-%s-%s", round, task.Host.Name, task.Args)
-	return fmt.Sprintf("%s-%s-%x", os.Args[0], task.Command, sha1.Sum([]byte(data)))
+	return fmt.Sprintf("acntt-%s-%x", task.Command, sha1.Sum([]byte(data)))
 }

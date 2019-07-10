@@ -40,8 +40,9 @@ func NewIPerf3Tester(cfg *config.Config, test *config.Test) (Parser, error) {
 }
 
 // Parse parse IPerf3 JSON responses
-func (ip IPerf3) Parse(in bytes.Buffer) ([]byte, error) {
+func (ip IPerf3) Parse(in *bytes.Buffer) ([]byte, error) {
+
 	// TODO parse input
 
-	return []byte{}, nil
+	return in.Bytes(), nil
 }
