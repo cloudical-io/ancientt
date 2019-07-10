@@ -54,13 +54,13 @@ func NewKubernetesRunner(cfg *config.Config) (Runner, error) {
 	if cfg.Runner.Kubernetes == nil {
 		return nil, fmt.Errorf("no kubernetes runner config")
 	}
-	// use the current context in kubeconfig
+	// Use the current context in kubeconfig
 	k8sconfig, err := clientcmd.BuildConfigFromFlags("", cfg.Runner.Kubernetes.Kubeconfig)
 	if err != nil {
 		return nil, fmt.Errorf("kubeconfig configuration error. %+v", err)
 	}
 
-	// create the clientset
+	// Create the clientset
 	clientset, err := kubernetes.NewForConfig(k8sconfig)
 	if err != nil {
 		return nil, fmt.Errorf("kubernetes client configuration error. %+v", err)
@@ -89,6 +89,7 @@ func (k Kubernetes) GetHostsForTest(test config.Test) (*testers.Hosts, error) {
 	r := rand.New(s)
 	r.Seed(time.Now().UnixNano())
 
+	// Go through Hosts Servers list to get the servers hosts
 	for _, servers := range test.Hosts.Servers {
 		filtered, err := util.FilterHostsList(k8sNodes, servers)
 		if err != nil {
@@ -108,6 +109,7 @@ func (k Kubernetes) GetHostsForTest(test config.Test) (*testers.Hosts, error) {
 		}
 	}
 
+	// Go through Hosts Clients list to get the clients hosts
 	for _, clients := range test.Hosts.Clients {
 		filtered, err := util.FilterHostsList(k8sNodes, clients)
 		if err != nil {
@@ -136,6 +138,7 @@ func (k Kubernetes) k8sNodesToHosts() ([]*testers.Host, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Quick conversion from a Kubernetes CoreV1 Nodes object to testers.Host
 	for _, node := range nodes.Items {
 		hosts = append(hosts, &testers.Host{
 			Labels: node.ObjectMeta.Labels,
@@ -208,6 +211,8 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, taskNam
 	// Create server Pod first
 	pName := util.GetPNameFromTask(round, mainTask)
 
+	// Create initial cmdtemplate.Variables
+	// TODO the port does not need to be mapped in Kubernetes case, but for other runners (e.g., Ansible)
 	templateVars := cmdtemplate.Variables{
 		ServerPort: 5601,
 	}
@@ -245,6 +250,7 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, taskNam
 			defer wg.Done()
 			pName := util.GetPNameFromTask(round, task)
 
+			// Template command and args for each task
 			if err := cmdtemplate.Template(&task, templateVars); err != nil {
 				errs <- fmt.Errorf("failed to template task command and / or args. %+v", err)
 				return
@@ -266,6 +272,9 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, taskNam
 				errs <- fmt.Errorf("pod %s/%s not running after 10 tries", k.config.Namespace, pName)
 				return
 			}
+
+			// In case of running sequentiell, just send the logs to the parser ASAP
+			// TODO Find a better way to do this. Feels a bit broken to do it here instead of, e.g., using a goroutined channel ;-)
 			if k.runOptions.Mode != config.RunModeParallel {
 				if err := k.pushLogsToParser(pName, parser); err != nil {
 					errs <- fmt.Errorf("failed to push pod %s/%s logs to parser. %+v", k.config.Namespace, pName, err)
@@ -273,10 +282,12 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, taskNam
 				}
 			}
 		}(task)
+
 		if k.runOptions.Mode != config.RunModeParallel {
 			wg.Wait()
 		}
 	}
+	// When RunOptions.Mode `parallel` then we wait after all test tasks have been run
 	if k.runOptions.Mode == config.RunModeParallel {
 		wg.Wait()
 	}
@@ -294,13 +305,17 @@ func (k Kubernetes) pushLogsToParser(podName string, parser parsers.Parser) erro
 	if err != nil {
 		return err
 	}
+
 	if succeeded {
+		// "Generate" request for logs of Pod
 		req := k.k8sclient.CoreV1().Pods(k.config.Namespace).GetLogs(podName, &corev1.PodLogOptions{})
+
+		// Start the log stream
 		podLogs, err := req.Stream()
 		if err != nil {
 			return err
 		}
-
+		// Close it afterwards
 		defer podLogs.Close()
 
 		buf := new(bytes.Buffer)
@@ -309,6 +324,8 @@ func (k Kubernetes) pushLogsToParser(podName string, parser parsers.Parser) erro
 			return fmt.Errorf("error in copy information from podLogs to buffer")
 		}
 
+		// Send the logs to the parser.Parser() func
+		// TODO Find a better way to do this. Feels a bit broken to do it here instead of, e.g., using a goroutined channel ;-)
 		parsed, err := parser.Parse(buf)
 		_ = parsed
 		if err != nil {
@@ -316,6 +333,7 @@ func (k Kubernetes) pushLogsToParser(podName string, parser parsers.Parser) erro
 		}
 		return nil
 	}
+
 	return fmt.Errorf("pod %s/%s has not succeeded", k.config.Namespace, podName)
 }
 

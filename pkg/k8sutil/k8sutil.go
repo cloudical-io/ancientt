@@ -25,12 +25,14 @@ import (
 
 // PodRecreate delete Pod if it exists and create it again. If the Pod does not exist, create it.
 func PodRecreate(k8sclient *kubernetes.Clientset, pod *corev1.Pod) error {
+	// Delete Pod if it exists
 	if err := k8sclient.CoreV1().Pods(pod.ObjectMeta.Namespace).Delete(pod.ObjectMeta.Name, &metav1.DeleteOptions{}); err != nil {
 		if !errors.IsNotFound(err) {
 			return err
 		}
 	}
 
+	// Create Pod again
 	if _, err := k8sclient.CoreV1().Pods(pod.ObjectMeta.Namespace).Create(pod); err != nil {
 		if errors.IsAlreadyExists(err) {
 			return err

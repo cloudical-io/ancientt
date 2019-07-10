@@ -32,6 +32,10 @@ type IPerf3 struct {
 	config *config.IPerf3
 }
 
+// IPerf3ClientResult TODO
+type IPerf3ClientResult struct {
+}
+
 // NewIPerf3Tester return a new IPerf3 tester instance
 func NewIPerf3Tester(cfg *config.Config, test *config.Test) (Parser, error) {
 	return IPerf3{
