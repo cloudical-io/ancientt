@@ -18,6 +18,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/cloudical-io/acntt/parsers"
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/cloudical-io/acntt/testers"
 )
@@ -92,12 +93,15 @@ func (k Mock) GetHostsForTest(test config.Test) (*testers.Hosts, error) {
 			for _, mockHost := range mockHosts {
 				hosts.Servers[mockHost.Name] = mockHost
 			}
+			continue
 		}
 		if servers.Random {
 			for i := 0; i < servers.Count; i++ {
 				mockHost := mockHosts[r.Intn(len(mockHosts))]
 				hosts.Servers[mockHost.Name] = mockHost
 			}
+			// TODO Filter on labelSelector basis and antiAffinity
+			continue
 		}
 		if len(servers.Hosts) > 0 {
 			// Just mock any hosts which are in a list format directly given
@@ -114,6 +118,7 @@ func (k Mock) GetHostsForTest(test config.Test) (*testers.Hosts, error) {
 					},
 				}
 			}
+			continue
 		}
 	}
 
@@ -135,8 +140,19 @@ func generateMockServers() []*testers.Host {
 	return hosts
 }
 
+// Prepare NOOP because there is nothing to prepare because this is Mock.
+func (k Mock) Prepare(plan *testers.Plan) error {
+	return nil
+}
+
 // Execute run the given testers.Plan and return the logs of each step and / or error
-func (k Mock) Execute(plan *testers.Plan) (string, error) {
+func (k Mock) Execute(plan *testers.Plan, parser parsers.Parser) error {
 	// Return nothing because we didn't do anything in the mock
-	return "", nil
+	return nil
+}
+
+// Cleanup NOOP because Mock doesn't create any resource nor connection or so to any hosts.
+func (k Mock) Cleanup(plan *testers.Plan) error {
+	// TODO
+	return nil
 }

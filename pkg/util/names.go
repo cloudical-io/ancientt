@@ -11,21 +11,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package parsers
+package util
 
 import (
-	"bytes"
+	"crypto/sha1"
+	"fmt"
+	"os"
 
-	"github.com/cloudical-io/acntt/pkg/config"
+	"github.com/cloudical-io/acntt/testers"
 )
 
-// Factories contains the list of all available testers.
-// The parser can each then be created using the function saved in the map.
-var Factories = make(map[string]func(cfg *config.Config, test *config.Test) (Parser, error))
-
-// Parser is the interface a parser has to implement
-type Parser interface {
-	// Parse returns parsed output of each runners task so it can then be saved
-	// for further visualization and / or analytics.
-	Parse(in bytes.Buffer) ([]byte, error)
+// GetPNameFromTask get a "persistent" name for a task
+// This is done by calculating the checksums of the used names.
+func GetPNameFromTask(round int, task testers.Task) string {
+	data := fmt.Sprintf("%d-%s-%s", round, task.Host.Name, task.Args)
+	return fmt.Sprintf("%s-%s-%x", os.Args[0], task.Command, sha1.Sum([]byte(data)))
 }

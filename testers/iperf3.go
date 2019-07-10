@@ -54,11 +54,11 @@ func (ip IPerf3) Plan(env *Environment, test *config.Test) (*Plan, error) {
 	var ports Ports
 	if ip.config.UDP != nil && *ip.config.UDP {
 		ports = Ports{
-			UDP: []int16{5601},
+			UDP: []int32{5601},
 		}
 	} else {
 		ports = Ports{
-			TCP: []int16{5601},
+			TCP: []int32{5601},
 		}
 	}
 
@@ -103,6 +103,7 @@ func (ip IPerf3) buildIPerf3ServerCommand(server *Host) (string, []string) {
 	// Base command and args
 	cmd := "iperf3"
 	args := []string{
+		"--json",
 		"--port={{ .ServerPort }}",
 		"--server",
 	}
@@ -123,6 +124,7 @@ func (ip IPerf3) buildIPerf3ClientCommand(server *Host, client *Host) (string, [
 	// Base command and args
 	cmd := "iperf3"
 	args := []string{
+		"--json",
 		"--port={{ .ServerPort }}",
 		"--client={{ .ServerAddress }}",
 	}

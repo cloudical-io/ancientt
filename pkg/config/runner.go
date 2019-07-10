@@ -21,7 +21,8 @@ type Runner struct {
 
 // RunnerKubernetes
 type RunnerKubernetes struct {
-	Kubeconfig string `yaml:"kubeconfig"`
-	Image      string `yaml:"image"`
-	Namespace  string `yaml:"namespace"`
+	Kubeconfig  string `yaml:"kubeconfig"`
+	Image       string `yaml:"image"`
+	Namespace   string `yaml:"namespace"`
+	HostNetwork bool   `yaml:"hostNetwork"`
 }

@@ -99,6 +99,6 @@ type Task struct {
 
 // Ports TCP and UDP ports list
 type Ports struct {
-	TCP []int16
-	UDP []int16
+	TCP []int32
+	UDP []int32
 }

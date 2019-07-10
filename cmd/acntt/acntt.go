@@ -19,6 +19,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/cloudical-io/acntt/parsers"
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/cloudical-io/acntt/runners"
 	"github.com/cloudical-io/acntt/testers"
@@ -87,6 +88,16 @@ func run(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
+		// Get parser for the tester output
+		var parser parsers.Parser
+		parserNewFunc, ok := parsers.Factories[testerName]
+		if !ok {
+			return fmt.Errorf("parser with name %s not found", testerName)
+		}
+		if parser, err = parserNewFunc(cfg, &test); err != nil {
+			return err
+		}
+
 		// Get hosts for the test
 		hosts, err := runner.GetHostsForTest(test)
 		if err != nil {
@@ -104,9 +115,17 @@ func run(cmd *cobra.Command, args []string) error {
 		// For now print the plan
 		plan.PrettyPrint()
 
+		// Prepare the plan
+		if err = runner.Prepare(plan); err != nil {
+			return err
+		}
+
 		// Execute the plan
-		_, err = runner.Execute(plan)
-		if err != nil {
+		if err := runner.Execute(plan, parser); err != nil {
+			return err
+		}
+
+		if err := runner.Cleanup(plan); err != nil {
 			return err
 		}
 	}

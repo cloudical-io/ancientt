@@ -14,6 +14,7 @@ limitations under the License.
 package runners
 
 import (
+	"github.com/cloudical-io/acntt/parsers"
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/cloudical-io/acntt/testers"
 )
@@ -25,5 +26,7 @@ var Factories = make(map[string]func(cfg *config.Config) (Runner, error))
 // Runner is the interface a runner has to implement.
 type Runner interface {
 	GetHostsForTest(test config.Test) (*testers.Hosts, error)
-	Execute(plan *testers.Plan) (string, error)
+	Prepare(plan *testers.Plan) error
+	Execute(plan *testers.Plan, parser parsers.Parser) error
+	Cleanup(plan *testers.Plan) error
 }

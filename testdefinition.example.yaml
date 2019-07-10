@@ -1,15 +1,15 @@
 version: '0'
 runner:
-  name: mock
-  #name: kubernetes
+  #name: mock
+  name: kubernetes
   kubernetes:
-    kubeconfig: .kube/config
+    kubeconfig: /home/atrost/.kube/config
     image: quay.io/galexrt/container-toolbox
     namespace: acntt
 tests:
 - type: iperf3
   runOptions:
-    rounds: 3
+    rounds: 1
     interval: 5m
     mode: "sequential"
     parallelcount: 1
@@ -20,24 +20,25 @@ tests:
     #- name: all-hosts
     #  all: true
     - name: all-hosts
-      hosts:
-        - servers-0
-        - servers-4
+      all: true
+      #hosts:
+      #  - servers-0
+      #  - servers-4
     servers:
     - name: one-randomly-selected-server
       random: true
       count: 1
-    - name: different-hosts-1
-      random: true
-      count: 2 # when more than one hosts is wanted,
-      hostSelector: # For Labels in K8s and Variables of hosts in Ansible
-        network-tests-run-here: "true"
-      antiAffinity:
-        - key: "openstack-region" # this makes sure hosts with different "openstack-region" are picked
-    - name: specific-hosts
-      hosts:
-        - serverabc123
-        - serverxyz789
+    #- name: different-hosts-1
+    #  random: true
+    #  count: 2 # when more than one hosts is wanted,
+    #  hostSelector: # For Labels in K8s and Variables of hosts in Ansible
+    #    network-tests-run-here: "true"
+    #  antiAffinity:
+    #    - key: "openstack-region" # this makes sure hosts with different "openstack-region" are picked
+    #- name: specific-hosts
+    #  hosts:
+    #    - serverabc123
+    #    - serverxyz789
   iperf3:
     udp: false
     windowSizeCalculation:
