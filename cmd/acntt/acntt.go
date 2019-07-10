@@ -76,7 +76,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	for _, test := range cfg.Tests {
-		// Get tester
+		// Get tester for the test
 		var tester testers.Tester
 		testerName := strings.ToLower(test.Type)
 		testerNewFunc, ok := testers.Factories[testerName]
@@ -103,6 +103,12 @@ func run(cmd *cobra.Command, args []string) error {
 		}
 		// For now print the plan
 		plan.PrettyPrint()
+
+		// Execute the plan
+		_, err = runner.Execute(plan)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

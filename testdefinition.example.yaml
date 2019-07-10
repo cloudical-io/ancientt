@@ -17,8 +17,12 @@ tests:
   # Each entry will be merged into one list
   hosts:
     clients:
+    #- name: all-hosts
+    #  all: true
     - name: all-hosts
-      all: true
+      hosts:
+        - servers-0
+        - servers-4
     servers:
     - name: one-randomly-selected-server
       random: true
@@ -35,11 +39,11 @@ tests:
         - serverabc123
         - serverxyz789
   iperf3:
+    udp: false
     windowSizeCalculation:
       auto: true
     additionalFlags:
-      client:
-        - --udp
+      client: []
       server: []
 #- type: siege
 #  runOptions:

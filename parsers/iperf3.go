@@ -11,17 +11,4 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package config
-
-// Runner
-type Runner struct {
-	Name       string            `yaml:"name"`
-	Kubernetes *RunnerKubernetes `yaml:"kubernetes"`
-}
-
-// RunnerKubernetes
-type RunnerKubernetes struct {
-	Kubeconfig string `yaml:"kubeconfig"`
-	Image      string `yaml:"image"`
-	Namespace  string `yaml:"namespace"`
-}
+package parsers

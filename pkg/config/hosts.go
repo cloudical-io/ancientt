@@ -19,6 +19,7 @@ type Hosts struct {
 	All          bool              `yaml:"all"`
 	Random       bool              `yaml:"random"`
 	Count        int               `yaml:"count"`
+	Hosts        []string          `yaml:"hosts"`
 	HostSelector map[string]string `yaml:"hostSelector"`
 	AntiAffinity []KeyValuePair    `yaml:"antiAffinity"`
 }

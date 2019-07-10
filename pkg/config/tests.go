@@ -48,6 +48,7 @@ type TestHosts struct {
 type IPerf struct {
 	WindowSizeCalculation IPerfWindowSizeCalculation `yaml:"windowSizeCalculation"`
 	AdditionalFlags       IPerfAdditionalFlags       `yaml:"additionalFlags"`
+	UDP                   bool                       `yaml:"udp"`
 }
 
 // IPerfWindowSizeCalculation
@@ -63,6 +64,9 @@ type IPerfAdditionalFlags struct {
 
 // IPerf3
 type IPerf3 struct {
+	WindowSizeCalculation IPerfWindowSizeCalculation `yaml:"windowSizeCalculation"`
+	AdditionalFlags       IPerfAdditionalFlags       `yaml:"additionalFlags"`
+	UDP                   *bool                      `yaml:"udp"`
 }
 
 // Siege

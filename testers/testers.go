@@ -21,6 +21,7 @@ import (
 )
 
 // Factories contains the list of all available testers.
+// The tester can each then be created using the function saved in the map.
 var Factories = make(map[string]func(cfg *config.Config, test *config.Test) (Tester, error))
 
 // Tester is the interface a tester has to implement
@@ -29,22 +30,22 @@ type Tester interface {
 	Plan(env *Environment, test *config.Test) (*Plan, error)
 }
 
-// Environment
+// Environment environment information such as which hosts are doing what (clients, servers)
 type Environment struct {
 	Hosts *Hosts
 }
 
-// TestHosts
+// Hosts contains a list of clients and servers hosts that will be used in the test environment.
 type Hosts struct {
-	Clients map[string]Host `yaml:"clients"`
-	Servers map[string]Host `yaml:"servers"`
+	Clients map[string]*Host `yaml:"clients"`
+	Servers map[string]*Host `yaml:"servers"`
 }
 
-// Host
+// Host host information, like labels and addresses (will most of the time be filled by the runners.Runner)
 type Host struct {
 	Name      string
 	Labels    map[string]string
-	Addresses IPAddresses
+	Addresses *IPAddresses
 }
 
 // IPAddresses list of IPv4 and IPv6 addresses a host has
@@ -55,9 +56,9 @@ type IPAddresses struct {
 
 // Plan contains the information needed to execute the plan
 type Plan struct {
-	AffectedServers map[string]Host     `json:"affectedServers"`
-	Commands        []map[string][]Task `json:"commands"`
-	Tester          string              `json:"tester"`
+	AffectedServers map[string]*Host `json:"affectedServers"`
+	Commands        [][]Task         `json:"commands"`
+	Tester          string           `json:"tester"`
 }
 
 // PrettyPrint "pretty" prints a plan
@@ -68,29 +69,32 @@ func (p Plan) PrettyPrint() {
 	}
 	fmt.Println("=> END AffectedServers")
 	fmt.Println("-> BEGIN Commands")
-	for k, command := range p.Commands {
-		fmt.Printf("--> BEGIN Round %d\n", k)
-		for server, tasks := range command {
-			fmt.Printf("---> BEGIN Server %s will run\n", server)
-			for _, task := range tasks {
-				fmt.Printf("----> %s (Additional info: %+v; %+v)\n", task.Command, task.Ports, task.Sleep)
+	for k, commands := range p.Commands {
+		round := k + 1
+		fmt.Printf("--> BEGIN Round %d\n", round)
+		for _, command := range commands {
+			fmt.Printf("---> BEGIN Server %s\n", command.Host.Name)
+			fmt.Printf("----> %s %s (Additional info: %+v; %+v)\n", command.Command, command.Args, command.Ports, command.Sleep)
+			for _, task := range command.SubTasks {
+				fmt.Printf("-----> BEGIN Client %s\n", task.Host.Name)
+				fmt.Printf("------> %s %s (Additional info: %+v; %+v)\n", task.Command, task.Args, task.Ports, task.Sleep)
+				fmt.Printf("=====> END Client %s\n", task.Host.Name)
 			}
-			fmt.Printf("---> END Server %s will run\n", server)
+			fmt.Printf("===> END Server %s\n", command.Host.Name)
 		}
-		fmt.Printf("--> END Round %d\n", k)
+		fmt.Printf("==> END Round %d\n", round)
 	}
 	fmt.Println("=> END Commands")
 }
 
 // Task information for the task to execute
 type Task struct {
-	Command string        `json:"command"`
-	Sleep   time.Duration `json:"sleep"`
-	// TODO Implement CommandBuilder to build commands on the fly in the runner
-	// This will be useful when the runner part can handle the "port assignment" / "port mapping".
-	// Might be handled by the testers.Tester itself when, e.g., RunOptions.Mode `parallel` is used.
-	CommandBuilder func(server Host, client Host) (string, error)
-	Ports          Ports `json:"ports"`
+	Host     *Host         `json:"host"`
+	Command  string        `json:"command"`
+	Args     []string      `json:"args"`
+	Sleep    time.Duration `json:"sleep"`
+	Ports    Ports         `json:"ports"`
+	SubTasks []Task        `json:"tasks"`
 }
 
 // Ports TCP and UDP ports list

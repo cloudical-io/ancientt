@@ -18,6 +18,9 @@ import (
 
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/cloudical-io/acntt/testers"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -68,8 +71,67 @@ func (k Kubernetes) GetHostsForTest(test config.Test) (*testers.Hosts, error) {
 }
 
 // Execute run the given commands and return the logs of it and / or error
-func (k Kubernetes) Execute(cmd, args []string) ([]byte, error) {
-	// TODO Run tasks using Kubernetes Job objects
+func (k Kubernetes) Execute(plan *testers.Plan) (string, error) {
+	// TODO Run tasks using Kubernetes Pods
+	// TODO Get actual ip addresses of the Pod and use the cmdtemplate.Template() to template it in
 
-	return []byte{}, nil
+	if err := k.prepareKubernetes(); err != nil {
+		return "", err
+	}
+
+	// Iterate over given plan.Commands to then run each task
+	for _, tasks := range plan.Commands {
+		// Create the Pods for the server task and client tasks
+		if err := k.createPodsForMainTask(tasks); err != nil {
+			return "", err
+		}
+		// Exec into the Pods for the server task and client tasks, run the commands
+		if err := k.execTasksInPods(tasks); err != nil {
+			return "", err
+		}
+	}
+
+	return "", nil
+}
+
+// prepareKubernetes prepares Kubernetes by creating the namespace if it does not exist
+func (k Kubernetes) prepareKubernetes() error {
+	// Check if namespaces exists, if not try create it
+	if _, err := k.k8sclient.CoreV1().Namespaces().Get(k.config.Namespace, metav1.GetOptions{}); err != nil {
+		// If namespace not found, create it
+		if errors.IsNotFound(err) {
+			ns := &corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"created-by": "acntt",
+					},
+					Name: k.config.Namespace,
+				},
+			}
+			if _, err := k.k8sclient.CoreV1().Namespaces().Create(ns); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+	return nil
+}
+
+// createPodsForMainTask
+func (k Kubernetes) createPodsForMainTask(tasks []testers.Task) error {
+	pod, err := k.k8sclient.CoreV1().Pods(k.config.Namespace).Get("", metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	_ = pod
+
+	return nil
+}
+
+// execTasksInPods
+func (k Kubernetes) execTasksInPods(tasks []testers.Task) error {
+	// TODO use k8sclient exec to run the commands with retry
+
+	return nil
 }

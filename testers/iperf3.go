@@ -14,18 +14,17 @@ limitations under the License.
 package testers
 
 import (
-	"fmt"
-
 	"github.com/cloudical-io/acntt/pkg/config"
 )
 
+// NameIPerf3 IPerf3 tester name
 const NameIPerf3 = "iperf3"
 
 func init() {
 	Factories[NameIPerf3] = NewIPerf3Tester
 }
 
-// IPerf3
+// IPerf3 IPerf3 tester structure
 type IPerf3 struct {
 	Tester
 	config *config.IPerf3
@@ -33,48 +32,108 @@ type IPerf3 struct {
 
 // NewIPerf3Tester return a new IPerf3 tester instance
 func NewIPerf3Tester(cfg *config.Config, test *config.Test) (Tester, error) {
+	if test == nil {
+		test = &config.Test{
+			IPerf3: &config.IPerf3{},
+		}
+	}
+
 	return IPerf3{
 		config: test.IPerf3,
 	}, nil
 }
 
-// Plan
+// Plan return a plan to run IPerf3 from the given config.Test and Environment information (hosts)
 func (ip IPerf3) Plan(env *Environment, test *config.Test) (*Plan, error) {
 	plan := &Plan{
 		Tester:          test.Type,
-		AffectedServers: map[string]Host{},
-		Commands:        []map[string][]Task{},
+		AffectedServers: map[string]*Host{},
+		Commands:        make([][]Task, test.RunOptions.Rounds),
+	}
+
+	var ports Ports
+	if ip.config.UDP != nil && *ip.config.UDP {
+		ports = Ports{
+			UDP: []int16{5601},
+		}
+	} else {
+		ports = Ports{
+			TCP: []int16{5601},
+		}
 	}
 
 	for i := 0; i < test.RunOptions.Rounds; i++ {
-		round := map[string][]Task{}
 		for _, server := range env.Hosts.Servers {
+			round := Task{}
 			// Add server host to AffectedServers list
 			if _, ok := plan.AffectedServers[server.Name]; !ok {
 				plan.AffectedServers[server.Name] = server
 			}
-			round[server.Name] = []Task{}
+
+			// Set the server that will run the iperf3 server in the "main" command
+			round.Host = server
+			round.Command, round.Args = ip.buildIPerf3ServerCommand(server)
+			round.Ports = ports
+
+			// Now go over each client and generate their Task
 			for _, client := range env.Hosts.Clients {
 				// Add client host to AffectedServers list
 				if _, ok := plan.AffectedServers[client.Name]; !ok {
 					plan.AffectedServers[client.Name] = client
 				}
 
-				command, err := buildIPerf3Command(server, client)
-				if err != nil {
-					return plan, err
-				}
-				round[server.Name] = append(round[server.Name], Task{
-					Command: command,
+				// Build the IPerf3 command
+				cmd, args := ip.buildIPerf3ClientCommand(server, client)
+				round.SubTasks = append(round.SubTasks, Task{
+					Host:    client,
+					Command: cmd,
+					Args:    args,
+					Ports:   ports,
 				})
 			}
+			plan.Commands[i] = append(plan.Commands[i], round)
 		}
-		plan.Commands = append(plan.Commands, round)
 	}
 
 	return plan, nil
 }
 
-func buildIPerf3Command(server Host, client Host) (string, error) {
-	return fmt.Sprintf("iperf3 -c %s -p %d %s", client.Name, 5601, ""), nil
+// buildIPerf3ServerCommand generate IPer3 server command
+func (ip IPerf3) buildIPerf3ServerCommand(server *Host) (string, []string) {
+	// Base command and args
+	cmd := "iperf3"
+	args := []string{
+		"--port={{ .ServerPort }}",
+		"--server",
+	}
+
+	// Add --udp flag when UDP should be used
+	if ip.config.UDP != nil && *ip.config.UDP {
+		args = append(args, "--udp")
+	}
+
+	// Append additional server flags to args array
+	args = append(args, ip.config.AdditionalFlags.Server...)
+
+	return cmd, args
+}
+
+// buildIPerf3ClientCommand generate IPer3 client command
+func (ip IPerf3) buildIPerf3ClientCommand(server *Host, client *Host) (string, []string) {
+	// Base command and args
+	cmd := "iperf3"
+	args := []string{
+		"--port={{ .ServerPort }}",
+		"--client={{ .ServerAddress }}",
+	}
+
+	// Add --udp flag when UDP should be used
+	if ip.config.UDP != nil && *ip.config.UDP {
+		args = append(args, "--udp")
+	}
+
+	// Append additional client flags to args array
+	args = append(args, ip.config.AdditionalFlags.Client...)
+
+	return cmd, args
 }

@@ -19,10 +19,11 @@ import (
 )
 
 // Factories contains the list of all available runners.
+// The runners can each then be created using the function saved in the map.
 var Factories = make(map[string]func(cfg *config.Config) (Runner, error))
 
-// Runner is the interface a runner has to implement
+// Runner is the interface a runner has to implement.
 type Runner interface {
 	GetHostsForTest(test config.Test) (*testers.Hosts, error)
-	Execute(cmd, args []string) ([]byte, error)
+	Execute(plan *testers.Plan) (string, error)
 }

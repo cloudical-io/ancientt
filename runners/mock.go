@@ -44,13 +44,15 @@ func NewMockRunner(cfg *config.Config) (Runner, error) {
 
 // GetHostsForTest return a mocked list of hots for the given test config
 func (k Mock) GetHostsForTest(test config.Test) (*testers.Hosts, error) {
+	// Pre create the structure to return
 	hosts := &testers.Hosts{
-		Clients: map[string]testers.Host{},
-		Servers: map[string]testers.Host{},
+		Clients: map[string]*testers.Host{},
+		Servers: map[string]*testers.Host{},
 	}
 
 	mockHosts := generateMockServers()
 
+	// Create and seed randomness source for the `random` selection of hosts
 	s := rand.NewSource(time.Now().Unix())
 	r := rand.New(s)
 	r.Seed(time.Now().UnixNano())
@@ -67,6 +69,22 @@ func (k Mock) GetHostsForTest(test config.Test) (*testers.Hosts, error) {
 				hosts.Clients[mockHost.Name] = mockHost
 			}
 		}
+		if len(clients.Hosts) > 0 {
+			// Just mock any hosts which are in a list format directly given
+			for k, mockHost := range clients.Hosts {
+				hosts.Clients[mockHost] = &testers.Host{
+					Name: mockHost,
+					Addresses: &testers.IPAddresses{
+						IPv4: []string{
+							fmt.Sprintf("%d.%d.%d.%d", k, k, k, k),
+						},
+						IPv6: []string{
+							fmt.Sprintf("2001:db8:abcd:0012::%d", k),
+						},
+					},
+				}
+			}
+		}
 	}
 
 	for _, servers := range test.Hosts.Servers {
@@ -81,17 +99,34 @@ func (k Mock) GetHostsForTest(test config.Test) (*testers.Hosts, error) {
 				hosts.Servers[mockHost.Name] = mockHost
 			}
 		}
+		if len(servers.Hosts) > 0 {
+			// Just mock any hosts which are in a list format directly given
+			for _, mockHost := range servers.Hosts {
+				hosts.Servers[mockHost] = &testers.Host{
+					Name: mockHost,
+					Addresses: &testers.IPAddresses{
+						IPv4: []string{
+							"1.1.1.1",
+						},
+						IPv6: []string{
+							"2001:db8:abcd:0012::1",
+						},
+					},
+				}
+			}
+		}
 	}
 
 	return hosts, nil
 }
 
-func generateMockServers() []testers.Host {
-	hosts := []testers.Host{}
+// generateMockServers generate a list of mcoekd servers for testing purposes
+func generateMockServers() []*testers.Host {
+	hosts := []*testers.Host{}
 	for i := 0; i < 10; i++ {
-		hosts = append(hosts, testers.Host{
+		hosts = append(hosts, &testers.Host{
 			Name:      fmt.Sprintf(mockServerNamePattern, i),
-			Addresses: testers.IPAddresses{},
+			Addresses: &testers.IPAddresses{},
 			Labels: map[string]string{
 				"i-am-server": fmt.Sprintf(mockServerNamePattern, i),
 			},
@@ -100,7 +135,8 @@ func generateMockServers() []testers.Host {
 	return hosts
 }
 
-// Execute run the given commands and return the logs of it and / or error
-func (k Mock) Execute(cmd, args []string) ([]byte, error) {
-	return []byte{}, nil
+// Execute run the given testers.Plan and return the logs of each step and / or error
+func (k Mock) Execute(plan *testers.Plan) (string, error) {
+	// Return nothing because we didn't do anything in the mock
+	return "", nil
 }

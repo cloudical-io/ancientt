@@ -11,17 +11,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package config
+package parsers
 
-// Runner
-type Runner struct {
-	Name       string            `yaml:"name"`
-	Kubernetes *RunnerKubernetes `yaml:"kubernetes"`
-}
+import (
+	"github.com/cloudical-io/acntt/pkg/config"
+)
 
-// RunnerKubernetes
-type RunnerKubernetes struct {
-	Kubeconfig string `yaml:"kubeconfig"`
-	Image      string `yaml:"image"`
-	Namespace  string `yaml:"namespace"`
+// Factories contains the list of all available testers.
+// The parser can each then be created using the function saved in the map.
+var Factories = make(map[string]func(cfg *config.Config, test *config.Test) (Parser, error))
+
+// Parser is the interface a parser has to implement
+type Parser interface {
+	// Parse returns the output of each runners task parsed so it can then be saved
+	// for further visualization and / or analytics.
+	Parse(in []byte) ([]byte, error)
 }
