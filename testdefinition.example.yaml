@@ -19,8 +19,11 @@ tests:
     clients:
     #- name: all-hosts
     #  all: true
-    - name: all-hosts
-      all: true
+    - name: one-randomly-selected-server
+      random: true
+      count: 1
+    #- name: all-hosts
+    #  all: true
       #hosts:
       #  - servers-0
       #  - servers-4
