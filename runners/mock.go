@@ -146,7 +146,7 @@ func (k Mock) Prepare(runOpts config.RunOptions, plan *testers.Plan) error {
 }
 
 // Execute run the given testers.Plan and return the logs of each step and / or error
-func (k Mock) Execute(plan *testers.Plan, parser parsers.Parser) error {
+func (k Mock) Execute(plan *testers.Plan, parser chan<- parsers.Input) error {
 	// Return nothing because we didn't do anything in the mock
 	return nil
 }

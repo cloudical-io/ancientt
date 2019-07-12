@@ -14,7 +14,7 @@ limitations under the License.
 package parsers
 
 import (
-	"bytes"
+	"io"
 
 	"github.com/cloudical-io/acntt/pkg/config"
 )
@@ -25,7 +25,16 @@ var Factories = make(map[string]func(cfg *config.Config, test *config.Test) (Par
 
 // Parser is the interface a parser has to implement
 type Parser interface {
-	// Parse returns parsed output of each runners task so it can then be saved
-	// for further visualization and / or analytics.
-	Parse(in *bytes.Buffer) ([]byte, error)
+	// Parse
+	Parse(stopCh chan struct{}, inCh <-chan Input) error
+}
+
+// Input structured parse
+type Input struct {
+	DataStream     *io.ReadCloser
+	Data           []byte
+	Tester         string
+	ServerHost     string
+	ClientHost     string
+	AdditionalInfo string
 }

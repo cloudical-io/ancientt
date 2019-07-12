@@ -14,9 +14,7 @@ limitations under the License.
 package runners
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"math/rand"
 	"sync"
 	"time"
@@ -27,6 +25,8 @@ import (
 	"github.com/cloudical-io/acntt/pkg/k8sutil"
 	"github.com/cloudical-io/acntt/pkg/util"
 	"github.com/cloudical-io/acntt/testers"
+	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -161,7 +161,7 @@ func (k Kubernetes) Prepare(runOpts config.RunOptions, plan *testers.Plan) error
 }
 
 // Execute run the given commands and return the logs of it and / or error
-func (k Kubernetes) Execute(plan *testers.Plan, parser parsers.Parser) error {
+func (k Kubernetes) Execute(plan *testers.Plan, parser chan<- parsers.Input) error {
 	// TODO Get actual ip addresses of the Pod and use the cmdtemplate.Template() to template it in
 
 	// Iterate over given plan.Commands to then run each task
@@ -170,7 +170,7 @@ func (k Kubernetes) Execute(plan *testers.Plan, parser parsers.Parser) error {
 			taskName := fmt.Sprintf("acntt-%d", time.Now().Unix())
 
 			// Create the Pods for the server task and client tasks
-			if err := k.createPodsForTasks(round, task, taskName, parser); err != nil {
+			if err := k.createPodsForTasks(round, task, plan.Tester, taskName, parser); err != nil {
 				return err
 			}
 		}
@@ -193,9 +193,11 @@ func (k Kubernetes) prepareKubernetes() error {
 					Name: k.config.Namespace,
 				},
 			}
+			log.WithFields(logrus.Fields{"namespace": k.config.Namespace}).Info("trying to create namespace")
 			if _, err := k.k8sclient.CoreV1().Namespaces().Create(ns); err != nil {
 				return fmt.Errorf("failed to create namespace %s. %+v", k.config.Namespace, err)
 			}
+			log.WithFields(logrus.Fields{"namespace": k.config.Namespace}).Info("created namespace")
 		} else {
 			return fmt.Errorf("error while getting namespace %s. %+v", k.config.Namespace, err)
 		}
@@ -204,12 +206,12 @@ func (k Kubernetes) prepareKubernetes() error {
 }
 
 // createPodsForTasks create the Pods that are needed for the task(s)
-func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, taskName string, parser parsers.Parser) error {
+func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, tester string, taskName string, parser chan<- parsers.Input) error {
 	var wg sync.WaitGroup
 	errs := make(chan error)
 
 	// Create server Pod first
-	pName := util.GetPNameFromTask(round, mainTask)
+	pName := util.GetPNameFromTask(round, mainTask, util.PNameRoleServer)
 
 	// Create initial cmdtemplate.Variables
 	// TODO the port does not need to be mapped in Kubernetes case, but for other runners (e.g., Ansible)
@@ -227,6 +229,7 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, taskNam
 		return fmt.Errorf("failed to create pod %s/%s. %+v", k.config.Namespace, pName, err)
 	}
 
+	log.WithFields(logrus.Fields{"namespace": k.config.Namespace, "pod": pName}).Info("waiting for server pod to run")
 	running, err := k8sutil.WaitForPodToRun(k.k8sclient, k.config.Namespace, pName)
 	if err != nil {
 		return fmt.Errorf("failed to wait for pod %s/%s. %+v", k.config.Namespace, pName, err)
@@ -248,7 +251,7 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, taskNam
 		wg.Add(1)
 		go func(task testers.Task) {
 			defer wg.Done()
-			pName := util.GetPNameFromTask(round, task)
+			pName := util.GetPNameFromTask(round, task, util.PNameRoleClient)
 
 			// Template command and args for each task
 			if err := cmdtemplate.Template(&task, templateVars); err != nil {
@@ -263,6 +266,7 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, taskNam
 				return
 			}
 
+			log.WithFields(logrus.Fields{"namespace": k.config.Namespace, "pod": pName}).Info("waiting for client pod to run")
 			running, err := k8sutil.WaitForPodToRun(k.k8sclient, k.config.Namespace, pName)
 			if err != nil {
 				errs <- fmt.Errorf("failed to wait for pod %s/%s. %+v", k.config.Namespace, pName, err)
@@ -273,13 +277,9 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, taskNam
 				return
 			}
 
-			// In case of running sequentiell, just send the logs to the parser ASAP
-			// TODO Find a better way to do this. Feels a bit broken to do it here instead of, e.g., using a goroutined channel ;-)
-			if k.runOptions.Mode != config.RunModeParallel {
-				if err := k.pushLogsToParser(pName, parser); err != nil {
-					errs <- fmt.Errorf("failed to push pod %s/%s logs to parser. %+v", k.config.Namespace, pName, err)
-					return
-				}
+			if err := k.pushLogsToParser(parser, tester, mainTask.Host.Name, task.Host.Name, pName); err != nil {
+				errs <- fmt.Errorf("failed to push pod %s/%s logs to parser. %+v", k.config.Namespace, pName, err)
+				return
 			}
 		}(task)
 
@@ -300,7 +300,8 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, taskNam
 	}
 }
 
-func (k Kubernetes) pushLogsToParser(podName string, parser parsers.Parser) error {
+func (k Kubernetes) pushLogsToParser(parserInput chan<- parsers.Input, tester string, serverHost string, clientHost string, podName string) error {
+	// Wait for the Pod to succeed because that is the "sign" that the test for that Pod is done.
 	succeeded, err := k8sutil.WaitForPodToSucceed(k.k8sclient, k.config.Namespace, podName)
 	if err != nil {
 		return err
@@ -315,21 +316,15 @@ func (k Kubernetes) pushLogsToParser(podName string, parser parsers.Parser) erro
 		if err != nil {
 			return err
 		}
-		// Close it afterwards
-		defer podLogs.Close()
+		// Don't close the podLogs here, that is the responsibility of the parser!
 
-		buf := new(bytes.Buffer)
-		_, err = io.Copy(buf, podLogs)
-		if err != nil {
-			return fmt.Errorf("error in copy information from podLogs to buffer")
-		}
-
-		// Send the logs to the parser.Parser() func
-		// TODO Find a better way to do this. Feels a bit broken to do it here instead of, e.g., using a goroutined channel ;-)
-		parsed, err := parser.Parse(buf)
-		_ = parsed
-		if err != nil {
-			return err
+		// Send the logs to the parser.InputChan
+		parserInput <- parsers.Input{
+			DataStream:     &podLogs,
+			Tester:         tester,
+			ServerHost:     serverHost,
+			ClientHost:     clientHost,
+			AdditionalInfo: podName,
 		}
 		return nil
 	}
@@ -339,6 +334,36 @@ func (k Kubernetes) pushLogsToParser(podName string, parser parsers.Parser) erro
 
 // Cleanup remove all (left behind) Kubernetes resources created for the given Plan.
 func (k Kubernetes) Cleanup(plan *testers.Plan) error {
-	// TODO
+	var wg sync.WaitGroup
+
+	errs := make(chan error)
+
+	for round, tasks := range plan.Commands {
+		for _, task := range tasks {
+			wg.Add(1)
+			go func(task testers.Task) {
+				defer wg.Done()
+				pName := util.GetPNameFromTask(round, task, util.PNameRoleServer)
+				if err := k8sutil.PodDeleteByName(k.k8sclient, k.config.Namespace, pName); err != nil {
+					errs <- err
+					return
+				}
+			}(task)
+			for _, subTask := range task.SubTasks {
+				wg.Add(1)
+				go func(task testers.Task) {
+					defer wg.Done()
+					pName := util.GetPNameFromTask(round, task, util.PNameRoleClient)
+					if err := k8sutil.PodDeleteByName(k.k8sclient, k.config.Namespace, pName); err != nil {
+						errs <- err
+						return
+					}
+				}(subTask)
+			}
+		}
+
+	}
+	wg.Wait()
+
 	return nil
 }

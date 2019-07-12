@@ -41,6 +41,26 @@ func PodRecreate(k8sclient *kubernetes.Clientset, pod *corev1.Pod) error {
 	return nil
 }
 
+// PodDelete delete Pod if it exists
+func PodDelete(k8sclient *kubernetes.Clientset, pod *corev1.Pod) error {
+	if err := k8sclient.CoreV1().Pods(pod.ObjectMeta.Namespace).Delete(pod.ObjectMeta.Name, &metav1.DeleteOptions{}); err != nil {
+		if !errors.IsNotFound(err) {
+			return err
+		}
+	}
+	return nil
+}
+
+// PodDeleteByName delete Pod by namespace and name if it exists
+func PodDeleteByName(k8sclient *kubernetes.Clientset, namespace string, podName string) error {
+	return PodDelete(k8sclient, &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      podName,
+		},
+	})
+}
+
 // WaitForPodToRun wait for a Pod to be in phase Running. In case of phase Running, return true and no error
 func WaitForPodToRun(k8sclient *kubernetes.Clientset, namespace string, podName string) (bool, error) {
 	// 10 tries with 3 second sleep so 30 seconds in total

@@ -15,6 +15,8 @@ package parsers
 
 import (
 	"bytes"
+	"fmt"
+	"io"
 
 	"github.com/cloudical-io/acntt/pkg/config"
 )
@@ -40,8 +42,30 @@ func NewIPerf3Tester(cfg *config.Config, test *config.Test) (Parser, error) {
 }
 
 // Parse parse IPerf3 JSON responses
-func (ip IPerf3) Parse(in *bytes.Buffer) ([]byte, error) {
+func (ip IPerf3) Parse(stopCh chan struct{}, inCh <-chan Input) error {
+	for {
+		select {
+		case input := <-inCh:
+			ip.parse(input)
+		case <-stopCh:
+			return nil
+		}
+	}
+}
+
+func (ip IPerf3) parse(input Input) error {
+	if input.DataStream != nil {
+		buf := new(bytes.Buffer)
+		if _, err := io.Copy(buf, *input.DataStream); err != nil {
+			return fmt.Errorf("error in copy information from logs to buffer")
+		}
+	} else if len(input.Data) > 0 {
+
+	} else {
+		return fmt.Errorf("no data stream nor data from Input channel")
+	}
+
 	// TODO parse input
 
-	return in.Bytes(), nil
+	return nil
 }

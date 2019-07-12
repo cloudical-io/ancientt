@@ -14,10 +14,12 @@ limitations under the License.
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/cloudical-io/acntt/parsers"
 	"github.com/cloudical-io/acntt/pkg/config"
@@ -35,8 +37,14 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
+	rootCmd.PersistentFlags().Bool("no-cleanup", false, "If runners should run cleanup routines after the tests.")
+	rootCmd.PersistentFlags().Bool("yes", false, "Ask for user confirmation for each test before executing it.")
 	rootCmd.PersistentFlags().StringP("testdefinition", "c", "", "Path to the testdefinitions to read for the tests.")
+	viper.BindPFlag("no-cleanup", rootCmd.PersistentFlags().Lookup("no-cleanup"))
+	viper.BindPFlag("yes", rootCmd.PersistentFlags().Lookup("yes"))
 	viper.BindPFlag("testdefinition", rootCmd.PersistentFlags().Lookup("testdefinition"))
+	viper.SetDefault("yes", false)
+	viper.SetDefault("no-cleanup", false)
 	viper.SetDefault("testdefinition", "testdefinition.yaml")
 }
 
@@ -115,18 +123,53 @@ func run(cmd *cobra.Command, args []string) error {
 		// For now print the plan
 		plan.PrettyPrint()
 
+		if !viper.GetBool("yes") {
+			fmt.Println("===================")
+			for {
+				reader := bufio.NewReader(os.Stdin)
+				fmt.Print("Are you sure you want to continue with above test plan? ('Yes' or 'No'): ")
+				userInput, err := reader.ReadString('\n')
+				if err != nil {
+					return err
+				}
+				userInput = strings.TrimSpace(strings.ToLower(userInput))
+				if userInput == "yes" || userInput == "y" {
+					break
+				} else if userInput == "no" || userInput == "n" {
+					return fmt.Errorf("aborted by user")
+				}
+			}
+		}
+
 		// Prepare the runner for the plan
 		if err = runner.Prepare(test.RunOptions, plan); err != nil {
 			return err
 		}
 
+		stopCh := make(chan struct{})
+		inCh := make(chan parsers.Input)
+
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := parser.Parse(stopCh, inCh); err != nil {
+				return
+			}
+		}()
+
 		// Execute the plan
-		if err := runner.Execute(plan, parser); err != nil {
+		if err := runner.Execute(plan, inCh); err != nil {
 			return err
 		}
 
-		if err := runner.Cleanup(plan); err != nil {
-			return err
+		close(stopCh)
+		wg.Wait()
+
+		if !viper.GetBool("no-cleanup") {
+			if err := runner.Cleanup(plan); err != nil {
+				return err
+			}
 		}
 	}
 
