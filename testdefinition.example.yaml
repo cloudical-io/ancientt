@@ -10,7 +10,15 @@ tests:
 - type: iperf3
   outputs:
   - name: csv
-    csv: {}
+    csv:
+      filePath: /tmp/
+      namePattern: '{{ .UnixTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv'
+#  - name: gochart
+#    goChart:
+#      types:
+#        - single_axis
+#      filePath: /tmp
+#      namePattern: '{{ .UnixTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Type }}.csv'
   runOptions:
     rounds: 1
     interval: 5m

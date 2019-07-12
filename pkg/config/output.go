@@ -22,8 +22,13 @@ type Output struct {
 
 // CSV
 type CSV struct {
+	FilePath    string `yaml:"filePath"`
+	NamePattern string `yaml:"namePattern"`
 }
 
 // GoChart
 type GoChart struct {
+	Types       []string `yaml:"types"`
+	FilePath    string   `yaml:"filePath"`
+	NamePattern string   `yaml:"namePattern"`
 }

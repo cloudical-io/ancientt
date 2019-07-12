@@ -14,6 +14,10 @@ limitations under the License.
 package outputs
 
 import (
+	"bytes"
+	"html/template"
+	"time"
+
 	"github.com/cloudical-io/acntt/pkg/config"
 )
 
@@ -54,4 +58,28 @@ type Column struct {
 // Row
 type Row struct {
 	Value interface{}
+}
+
+// getFilenameFromPattern
+func getFilenameFromPattern(pattern string, data Data, additionalData map[string]interface{}) (string, error) {
+	t, err := template.New("main").Parse(pattern)
+	if err != nil {
+		return "", err
+	}
+
+	variables := struct {
+		Data     Data
+		UnixTime int64
+		Extra    map[string]interface{}
+	}{
+		Data:     data,
+		UnixTime: time.Now().Unix(),
+		Extra:    additionalData,
+	}
+
+	var out bytes.Buffer
+	if err = t.ExecuteTemplate(&out, "main", variables); err != nil {
+		return "", err
+	}
+	return out.String(), nil
 }

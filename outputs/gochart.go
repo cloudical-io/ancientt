@@ -14,40 +14,40 @@ limitations under the License.
 package outputs
 
 import (
-	"encoding/csv"
+	"bytes"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/cloudical-io/acntt/pkg/config"
+	chart "github.com/wcharczuk/go-chart"
 )
 
-// NameCSV CSV output name
-const NameCSV = "csv"
+// NameGoChart GoChart output name
+const NameGoChart = "gochart"
 
 func init() {
-	Factories[NameCSV] = NewCSVOutput
+	Factories[NameGoChart] = NewGoChartOutput
 }
 
-// CSV CSV tester structure
-type CSV struct {
+// GoChart GoChart tester structure
+type GoChart struct {
 	Output
-	config *config.CSV
+	config *config.GoChart
 }
 
-// NewCSVOutput return a new CSV tester instance
-func NewCSVOutput(cfg *config.Config, outCfg *config.Output) (Output, error) {
-	csv := CSV{
-		config: outCfg.CSV,
+// NewGoChartOutput return a new GoChart tester instance
+func NewGoChartOutput(cfg *config.Config, outCfg *config.Output) (Output, error) {
+	goChart := GoChart{
+		config: outCfg.GoChart,
 	}
-	if csv.config.NamePattern != "" {
-		csv.config.NamePattern = "{{ .UnixTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv"
+	if goChart.config.NamePattern != "" {
+		goChart.config.NamePattern = "{{ .UnixTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.goChart"
 	}
-	return csv, nil
+	return goChart, nil
 }
 
-// Do make CSV outputs
-func (ip CSV) Do(data Data) error {
+// Do make GoChart charts
+func (ip GoChart) Do(data Data) error {
+	return fmt.Errorf("gochart not implemented yet")
 	dataTable, ok := data.Data.(Table)
 	if !ok {
 		return fmt.Errorf("data not in table for csv output")
@@ -58,15 +58,21 @@ func (ip CSV) Do(data Data) error {
 		return err
 	}
 
-	outPath := filepath.Join(ip.config.FilePath, filename)
-	file, err := os.Create(outPath)
-	if err != nil {
+	_ = filename
+
+	graph := chart.Chart{
+		Series: []chart.Series{
+			chart.ContinuousSeries{
+				XValues: []float64{1.0, 2.0, 3.0, 4.0},
+				YValues: []float64{1.0, 2.0, 3.0, 4.0},
+			},
+		},
+	}
+
+	buffer := bytes.NewBuffer([]byte{})
+	if err := graph.Render(chart.PNG, buffer); err != nil {
 		return err
 	}
-	defer file.Close()
-
-	writer := csv.NewWriter(file)
-	defer writer.Flush()
 
 	// Iterate over header columns
 	for _, column := range dataTable.Headers {
@@ -78,9 +84,6 @@ func (ip CSV) Do(data Data) error {
 			continue
 		}
 
-		if err := writer.Write(rowCells); err != nil {
-			return err
-		}
 	}
 
 	// Iterate over data columns
@@ -93,9 +96,6 @@ func (ip CSV) Do(data Data) error {
 			continue
 		}
 
-		if err := writer.Write(rowCells); err != nil {
-			return err
-		}
 	}
 
 	return nil

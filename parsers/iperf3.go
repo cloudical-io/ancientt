@@ -15,11 +15,13 @@ package parsers
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 
 	"github.com/cloudical-io/acntt/outputs"
 	"github.com/cloudical-io/acntt/pkg/config"
+	iperf3models "github.com/cloudical-io/acntt/pkg/models/iperf3"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
@@ -86,49 +88,89 @@ func (ip IPerf3) parse(input Input, dataCh chan<- outputs.Data) error {
 		return fmt.Errorf("no data stream nor data from Input channel")
 	}
 
-	_ = logs
-	// TODO parse JSON input
+	// Parse JSON response
+	result := &iperf3models.ClientResult{}
+	if err := json.Unmarshal(logs.Bytes(), result); err != nil {
+		return err
+	}
 
-	table := outputs.Table{
+	intervalTable := outputs.Table{
 		Headers: []outputs.Column{
 			outputs.Column{
 				Rows: []outputs.Row{
-					{Value: "timestamp"},
-					{Value: "source_address"},
-					{Value: "source_port"},
-					{Value: "destination_address"},
-					{Value: "destination_port"},
-					{Value: "interval"},
-					{Value: "transferred_bytes"},
+					{Value: "id"},
+					{Value: "tester"},
+					{Value: "server_host"},
+					{Value: "client_host"},
+					{Value: "socket"},
+					{Value: "start"},
+					{Value: "end"},
+					{Value: "seconds"},
+					{Value: "bytes"},
 					{Value: "bits_per_second"},
+					{Value: "retransmits"},
+					{Value: "snd_cwnd"},
+					{Value: "rtt"},
+					{Value: "rttvar"},
+					{Value: "pmtu"},
+					{Value: "omitted"},
+					{Value: "iperf3_version"},
+					{Value: "system_info"},
+					{Value: "additional_info"},
 				},
 			},
 		},
 		Columns: []outputs.Column{
 			outputs.Column{
-				Rows: []outputs.Row{
-					{
-						Value: 123.2,
-					},
-				},
+				Rows: []outputs.Row{},
 			},
 		},
 	}
 
+	for _, interval := range result.Intervals {
+		for i, stream := range interval.Streams {
+			intervalTable.Columns = append(intervalTable.Columns, outputs.Column{
+				Rows: []outputs.Row{
+					{Value: i},
+					{Value: input.Tester},
+					{Value: input.ServerHost},
+					{Value: input.ClientHost},
+					{Value: stream.Socket},
+					{Value: stream.Start},
+					{Value: stream.End},
+					{Value: stream.Seconds},
+					{Value: stream.Bytes},
+					{Value: stream.BitsPerSecond},
+					{Value: stream.Retransmits},
+					{Value: stream.SndCwnd},
+					{Value: stream.RTT},
+					{Value: stream.RTTVar},
+					{Value: stream.PMTU},
+					{Value: stream.Omitted},
+					{Value: result.Start.Version},
+					{Value: result.Start.SystemInfo},
+					{Value: input.AdditionalInfo},
+				},
+			})
+		}
+	}
+
 	logger.Debug("parsed data input")
 
-	// Transofrm Input into outputs.Data struct
+	// Transform Input into outputs.Data struct
 	data := outputs.Data{
 		AdditionalInfo: input.AdditionalInfo,
 		ServerHost:     input.ServerHost,
 		ClientHost:     input.ClientHost,
 		Tester:         input.Tester,
-		Data:           table,
+		Data:           intervalTable,
 	}
 
 	logger.Debug("sending parsed data to dataCh")
 
 	dataCh <- data
+
+	// TODO generate sum and / or end table and send to output
 
 	logger.Debug("sent parsed data to dataCh")
 
