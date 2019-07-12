@@ -8,6 +8,9 @@ runner:
     namespace: acntt
 tests:
 - type: iperf3
+  outputs:
+  - name: csv
+    csv: {}
   runOptions:
     rounds: 1
     interval: 5m

@@ -1,6 +1,6 @@
 # acntt
 
-Automated Continous network testing tool using existing projects like iperf3, siege, etc.
+Automated Continuous network testing tool using existing projects like iperf3, siege, etc.
 
 ## Points to achieve
 

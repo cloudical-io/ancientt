@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Cloudical Deutschland GmbH
+Copyright 2019 Cloudical Deutschland GmbH. All rights reserved.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -287,10 +287,13 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, tester 
 			wg.Wait()
 		}
 	}
+
 	// When RunOptions.Mode `parallel` then we wait after all test tasks have been run
 	if k.runOptions.Mode == config.RunModeParallel {
 		wg.Wait()
 	}
+
+	log.Debug("done running tests in kubernetes for plan")
 
 	select {
 	case err := <-errs:

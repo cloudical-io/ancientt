@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Cloudical Deutschland GmbH
+Copyright 2019 Cloudical Deutschland GmbH. All rights reserved.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -15,12 +15,13 @@ package config
 
 // Test
 type Test struct {
-	Type       string     `yaml:"type"`
-	RunOptions RunOptions `yaml:"runOptions"`
-	Hosts      TestHosts  `yaml:"hosts"`
-	IPerf      *IPerf     `yaml:"iperf"`
-	IPerf3     *IPerf3    `yaml:"iperf3"`
-	Siege      *Siege     `yaml:"siege"`
+	Type        string       `yaml:"type"`
+	RunOptions  RunOptions   `yaml:"runOptions"`
+	Hosts       TestHosts    `yaml:"hosts"`
+	IPerf       *IPerf       `yaml:"iperf"`
+	IPerf3      *IPerf3      `yaml:"iperf3"`
+	Siege       *Siege       `yaml:"siege"`
+	Outputs []Output `yaml:"outputs"`
 }
 
 const (

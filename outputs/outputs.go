@@ -11,31 +11,47 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package parsers
+package outputs
 
 import (
-	"io"
-
-	"github.com/cloudical-io/acntt/outputs"
 	"github.com/cloudical-io/acntt/pkg/config"
 )
 
-// Factories contains the list of all available testers.
-// The parser can each then be created using the function saved in the map.
-var Factories = make(map[string]func(cfg *config.Config, test *config.Test) (Parser, error))
+// Factories contains the list of all available outputs.
+// The outputs can each then be created using the function saved in the map.
+var Factories = make(map[string]func(cfg *config.Config, outCfg *config.Output) (Output, error))
 
-// Parser is the interface a parser has to implement
-type Parser interface {
-	// Parse
-	Parse(doneCh chan struct{}, inCh <-chan Input, dataCh chan<- outputs.Data) error
+// Output is the interface a output has to implement.
+type Output interface {
+	Do(data Data) error
 }
 
-// Input structured parse
-type Input struct {
-	DataStream     *io.ReadCloser
-	Data           []byte
+// Data structured parsed data
+type Data struct {
 	Tester         string
 	ServerHost     string
 	ClientHost     string
 	AdditionalInfo string
+	Data           DataFormat
+}
+
+// DataFormat
+type DataFormat interface {
+}
+
+// Table
+type Table struct {
+	DataFormat
+	Headers []Column
+	Columns []Column
+}
+
+// Column
+type Column struct {
+	Rows []Row
+}
+
+// Row
+type Row struct {
+	Value interface{}
 }

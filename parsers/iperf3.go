@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Cloudical Deutschland GmbH
+Copyright 2019 Cloudical Deutschland GmbH. All rights reserved.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -18,7 +18,10 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/cloudical-io/acntt/outputs"
 	"github.com/cloudical-io/acntt/pkg/config"
+	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // NameIPerf3 IPerf3 tester name
@@ -31,41 +34,103 @@ func init() {
 // IPerf3 IPerf3 tester structure
 type IPerf3 struct {
 	Parser
-	config *config.IPerf3
+	config *config.Test
 }
 
 // NewIPerf3Tester return a new IPerf3 tester instance
 func NewIPerf3Tester(cfg *config.Config, test *config.Test) (Parser, error) {
 	return IPerf3{
-		config: test.IPerf3,
+		config: test,
 	}, nil
 }
 
 // Parse parse IPerf3 JSON responses
-func (ip IPerf3) Parse(stopCh chan struct{}, inCh <-chan Input) error {
+func (ip IPerf3) Parse(doneCh chan struct{}, inCh <-chan Input, dataCh chan<- outputs.Data) error {
 	for {
 		select {
-		case input := <-inCh:
-			ip.parse(input)
-		case <-stopCh:
+		case <-doneCh:
 			return nil
+		case input, ok := <-inCh:
+			if !ok {
+				return nil
+			}
+			if input.ClientHost == "" && input.ServerHost == "" && input.Tester == "" {
+				log.Warn("received input.Data with empty input.Tester and others are empty, 'signal' channel closed")
+				close(dataCh)
+				return nil
+			}
+			if err := ip.parse(input, dataCh); err != nil {
+				return err
+			}
 		}
 	}
 }
 
-func (ip IPerf3) parse(input Input) error {
+func (ip IPerf3) parse(input Input, dataCh chan<- outputs.Data) error {
+	logger := log.WithFields(logrus.Fields{"parers": NameIPerf3})
+
+	var logs *bytes.Buffer
 	if input.DataStream != nil {
-		buf := new(bytes.Buffer)
-		if _, err := io.Copy(buf, *input.DataStream); err != nil {
+		logs = new(bytes.Buffer)
+		if _, err := io.Copy(logs, *input.DataStream); err != nil {
 			return fmt.Errorf("error in copy information from logs to buffer")
 		}
+		if err := (*input.DataStream).Close(); err != nil {
+			return fmt.Errorf("error during closing input.DataStream. %+v", err)
+		}
 	} else if len(input.Data) > 0 {
-
+		// Directly pump the data in the logs var
+		logger.Warn("received input.Data instead of input.DataStream, who wrote that runners without stream support")
+		logs = bytes.NewBuffer(input.Data)
 	} else {
 		return fmt.Errorf("no data stream nor data from Input channel")
 	}
 
-	// TODO parse input
+	_ = logs
+	// TODO parse JSON input
+
+	table := outputs.Table{
+		Headers: []outputs.Column{
+			outputs.Column{
+				Rows: []outputs.Row{
+					{Value: "timestamp"},
+					{Value: "source_address"},
+					{Value: "source_port"},
+					{Value: "destination_address"},
+					{Value: "destination_port"},
+					{Value: "interval"},
+					{Value: "transferred_bytes"},
+					{Value: "bits_per_second"},
+				},
+			},
+		},
+		Columns: []outputs.Column{
+			outputs.Column{
+				Rows: []outputs.Row{
+					{
+						Value: 123.2,
+					},
+				},
+			},
+		},
+	}
+
+	logger.Debug("parsed data input")
+
+	// Transofrm Input into outputs.Data struct
+	data := outputs.Data{
+		AdditionalInfo: input.AdditionalInfo,
+		ServerHost:     input.ServerHost,
+		ClientHost:     input.ClientHost,
+		Tester:         input.Tester,
+		Data:           table,
+	}
+
+	logger.Debug("sending parsed data to dataCh")
+
+	dataCh <- data
+
+	logger.Debug("sent parsed data to dataCh")
 
 	return nil
 }

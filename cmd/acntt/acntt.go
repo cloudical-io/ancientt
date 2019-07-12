@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Cloudical Deutschland GmbH
+Copyright 2019 Cloudical Deutschland GmbH. All rights reserved.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -21,10 +21,13 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/cloudical-io/acntt/outputs"
 	"github.com/cloudical-io/acntt/parsers"
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/cloudical-io/acntt/runners"
 	"github.com/cloudical-io/acntt/testers"
+	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
@@ -56,6 +59,12 @@ func main() {
 }
 
 func run(cmd *cobra.Command, args []string) error {
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp: true,
+	})
+	log.SetReportCaller(false)
+	log.SetLevel(log.DebugLevel)
+
 	cfgFile := viper.GetString("testdefinition")
 
 	file, err := os.Open(cfgFile)
@@ -120,10 +129,13 @@ func run(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		// For now print the plan
+		// Print the plan
+		fmt.Println("--> BEGIN PLAN <--")
 		plan.PrettyPrint()
+		fmt.Println("-->  END PLAN  <--")
 
 		if !viper.GetBool("yes") {
+			// Ask user if we can continue or not
 			fmt.Println("===================")
 			for {
 				reader := bufio.NewReader(os.Stdin)
@@ -139,39 +151,105 @@ func run(cmd *cobra.Command, args []string) error {
 					return fmt.Errorf("aborted by user")
 				}
 			}
+			fmt.Println("===================")
 		}
+
+		log.WithFields(logrus.Fields{"testers": test.Type}).Info("preparing test")
 
 		// Prepare the runner for the plan
 		if err = runner.Prepare(test.RunOptions, plan); err != nil {
 			return err
 		}
 
-		stopCh := make(chan struct{})
-		inCh := make(chan parsers.Input)
-
 		var wg sync.WaitGroup
-		wg.Add(1)
+
+		doneCh := make(chan struct{})
+		inCh := make(chan parsers.Input)
+		dataCh := make(chan outputs.Data)
+
+		errs := make(chan error)
+
 		go func() {
-			defer wg.Done()
-			if err := parser.Parse(stopCh, inCh); err != nil {
+			select {
+			case erro := <-errs:
+				log.Error(erro.Error())
+			case <-doneCh:
 				return
 			}
 		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			err := parser.Parse(doneCh, inCh, dataCh)
+			// Close dataCh as there won't be anything else coming through
+			close(dataCh)
+			if err != nil {
+				errs <- err
+				return
+			}
+		}()
+
+		// Start each output
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for {
+				select {
+				case data, ok := <-dataCh:
+					if !ok {
+						return
+					}
+					for _, outputItem := range test.Outputs {
+						outputName := outputItem.Name
+
+						var output outputs.Output
+						outputNewFunc, ok := outputs.Factories[outputName]
+						if !ok {
+							errs <- fmt.Errorf("output with name %s not found", outputName)
+							return
+						}
+						output, err = outputNewFunc(cfg, &outputItem)
+						if err != nil {
+							errs <- err
+							return
+						}
+
+						if err := output.Do(data); err != nil {
+							errs <- err
+							return
+						}
+					}
+				case <-doneCh:
+					return
+				}
+			}
+		}()
+
+		log.WithFields(logrus.Fields{"testers": test.Type}).Info("executing test")
 
 		// Execute the plan
 		if err := runner.Execute(plan, inCh); err != nil {
 			return err
 		}
+		log.WithFields(logrus.Fields{"testers": test.Type}).Debug("runner execute returned, closing doneCh")
 
-		close(stopCh)
+		close(inCh)
 		wg.Wait()
 
+		close(doneCh)
+
+		// Run runners.Cleanup() func if wanted by the user
+		// TODO When wanted, should be run when signal (CTRL+C) received
 		if !viper.GetBool("no-cleanup") {
+			log.WithFields(logrus.Fields{"testers": test.Type}).Info("running cleanup for test")
 			if err := runner.Cleanup(plan); err != nil {
 				return err
 			}
 		}
 	}
+
+	log.Info("done with tests")
 
 	return nil
 }
