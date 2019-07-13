@@ -4,6 +4,8 @@ go 1.12
 
 require (
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
+	github.com/k0kubun/pp v3.0.1+incompatible
+	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.3.2

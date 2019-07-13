@@ -18,6 +18,7 @@ type Output struct {
 	Name    string   `yaml:"name"`
 	CSV     *CSV     `yaml:"csv"`
 	GoChart *GoChart `yaml:"goChart"`
+	Dump    *Dump    `yaml:"dump"`
 }
 
 // CSV CSV Output config options
@@ -31,4 +32,10 @@ type GoChart struct {
 	Types       []string `yaml:"types"`
 	FilePath    string   `yaml:"filePath"`
 	NamePattern string   `yaml:"namePattern"`
+}
+
+// Dump Dump Output config options
+type Dump struct {
+	FilePath    string `yaml:"filePath"`
+	NamePattern string `yaml:"namePattern"`
 }

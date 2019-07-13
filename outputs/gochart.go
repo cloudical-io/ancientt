@@ -51,7 +51,7 @@ func NewGoChartOutput(cfg *config.Config, outCfg *config.Output) (Output, error)
 }
 
 // Do make GoChart charts
-func (ip GoChart) Do(data Data) error {
+func (gc GoChart) Do(data Data) error {
 	dataTable, ok := data.Data.(Table)
 	if !ok {
 		return fmt.Errorf("data not in table for csv output")
@@ -59,10 +59,10 @@ func (ip GoChart) Do(data Data) error {
 
 	// Iterate over wanted graph types
 	// TODO Allow certain header columns to be selected per graphType
-	for _, graphType := range ip.config.Types {
+	for _, graphType := range gc.config.Types {
 		for _, column := range dataTable.Headers {
 			for _, row := range column.Rows {
-				filename, err := getFilenameFromPattern(ip.config.NamePattern, data, map[string]interface{}{
+				filename, err := getFilenameFromPattern(gc.config.NamePattern, data, map[string]interface{}{
 					"Type":   graphType,
 					"Header": row.Value,
 				})

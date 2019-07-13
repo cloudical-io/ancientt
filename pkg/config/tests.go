@@ -18,7 +18,6 @@ type Test struct {
 	Type       string     `yaml:"type"`
 	RunOptions RunOptions `yaml:"runOptions"`
 	Hosts      TestHosts  `yaml:"hosts"`
-	IPerf      *IPerf     `yaml:"iperf"`
 	IPerf3     *IPerf3    `yaml:"iperf3"`
 	Siege      *Siege     `yaml:"siege"`
 	Outputs    []Output   `yaml:"outputs"`
@@ -45,24 +44,24 @@ type TestHosts struct {
 	Servers []Hosts `yaml:"servers"`
 }
 
-// IPerf IPerf config structure for testers.Tester config
-type IPerf struct {
-	AdditionalFlags IPerfAdditionalFlags `yaml:"additionalFlags"`
-	UDP             bool                 `yaml:"udp"`
-}
-
-// IPerfAdditionalFlags additional flags structure for IPerf and IPerf3
-type IPerfAdditionalFlags struct {
+// AdditionalFlags additional flags structure for Server and Clients
+type AdditionalFlags struct {
 	Client []string `yaml:"client"`
 	Server []string `yaml:"server"`
 }
 
 // IPerf3 IPerf3 config structure for testers.Tester config
 type IPerf3 struct {
-	AdditionalFlags IPerfAdditionalFlags `yaml:"additionalFlags"`
-	UDP             *bool                `yaml:"udp"`
+	AdditionalFlags AdditionalFlags `yaml:"additionalFlags"`
+	UDP             *bool           `yaml:"udp"`
 }
 
 // Siege Siege config structure TODO not implemented yet
 type Siege struct {
+	AdditionalFlags AdditionalFlags   `yaml:"additionalFlags"`
+	Benchmark       bool              `yaml:"benchmark"`
+	Headers         map[string]string `yaml:"headers"`
+	URLs            []string          `yaml:"urls"`
+	UserAgent       string            `yaml:"userAgent"`
+	// TODO Add more options from SIEGERC config file
 }

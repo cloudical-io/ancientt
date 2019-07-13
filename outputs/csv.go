@@ -40,29 +40,29 @@ type CSV struct {
 
 // NewCSVOutput return a new CSV tester instance
 func NewCSVOutput(cfg *config.Config, outCfg *config.Output) (Output, error) {
-	csv := CSV{
+	c := CSV{
 		logger: log.WithFields(logrus.Fields{"output": NameCSV}),
 		config: outCfg.CSV,
 	}
-	if csv.config.NamePattern != "" {
-		csv.config.NamePattern = "{{ .UnixTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv"
+	if c.config.NamePattern != "" {
+		c.config.NamePattern = "{{ .UnixTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv"
 	}
-	return csv, nil
+	return c, nil
 }
 
 // Do make CSV outputs
-func (ip CSV) Do(data Data) error {
+func (c CSV) Do(data Data) error {
 	dataTable, ok := data.Data.(Table)
 	if !ok {
 		return fmt.Errorf("data not in table for csv output")
 	}
 
-	filename, err := getFilenameFromPattern(ip.config.NamePattern, data, nil)
+	filename, err := getFilenameFromPattern(c.config.NamePattern, data, nil)
 	if err != nil {
 		return err
 	}
 
-	outPath := filepath.Join(ip.config.FilePath, filename)
+	outPath := filepath.Join(c.config.FilePath, filename)
 	file, err := os.Create(outPath)
 	if err != nil {
 		return err
