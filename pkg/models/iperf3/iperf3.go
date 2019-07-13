@@ -13,7 +13,7 @@ limitations under the License.
 
 package iperf3
 
-// ClientResult
+// ClientResult IPerf3 client result output
 type ClientResult struct {
 	Start     Start      `json:"start"`
 	Intervals []Interval `json:"intervals"`

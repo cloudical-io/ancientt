@@ -13,16 +13,21 @@ limitations under the License.
 
 package config
 
-// Runner
+// Runner structure with all available runners config options
 type Runner struct {
 	Name       string            `yaml:"name"`
 	Kubernetes *RunnerKubernetes `yaml:"kubernetes"`
+	Mock       *RunnerMock       `yaml:"mock"`
 }
 
-// RunnerKubernetes
+// RunnerKubernetes Kubernetes Runner config options
 type RunnerKubernetes struct {
 	Kubeconfig  string `yaml:"kubeconfig"`
 	Image       string `yaml:"image"`
 	Namespace   string `yaml:"namespace"`
 	HostNetwork bool   `yaml:"hostNetwork"`
+}
+
+// RunnerMock Mock Runner config options (here for good measure)
+type RunnerMock struct {
 }

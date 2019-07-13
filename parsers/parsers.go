@@ -26,7 +26,7 @@ var Factories = make(map[string]func(cfg *config.Config, test *config.Test) (Par
 
 // Parser is the interface a parser has to implement
 type Parser interface {
-	// Parse
+	// Parse parse data from runners.Execute() func
 	Parse(doneCh chan struct{}, inCh <-chan Input, dataCh chan<- outputs.Data) error
 }
 

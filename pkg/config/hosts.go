@@ -13,7 +13,7 @@ limitations under the License.
 
 package config
 
-// Hosts
+// Hosts options for hosts selection for a Test
 type Hosts struct {
 	Name         string            `yaml:"name"`
 	All          bool              `yaml:"all"`
@@ -21,5 +21,6 @@ type Hosts struct {
 	Count        int               `yaml:"count"`
 	Hosts        []string          `yaml:"hosts"`
 	HostSelector map[string]string `yaml:"hostSelector"`
-	AntiAffinity []KeyValuePair    `yaml:"antiAffinity"`
+	// AntiAffinity not implemented yet
+	AntiAffinity []KeyValuePair `yaml:"antiAffinity"`
 }

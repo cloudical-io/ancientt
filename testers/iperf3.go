@@ -15,6 +15,8 @@ package testers
 
 import (
 	"github.com/cloudical-io/acntt/pkg/config"
+	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // NameIPerf3 IPerf3 tester name
@@ -27,6 +29,7 @@ func init() {
 // IPerf3 IPerf3 tester structure
 type IPerf3 struct {
 	Tester
+	logger *log.Entry
 	config *config.IPerf3
 }
 
@@ -39,6 +42,7 @@ func NewIPerf3Tester(cfg *config.Config, test *config.Test) (Tester, error) {
 	}
 
 	return IPerf3{
+		logger: log.WithFields(logrus.Fields{"tester": NameIPerf3}),
 		config: test.IPerf3,
 	}, nil
 }

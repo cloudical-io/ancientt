@@ -13,19 +13,20 @@ limitations under the License.
 
 package config
 
-// Config
+// Config Config object for the config file
 type Config struct {
 	Version string `yaml:"version"`
 	Runner  Runner `yaml:"runner"`
 	Tests   []Test `yaml:"tests"`
 }
 
-// KeyValuePair
+// KeyValuePair key value string pair
 type KeyValuePair struct {
 	Key   string `yaml:"key"`
 	Value string `yaml:"value"`
 }
 
+// New return a new Config object with the `Version` set by default
 func New() *Config {
 	return &Config{
 		Version: "0",

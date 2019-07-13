@@ -13,15 +13,15 @@ limitations under the License.
 
 package config
 
-// Test
+// Test Config options for each Test
 type Test struct {
-	Type        string       `yaml:"type"`
-	RunOptions  RunOptions   `yaml:"runOptions"`
-	Hosts       TestHosts    `yaml:"hosts"`
-	IPerf       *IPerf       `yaml:"iperf"`
-	IPerf3      *IPerf3      `yaml:"iperf3"`
-	Siege       *Siege       `yaml:"siege"`
-	Outputs []Output `yaml:"outputs"`
+	Type       string     `yaml:"type"`
+	RunOptions RunOptions `yaml:"runOptions"`
+	Hosts      TestHosts  `yaml:"hosts"`
+	IPerf      *IPerf     `yaml:"iperf"`
+	IPerf3     *IPerf3    `yaml:"iperf3"`
+	Siege      *Siege     `yaml:"siege"`
+	Outputs    []Output   `yaml:"outputs"`
 }
 
 const (
@@ -45,31 +45,24 @@ type TestHosts struct {
 	Servers []Hosts `yaml:"servers"`
 }
 
-// IPerf
+// IPerf IPerf config structure for testers.Tester config
 type IPerf struct {
-	WindowSizeCalculation IPerfWindowSizeCalculation `yaml:"windowSizeCalculation"`
-	AdditionalFlags       IPerfAdditionalFlags       `yaml:"additionalFlags"`
-	UDP                   bool                       `yaml:"udp"`
+	AdditionalFlags IPerfAdditionalFlags `yaml:"additionalFlags"`
+	UDP             bool                 `yaml:"udp"`
 }
 
-// IPerfWindowSizeCalculation
-type IPerfWindowSizeCalculation struct {
-	Auto bool `yaml:"auto"`
-}
-
-// IPerfAdditionalFlags
+// IPerfAdditionalFlags additional flags structure for IPerf and IPerf3
 type IPerfAdditionalFlags struct {
 	Client []string `yaml:"client"`
 	Server []string `yaml:"server"`
 }
 
-// IPerf3
+// IPerf3 IPerf3 config structure for testers.Tester config
 type IPerf3 struct {
-	WindowSizeCalculation IPerfWindowSizeCalculation `yaml:"windowSizeCalculation"`
-	AdditionalFlags       IPerfAdditionalFlags       `yaml:"additionalFlags"`
-	UDP                   *bool                      `yaml:"udp"`
+	AdditionalFlags IPerfAdditionalFlags `yaml:"additionalFlags"`
+	UDP             *bool                `yaml:"udp"`
 }
 
-// Siege
+// Siege Siege config structure TODO not implemented yet
 type Siege struct {
 }

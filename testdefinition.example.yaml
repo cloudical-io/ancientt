@@ -55,8 +55,6 @@ tests:
     #    - serverxyz789
   iperf3:
     udp: false
-    windowSizeCalculation:
-      auto: true
     additionalFlags:
       client: []
       server: []

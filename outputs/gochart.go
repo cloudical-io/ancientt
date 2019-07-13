@@ -18,6 +18,9 @@ import (
 	"fmt"
 
 	"github.com/cloudical-io/acntt/pkg/config"
+	"github.com/cloudical-io/acntt/pkg/util"
+	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	chart "github.com/wcharczuk/go-chart"
 )
 
@@ -31,71 +34,73 @@ func init() {
 // GoChart GoChart tester structure
 type GoChart struct {
 	Output
+	logger *log.Entry
 	config *config.GoChart
 }
 
 // NewGoChartOutput return a new GoChart tester instance
 func NewGoChartOutput(cfg *config.Config, outCfg *config.Output) (Output, error) {
 	goChart := GoChart{
+		logger: log.WithFields(logrus.Fields{"output": NameGoChart}),
 		config: outCfg.GoChart,
 	}
 	if goChart.config.NamePattern != "" {
-		goChart.config.NamePattern = "{{ .UnixTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.goChart"
+		goChart.config.NamePattern = "{{ .UnixTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Header }}-{{ .Extra.Type }}.png"
 	}
 	return goChart, nil
 }
 
 // Do make GoChart charts
 func (ip GoChart) Do(data Data) error {
-	return fmt.Errorf("gochart not implemented yet")
 	dataTable, ok := data.Data.(Table)
 	if !ok {
 		return fmt.Errorf("data not in table for csv output")
 	}
 
-	filename, err := getFilenameFromPattern(ip.config.NamePattern, data, nil)
-	if err != nil {
-		return err
-	}
+	// Iterate over wanted graph types
+	// TODO Allow certain header columns to be selected per graphType
+	for _, graphType := range ip.config.Types {
+		for _, column := range dataTable.Headers {
+			for _, row := range column.Rows {
+				filename, err := getFilenameFromPattern(ip.config.NamePattern, data, map[string]interface{}{
+					"Type":   graphType,
+					"Header": row.Value,
+				})
+				if err != nil {
+					return err
+				}
 
-	_ = filename
+				graph := chart.Chart{Series: []chart.Series{chart.ContinuousSeries{}}}
 
-	graph := chart.Chart{
-		Series: []chart.Series{
-			chart.ContinuousSeries{
-				XValues: []float64{1.0, 2.0, 3.0, 4.0},
-				YValues: []float64{1.0, 2.0, 3.0, 4.0},
-			},
-		},
-	}
+				// TODO create graphs per column
 
-	buffer := bytes.NewBuffer([]byte{})
-	if err := graph.Render(chart.PNG, buffer); err != nil {
-		return err
-	}
+				// Iterate over header columns
 
-	// Iterate over header columns
-	for _, column := range dataTable.Headers {
-		rowCells := []string{}
-		for _, row := range column.Rows {
-			rowCells = append(rowCells, fmt.Sprintf("%v", row.Value))
+				// Iterate over data columns
+				for _, column := range dataTable.Columns {
+					rowCells := []string{}
+					for _, row := range column.Rows {
+						rowCells = append(rowCells, fmt.Sprintf("%v", row.Value))
+					}
+					if len(rowCells) == 0 {
+						continue
+					}
+
+				}
+
+				//XValues: []float64{1.0, 2.0, 3.0, 4.0},
+				//YValues: []float64{1.0, 2.0, 3.0, 4.0},
+
+				buffer := bytes.NewBuffer([]byte{})
+				if err := graph.Render(chart.PNG, buffer); err != nil {
+					return err
+				}
+
+				if err := util.WriteNewTruncFile(filename, buffer.Bytes()); err != nil {
+					return err
+				}
+			}
 		}
-		if len(rowCells) == 0 {
-			continue
-		}
-
-	}
-
-	// Iterate over data columns
-	for _, column := range dataTable.Columns {
-		rowCells := []string{}
-		for _, row := range column.Rows {
-			rowCells = append(rowCells, fmt.Sprintf("%v", row.Value))
-		}
-		if len(rowCells) == 0 {
-			continue
-		}
-
 	}
 
 	return nil

@@ -35,6 +35,7 @@ func FilterHostsList(inHosts []*testers.Host, filter config.Hosts) ([]*testers.H
 
 	hosts := []*testers.Host{}
 
+	// Get random server(s)
 	if filter.Random {
 		for i := 0; i < filter.Count; i++ {
 			inHost := inHosts[r.Intn(len(inHosts))]
@@ -43,7 +44,14 @@ func FilterHostsList(inHosts []*testers.Host, filter config.Hosts) ([]*testers.H
 		return hosts, nil
 	}
 
-	// TODO implement anti affinity logic based on labels
+	if len(filter.Hosts) > 0 {
+		for _, host := range filter.Hosts {
+			hosts = append(hosts, &testers.Host{
+				Name: host,
+			})
+		}
+	}
+
 	filteredHosts := filterHostsByLabels(inHosts, filter.HostSelector)
 
 	return filteredHosts, nil
@@ -51,6 +59,9 @@ func FilterHostsList(inHosts []*testers.Host, filter config.Hosts) ([]*testers.H
 
 // filterHostsByLabels
 func filterHostsByLabels(hosts []*testers.Host, labels map[string]string) []*testers.Host {
+	if len(labels) == 0 {
+		return hosts
+	}
 	filtered := []*testers.Host{}
 	for _, host := range hosts {
 		// Compare host and filter labels list
@@ -58,6 +69,7 @@ func filterHostsByLabels(hosts []*testers.Host, labels map[string]string) []*tes
 			filtered = append(filtered, host)
 			continue
 		}
+		// TODO implement anti affinity logic based on labels
 	}
 
 	return filtered

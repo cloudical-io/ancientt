@@ -49,6 +49,7 @@ func Template(task *testers.Task, variables Variables) error {
 	return nil
 }
 
+// templateString execute a given template with the variables given
 func templateString(in string, variable interface{}) (string, error) {
 	t, err := template.New("main").Parse(in)
 	if err != nil {

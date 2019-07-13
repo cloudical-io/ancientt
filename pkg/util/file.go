@@ -11,24 +11,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package config
+package util
 
-// Output Output config structure pointing to the other config options for each output
-type Output struct {
-	Name    string   `yaml:"name"`
-	CSV     *CSV     `yaml:"csv"`
-	GoChart *GoChart `yaml:"goChart"`
-}
+import (
+	"os"
+)
 
-// CSV CSV Output config options
-type CSV struct {
-	FilePath    string `yaml:"filePath"`
-	NamePattern string `yaml:"namePattern"`
-}
+// WriteNewTruncFile write new or truncate existing file
+func WriteNewTruncFile(filename string, buffer []byte) error {
+	f, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
 
-// GoChart GoChart Output config options
-type GoChart struct {
-	Types       []string `yaml:"types"`
-	FilePath    string   `yaml:"filePath"`
-	NamePattern string   `yaml:"namePattern"`
+	// Manually close the file handler here, because it must be closed not deffered but
+	if _, err := f.Write(buffer); err != nil {
+		f.Close()
+		return err
+	}
+	f.Close()
+	return nil
 }

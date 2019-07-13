@@ -36,12 +36,14 @@ func init() {
 // IPerf3 IPerf3 tester structure
 type IPerf3 struct {
 	Parser
+	logger *log.Entry
 	config *config.Test
 }
 
 // NewIPerf3Tester return a new IPerf3 tester instance
 func NewIPerf3Tester(cfg *config.Config, test *config.Test) (Parser, error) {
 	return IPerf3{
+		logger: log.WithFields(logrus.Fields{"parers": NameIPerf3}),
 		config: test,
 	}, nil
 }
@@ -69,7 +71,6 @@ func (ip IPerf3) Parse(doneCh chan struct{}, inCh <-chan Input, dataCh chan<- ou
 }
 
 func (ip IPerf3) parse(input Input, dataCh chan<- outputs.Data) error {
-	logger := log.WithFields(logrus.Fields{"parers": NameIPerf3})
 
 	var logs *bytes.Buffer
 	if input.DataStream != nil {
@@ -82,7 +83,7 @@ func (ip IPerf3) parse(input Input, dataCh chan<- outputs.Data) error {
 		}
 	} else if len(input.Data) > 0 {
 		// Directly pump the data in the logs var
-		logger.Warn("received input.Data instead of input.DataStream, who wrote that runners without stream support")
+		ip.logger.Warn("received input.Data instead of input.DataStream, who wrote that runners without stream support")
 		logs = bytes.NewBuffer(input.Data)
 	} else {
 		return fmt.Errorf("no data stream nor data from Input channel")
@@ -155,7 +156,7 @@ func (ip IPerf3) parse(input Input, dataCh chan<- outputs.Data) error {
 		}
 	}
 
-	logger.Debug("parsed data input")
+	ip.logger.Debug("parsed data input")
 
 	// Transform Input into outputs.Data struct
 	data := outputs.Data{
@@ -166,13 +167,13 @@ func (ip IPerf3) parse(input Input, dataCh chan<- outputs.Data) error {
 		Data:           intervalTable,
 	}
 
-	logger.Debug("sending parsed data to dataCh")
+	ip.logger.Debug("sending parsed data to dataCh")
 
 	dataCh <- data
 
 	// TODO generate sum and / or end table and send to output
 
-	logger.Debug("sent parsed data to dataCh")
+	ip.logger.Debug("sent parsed data to dataCh")
 
 	return nil
 }

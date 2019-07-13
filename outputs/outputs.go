@@ -60,8 +60,10 @@ type Row struct {
 	Value interface{}
 }
 
+// TODO Add more ways to transmit data from parsers.Parser.Parse() func to outputs.Output.Do() func
+
 // getFilenameFromPattern
-func getFilenameFromPattern(pattern string, data Data, additionalData map[string]interface{}) (string, error) {
+func getFilenameFromPattern(pattern string, data Data, extra map[string]interface{}) (string, error) {
 	t, err := template.New("main").Parse(pattern)
 	if err != nil {
 		return "", err
@@ -74,7 +76,7 @@ func getFilenameFromPattern(pattern string, data Data, additionalData map[string
 	}{
 		Data:     data,
 		UnixTime: time.Now().Unix(),
-		Extra:    additionalData,
+		Extra:    extra,
 	}
 
 	var out bytes.Buffer

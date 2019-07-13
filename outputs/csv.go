@@ -20,6 +20,8 @@ import (
 	"path/filepath"
 
 	"github.com/cloudical-io/acntt/pkg/config"
+	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // NameCSV CSV output name
@@ -32,12 +34,14 @@ func init() {
 // CSV CSV tester structure
 type CSV struct {
 	Output
+	logger *log.Entry
 	config *config.CSV
 }
 
 // NewCSVOutput return a new CSV tester instance
 func NewCSVOutput(cfg *config.Config, outCfg *config.Output) (Output, error) {
 	csv := CSV{
+		logger: log.WithFields(logrus.Fields{"output": NameCSV}),
 		config: outCfg.CSV,
 	}
 	if csv.config.NamePattern != "" {
