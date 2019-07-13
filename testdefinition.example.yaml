@@ -56,7 +56,7 @@ tests:
   iperf3:
     udp: false
     additionalFlags:
-      client: []
+      clients: []
       server: []
 #- type: siege
 #  runOptions:

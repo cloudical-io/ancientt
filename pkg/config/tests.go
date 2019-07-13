@@ -46,8 +46,8 @@ type TestHosts struct {
 
 // AdditionalFlags additional flags structure for Server and Clients
 type AdditionalFlags struct {
-	Client []string `yaml:"client"`
-	Server []string `yaml:"server"`
+	Clients []string `yaml:"clients"`
+	Server  []string `yaml:"server"`
 }
 
 // IPerf3 IPerf3 config structure for testers.Tester config

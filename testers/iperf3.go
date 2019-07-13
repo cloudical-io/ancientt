@@ -139,7 +139,7 @@ func (ip IPerf3) buildIPerf3ClientCommand(server *Host, client *Host) (string, [
 	}
 
 	// Append additional client flags to args array
-	args = append(args, ip.config.AdditionalFlags.Client...)
+	args = append(args, ip.config.AdditionalFlags.Clients...)
 
 	return cmd, args
 }
