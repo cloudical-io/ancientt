@@ -35,26 +35,27 @@ func FilterHostsList(inHosts []*testers.Host, filter config.Hosts) ([]*testers.H
 
 	hosts := []*testers.Host{}
 
-	// Get random server(s)
-	if filter.Random {
-		for i := 0; i < filter.Count; i++ {
-			inHost := inHosts[r.Intn(len(inHosts))]
-			hosts = append(hosts, inHost)
-		}
-		return hosts, nil
-	}
-
 	if len(filter.Hosts) > 0 {
 		for _, host := range filter.Hosts {
 			hosts = append(hosts, &testers.Host{
 				Name: host,
 			})
 		}
+		return hosts, nil
 	}
 
 	filteredHosts := filterHostsByLabels(inHosts, filter.HostSelector)
 
-	return filteredHosts, nil
+	// Get random server(s)
+	if filter.Random {
+		for i := 0; i < filter.Count; i++ {
+			inHost := filteredHosts[r.Intn(len(filteredHosts))]
+			hosts = append(hosts, inHost)
+		}
+		return hosts, nil
+	}
+
+	return hosts, nil
 }
 
 // filterHostsByLabels
