@@ -56,6 +56,7 @@ type IPAddresses struct {
 
 // Plan contains the information needed to execute the plan
 type Plan struct {
+	PlannedTime     time.Time         `json:"plannedTime"`
 	AffectedServers map[string]*Host  `json:"affectedServers"`
 	Commands        [][]Task          `json:"commands"`
 	Tester          string            `json:"tester"`
@@ -74,11 +75,15 @@ func (p Plan) PrettyPrint() {
 		round := k + 1
 		fmt.Printf("--> BEGIN Round %d\n", round)
 		for _, command := range commands {
+			if command.Sleep != 0 {
+				fmt.Printf("---> Wait for %+v\n", command.Sleep)
+				continue
+			}
 			fmt.Printf("---> BEGIN Server %s\n", command.Host.Name)
-			fmt.Printf("----> %s %s (Additional info: %+v; %+v)\n", command.Command, command.Args, command.Ports, command.Sleep)
+			fmt.Printf("----> RUN %s %s (Additional info: %+v; %+v)\n", command.Command, command.Args, command.Ports, command.Sleep)
 			for _, task := range command.SubTasks {
 				fmt.Printf("-----> BEGIN Client %s\n", task.Host.Name)
-				fmt.Printf("------> %s %s (Additional info: %+v; %+v)\n", task.Command, task.Args, task.Ports, task.Sleep)
+				fmt.Printf("------> RUN %s %s (Additional info: %+v; %+v)\n", task.Command, task.Args, task.Ports, task.Sleep)
 				fmt.Printf("=====> END Client %s\n", task.Host.Name)
 			}
 			fmt.Printf("===> END Server %s\n", command.Host.Name)

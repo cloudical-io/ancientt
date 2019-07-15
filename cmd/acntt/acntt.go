@@ -20,6 +20,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/cloudical-io/acntt/outputs"
 	"github.com/cloudical-io/acntt/parsers"
@@ -129,10 +130,13 @@ func run(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
+		// Set PlannedTime for usage in output / results later on
+		plan.PlannedTime = time.Now()
+
 		// Print the plan
-		fmt.Println("--> BEGIN PLAN <--")
+		fmt.Println("--> BEGIN PLAN")
 		plan.PrettyPrint()
-		fmt.Println("-->  END PLAN  <--")
+		fmt.Println("--> END PLAN")
 
 		if !viper.GetBool("yes") {
 			// Ask user if we can continue or not
@@ -172,6 +176,8 @@ func run(cmd *cobra.Command, args []string) error {
 		go func() {
 			select {
 			case erro := <-errs:
+				// TODO An error right now causes a deadlock in the application
+				// due to, e.g., parser not processing incoming data
 				log.Error(erro.Error())
 			case <-doneCh:
 				return
@@ -181,10 +187,9 @@ func run(cmd *cobra.Command, args []string) error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			err := parser.Parse(doneCh, inCh, dataCh)
 			// Close dataCh as there won't be anything else coming through
-			close(dataCh)
-			if err != nil {
+			defer close(dataCh)
+			if err := parser.Parse(doneCh, inCh, dataCh); err != nil {
 				errs <- err
 				return
 			}
@@ -194,6 +199,24 @@ func run(cmd *cobra.Command, args []string) error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+
+			outputsAssembled := map[string]outputs.Output{}
+
+			for _, outputItem := range test.Outputs {
+				outputName := outputItem.Name
+
+				outputNewFunc, ok := outputs.Factories[outputName]
+				if !ok {
+					errs <- fmt.Errorf("output with name %s not found", outputName)
+					return
+				}
+				outputsAssembled[outputName], err = outputNewFunc(cfg, &outputItem)
+				if err != nil {
+					errs <- err
+					return
+				}
+			}
+
 			for {
 				select {
 				case data, ok := <-dataCh:
@@ -203,19 +226,7 @@ func run(cmd *cobra.Command, args []string) error {
 					for _, outputItem := range test.Outputs {
 						outputName := outputItem.Name
 
-						var output outputs.Output
-						outputNewFunc, ok := outputs.Factories[outputName]
-						if !ok {
-							errs <- fmt.Errorf("output with name %s not found", outputName)
-							return
-						}
-						output, err = outputNewFunc(cfg, &outputItem)
-						if err != nil {
-							errs <- err
-							return
-						}
-
-						if err := output.Do(data); err != nil {
+						if err := outputsAssembled[outputName].Do(data); err != nil {
 							errs <- err
 							return
 						}

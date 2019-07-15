@@ -15,6 +15,7 @@ package runners
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -157,15 +158,19 @@ func (k Kubernetes) Prepare(runOpts config.RunOptions, plan *testers.Plan) error
 
 // Execute run the given commands and return the logs of it and / or error
 func (k Kubernetes) Execute(plan *testers.Plan, parser chan<- parsers.Input) error {
-	// TODO Get actual ip addresses of the Pod and use the cmdtemplate.Template() to template it in
+	// TODO Add option to go through Service IPs instead of Pod IPs
 
 	// Iterate over given plan.Commands to then run each task
 	for round, tasks := range plan.Commands {
 		for _, task := range tasks {
-			taskName := fmt.Sprintf("acntt-%d", time.Now().Unix())
+			if task.Sleep != 0 {
+				k.logger.Infof("waiting %s to pass before continuing next round", task.Sleep.String())
+				time.Sleep(task.Sleep)
+				continue
+			}
 
 			// Create the Pods for the server task and client tasks
-			if err := k.createPodsForTasks(round, task, plan.Tester, taskName, parser); err != nil {
+			if err := k.createPodsForTasks(round, task, plan.PlannedTime, plan.Tester, util.GetTaskName(plan), parser); err != nil {
 				return err
 			}
 		}
@@ -201,12 +206,14 @@ func (k Kubernetes) prepareKubernetes() error {
 }
 
 // createPodsForTasks create the Pods that are needed for the task(s)
-func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, tester string, taskName string, parser chan<- parsers.Input) error {
+func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, plannedTime time.Time, tester string, taskName string, parser chan<- parsers.Input) error {
+	logger := k.logger.WithFields(logrus.Fields{"round": round})
+
 	var wg sync.WaitGroup
 	errs := make(chan error)
 
 	// Create server Pod first
-	pName := util.GetPNameFromTask(round, mainTask, util.PNameRoleServer)
+	serverPodName := util.GetPNameFromTask(round, mainTask, util.PNameRoleServer)
 
 	// Create initial cmdtemplate.Variables
 	// TODO the port does not need to be mapped in Kubernetes case, but for other runners (e.g., Ansible) need to map the port
@@ -219,33 +226,36 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, tester 
 		return fmt.Errorf("failed to template main task command and / or args. %+v", err)
 	}
 
-	pod := k.getPodSpec(pName, taskName, mainTask)
+	pod := k.getPodSpec(serverPodName, taskName, mainTask)
 
+	logger.WithFields(logrus.Fields{"pod": serverPodName}).Debug("(re)creating server pod")
 	if err := k8sutil.PodRecreate(k.k8sclient, pod); err != nil {
-		return fmt.Errorf("failed to create pod %s/%s. %+v", k.config.Namespace, pName, err)
+		return fmt.Errorf("failed to create pod %s/%s. %+v", k.config.Namespace, serverPodName, err)
 	}
 
-	k.logger.WithFields(logrus.Fields{"pod": pName}).Info("waiting for server pod to run")
-	running, err := k8sutil.WaitForPodToRun(k.k8sclient, k.config.Namespace, pName)
+	logger.WithFields(logrus.Fields{"pod": serverPodName}).Info("waiting for server pod to run")
+	running, err := k8sutil.WaitForPodToRun(k.k8sclient, k.config.Namespace, serverPodName)
 	if err != nil {
-		return fmt.Errorf("failed to wait for pod %s/%s. %+v", k.config.Namespace, pName, err)
+		return fmt.Errorf("failed to wait for pod %s/%s. %+v", k.config.Namespace, serverPodName, err)
 	}
 	if !running {
-		return fmt.Errorf("pod %s/%s not running after 10 tries", k.config.Namespace, pName)
+		return fmt.Errorf("pod %s/%s not running after 10 tries", k.config.Namespace, serverPodName)
 	}
 
 	// Get server Pod to have the server IP for each client task
-	pod, err = k.k8sclient.CoreV1().Pods(k.config.Namespace).Get(pName, metav1.GetOptions{})
+	pod, err = k.k8sclient.CoreV1().Pods(k.config.Namespace).Get(serverPodName, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to get pod %s/%s. %+v", k.config.Namespace, pName, err)
+		return fmt.Errorf("failed to get pod %s/%s. %+v", k.config.Namespace, serverPodName, err)
 	}
 	templateVars.ServerAddress = pod.Status.PodIP
 
 	tasks := []testers.Task{}
 	tasks = append(tasks, mainTask.SubTasks...)
 	for _, task := range tasks {
+		testTime := time.Now()
+
 		wg.Add(1)
-		go func(task testers.Task) {
+		go func(task testers.Task, testTime time.Time) {
 			defer wg.Done()
 			pName := util.GetPNameFromTask(round, task, util.PNameRoleClient)
 
@@ -257,12 +267,13 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, tester 
 
 			pod = k.getPodSpec(pName, taskName, task)
 
+			logger.WithFields(logrus.Fields{"pod": pName}).Debug("(re)creating client pod")
 			if err := k8sutil.PodRecreate(k.k8sclient, pod); err != nil {
 				errs <- fmt.Errorf("failed to create pod %s/%s. %+v", k.config.Namespace, pName, err)
 				return
 			}
 
-			k.logger.WithFields(logrus.Fields{"pod": pName}).Info("waiting for client pod to run")
+			logger.WithFields(logrus.Fields{"pod": pName}).Info("waiting for client pod to run")
 			running, err := k8sutil.WaitForPodToRun(k.k8sclient, k.config.Namespace, pName)
 			if err != nil {
 				errs <- fmt.Errorf("failed to wait for pod %s/%s. %+v", k.config.Namespace, pName, err)
@@ -273,15 +284,27 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, tester 
 				return
 			}
 
-			if err := k.pushLogsToParser(parser, tester, mainTask.Host.Name, task.Host.Name, pName); err != nil {
+			if err := k.pushLogsToParser(parser, plannedTime, testTime, round, tester, mainTask.Host.Name, task.Host.Name, pName); err != nil {
 				errs <- fmt.Errorf("failed to push pod %s/%s logs to parser. %+v", k.config.Namespace, pName, err)
 				return
 			}
-		}(task)
+
+			logger.WithFields(logrus.Fields{"pod": pName}).Info("deleting client pod")
+			if err := k8sutil.PodDelete(k.k8sclient, pod); err != nil {
+				errs <- fmt.Errorf("failed to delete client pod %s/%s. %+v", k.config.Namespace, pName, err)
+				return
+			}
+		}(task, testTime)
 
 		if k.runOptions.Mode != config.RunModeParallel {
 			wg.Wait()
 		}
+	}
+
+	// Delete server pod
+	logger.WithFields(logrus.Fields{"pod": serverPodName}).Info("deleting server pod")
+	if err := k8sutil.PodDeleteByName(k.k8sclient, k.config.Namespace, serverPodName); err != nil {
+		logger.WithFields(logrus.Fields{"pod": serverPodName}).Errorf("failed to delete server pod. %+v", err)
 	}
 
 	// When RunOptions.Mode `parallel` then we wait after all test tasks have been run
@@ -289,17 +312,22 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, tester 
 		wg.Wait()
 	}
 
-	k.logger.Debug("done running tests in kubernetes for plan")
+	logger.Debug("done running tests in kubernetes for plan")
 
 	select {
-	case err := <-errs:
-		return err
+	case <-errs:
+		// TODO Fix this code to be.. well "good"(?)
+		errsList := []string{}
+		for erro := range errs {
+			errsList = append(errsList, erro.Error())
+		}
+		return fmt.Errorf(strings.Join(errsList, "\n"))
 	default:
 		return nil
 	}
 }
 
-func (k Kubernetes) pushLogsToParser(parserInput chan<- parsers.Input, tester string, serverHost string, clientHost string, podName string) error {
+func (k Kubernetes) pushLogsToParser(parserInput chan<- parsers.Input, plannedTime time.Time, testTime time.Time, round int, tester string, serverHost string, clientHost string, podName string) error {
 	// Wait for the Pod to succeed because that is the "sign" that the test for that Pod is done.
 	succeeded, err := k8sutil.WaitForPodToSucceed(k.k8sclient, k.config.Namespace, podName)
 	if err != nil {
@@ -319,6 +347,9 @@ func (k Kubernetes) pushLogsToParser(parserInput chan<- parsers.Input, tester st
 
 		// Send the logs to the parser.InputChan
 		parserInput <- parsers.Input{
+			PlannedTime:    plannedTime,
+			TestTime:       testTime,
+			Round:          round,
 			DataStream:     &podLogs,
 			Tester:         tester,
 			ServerHost:     serverHost,
@@ -335,35 +366,12 @@ func (k Kubernetes) pushLogsToParser(parserInput chan<- parsers.Input, tester st
 func (k Kubernetes) Cleanup(plan *testers.Plan) error {
 	var wg sync.WaitGroup
 
-	errs := make(chan error)
-
-	// Iterate over Commands and Tasks of each Command to remove the Pods
-	// Don't just delete the Namespace because the user might have created it.
-	for round, tasks := range plan.Commands {
-		for _, task := range tasks {
-			wg.Add(1)
-			go func(task testers.Task) {
-				defer wg.Done()
-				pName := util.GetPNameFromTask(round, task, util.PNameRoleServer)
-				if err := k8sutil.PodDeleteByName(k.k8sclient, k.config.Namespace, pName); err != nil {
-					errs <- err
-					return
-				}
-			}(task)
-			// Go over subtasks
-			for _, subTask := range task.SubTasks {
-				wg.Add(1)
-				go func(task testers.Task) {
-					defer wg.Done()
-					pName := util.GetPNameFromTask(round, task, util.PNameRoleClient)
-					if err := k8sutil.PodDeleteByName(k.k8sclient, k.config.Namespace, pName); err != nil {
-						errs <- err
-						return
-					}
-				}(subTask)
-			}
-		}
-
+	// Delete all Pods with label XYZ
+	if err := k8sutil.PodDeleteByLabels(k.k8sclient, k.config.Namespace, map[string]string{
+		k8sutil.TaskIDLabel: util.GetTaskName(plan),
+	}); err != nil {
+		k.logger.Errorf("error during pod delete by labels in cleanup. %+v", err)
+		return err
 	}
 	wg.Wait()
 

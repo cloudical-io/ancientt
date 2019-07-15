@@ -20,6 +20,7 @@ import (
 	"github.com/cloudical-io/acntt/testers"
 )
 
+// PNameRole
 type PNameRole string
 
 const (
@@ -34,4 +35,9 @@ const (
 func GetPNameFromTask(round int, task testers.Task, role PNameRole) string {
 	data := fmt.Sprintf("%d-%s-%s", round, task.Host.Name, task.Args)
 	return fmt.Sprintf("acntt-%s-%s-%x", role, task.Command, sha1.Sum([]byte(data)))
+}
+
+// GetTaskName get a task name
+func GetTaskName(plan *testers.Plan) string {
+	return fmt.Sprintf("acntt-%s-%d", plan.Tester, plan.PlannedTime.Unix())
 }

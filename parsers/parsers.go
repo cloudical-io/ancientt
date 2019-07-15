@@ -15,6 +15,7 @@ package parsers
 
 import (
 	"io"
+	"time"
 
 	"github.com/cloudical-io/acntt/outputs"
 	"github.com/cloudical-io/acntt/pkg/config"
@@ -28,10 +29,15 @@ var Factories = make(map[string]func(cfg *config.Config, test *config.Test) (Par
 type Parser interface {
 	// Parse parse data from runners.Execute() func
 	Parse(doneCh chan struct{}, inCh <-chan Input, dataCh chan<- outputs.Data) error
+	// Summary send summary of parsed data to outputs.Output
+	Summary(doneCh chan struct{}, inCh <-chan Input, dataCh chan<- outputs.Data) error
 }
 
 // Input structured parse
 type Input struct {
+	PlannedTime    time.Time
+	TestTime       time.Time
+	Round          int
 	DataStream     *io.ReadCloser
 	Data           []byte
 	Tester         string

@@ -96,6 +96,13 @@ func (ip IPerf3) Plan(env *Environment, test *config.Test) (*Plan, error) {
 				})
 			}
 			plan.Commands[i] = append(plan.Commands[i], round)
+
+			// Add the given interval after each round except the last one
+			if test.RunOptions.Interval != 0 && i != test.RunOptions.Rounds-1 {
+				plan.Commands[i] = append(plan.Commands[i], Task{
+					Sleep: test.RunOptions.Interval,
+				})
+			}
 		}
 	}
 

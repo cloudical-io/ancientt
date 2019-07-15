@@ -36,6 +36,7 @@ type Dump struct {
 	Output
 	logger *log.Entry
 	config *config.Dump
+	files  map[string]*os.File
 }
 
 // NewDumpOutput return a new Dump tester instance
@@ -43,9 +44,10 @@ func NewDumpOutput(cfg *config.Config, outCfg *config.Output) (Output, error) {
 	dump := Dump{
 		logger: log.WithFields(logrus.Fields{"output": NameDump}),
 		config: outCfg.Dump,
+		files:  map[string]*os.File{},
 	}
 	if dump.config.NamePattern != "" {
-		dump.config.NamePattern = "{{ .UnixTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.txt"
+		dump.config.NamePattern = "acntt-{{ .PlannedTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.txt"
 	}
 	return dump, nil
 }
@@ -57,22 +59,37 @@ func (d Dump) Do(data Data) error {
 		return fmt.Errorf("data not in table for dump output")
 	}
 
-	filename, err := getFilenameFromPattern(d.config.NamePattern, data, nil)
+	filename, err := getFilenameFromPattern(d.config.NamePattern, "", data, nil)
 	if err != nil {
 		return err
 	}
 
 	outPath := filepath.Join(d.config.FilePath, filename)
-	file, err := os.Create(outPath)
-	if err != nil {
-		return err
+	file, ok := d.files[outPath]
+	if !ok {
+		file, err = os.Create(outPath)
+		if err != nil {
+			return err
+		}
+		d.files[outPath] = file
 	}
-	defer file.Close()
 
 	// FIXME should the output be improved?
 
 	if _, err := file.WriteString(pp.Sprint(dataTable)); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// Close close open files
+func (d Dump) Close() error {
+	for name, file := range d.files {
+		d.logger.WithFields(logrus.Fields{"filepath": name}).Debug("closing file")
+		if err := file.Close(); err != nil {
+			d.logger.WithFields(logrus.Fields{"filepath": name}).Errorf("error closing file. %+v", err)
+		}
 	}
 
 	return nil

@@ -22,6 +22,7 @@ import (
 	"github.com/cloudical-io/acntt/outputs"
 	"github.com/cloudical-io/acntt/pkg/config"
 	iperf3models "github.com/cloudical-io/acntt/pkg/models/iperf3"
+	"github.com/cloudical-io/acntt/pkg/util"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
@@ -71,7 +72,6 @@ func (ip IPerf3) Parse(doneCh chan struct{}, inCh <-chan Input, dataCh chan<- ou
 }
 
 func (ip IPerf3) parse(input Input, dataCh chan<- outputs.Data) error {
-
 	var logs *bytes.Buffer
 	if input.DataStream != nil {
 		logs = new(bytes.Buffer)
@@ -99,7 +99,8 @@ func (ip IPerf3) parse(input Input, dataCh chan<- outputs.Data) error {
 		Headers: []outputs.Column{
 			outputs.Column{
 				Rows: []outputs.Row{
-					{Value: "id"},
+					{Value: "test_time"},
+					{Value: "round"},
 					{Value: "tester"},
 					{Value: "server_host"},
 					{Value: "client_host"},
@@ -129,10 +130,11 @@ func (ip IPerf3) parse(input Input, dataCh chan<- outputs.Data) error {
 	}
 
 	for _, interval := range result.Intervals {
-		for i, stream := range interval.Streams {
+		for _, stream := range interval.Streams {
 			intervalTable.Columns = append(intervalTable.Columns, outputs.Column{
 				Rows: []outputs.Row{
-					{Value: i},
+					{Value: input.TestTime.Format(util.TimeDateFormat)},
+					{Value: input.Round},
 					{Value: input.Tester},
 					{Value: input.ServerHost},
 					{Value: input.ClientHost},
@@ -160,6 +162,8 @@ func (ip IPerf3) parse(input Input, dataCh chan<- outputs.Data) error {
 
 	// Transform Input into outputs.Data struct
 	data := outputs.Data{
+		PlannedTime:    input.PlannedTime,
+		TestTime:       input.TestTime,
 		AdditionalInfo: input.AdditionalInfo,
 		ServerHost:     input.ServerHost,
 		ClientHost:     input.ClientHost,

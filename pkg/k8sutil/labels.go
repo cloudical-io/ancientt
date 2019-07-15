@@ -13,6 +13,11 @@ limitations under the License.
 
 package k8sutil
 
+const (
+	// TaskIDLabel label for the task-id
+	TaskIDLabel = "acntt/task-id"
+)
+
 // GetLabels return a default set of labels for "any" object acntt is going to create.
 func GetLabels() map[string]string {
 	name := "acntt"
@@ -27,6 +32,6 @@ func GetLabels() map[string]string {
 func GetPodLabels(podName string, taskName string) map[string]string {
 	labels := GetLabels()
 	labels["app.kubernetes.io/instance"] = podName
-	labels["acntt/task-id"] = taskName
+	labels[TaskIDLabel] = taskName
 	return labels
 }

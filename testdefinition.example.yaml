@@ -12,16 +12,17 @@ tests:
   - name: csv
     csv:
       filePath: /tmp/
-      namePattern: '{{ .UnixTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv'
+      namePattern: 'acntt-{{ .PlannedTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv'
 #  - name: gochart
 #    goChart:
 #      types:
 #        - single_axis
 #      filePath: /tmp
-#      namePattern: '{{ .UnixTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Type }}.csv'
+#      namePattern: 'acntt-{{ .PlannedTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Type }}.csv'
   runOptions:
-    rounds: 1
-    interval: 5m
+    rounds: 2
+    # wait 10 seconds between each round
+    interval: 10s
     mode: "sequential"
     parallelcount: 1
   # This hosts section would cause iperf3 to be run from all hosts to the hosts selected in the `destinations` section

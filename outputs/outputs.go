@@ -27,11 +27,16 @@ var Factories = make(map[string]func(cfg *config.Config, outCfg *config.Output) 
 
 // Output is the interface a output has to implement.
 type Output interface {
+	// Do
 	Do(data Data) error
+	// Close run "cleanup" / close tasks, e.g., close file handles and others
+	Close() error
 }
 
 // Data structured parsed data
 type Data struct {
+	PlannedTime    time.Time
+	TestTime       time.Time
 	Tester         string
 	ServerHost     string
 	ClientHost     string
@@ -63,20 +68,24 @@ type Row struct {
 // TODO Add more ways to transmit data from parsers.Parser.Parse() func to outputs.Output.Do() func
 
 // getFilenameFromPattern
-func getFilenameFromPattern(pattern string, data Data, extra map[string]interface{}) (string, error) {
+func getFilenameFromPattern(pattern string, role string, data Data, extra map[string]interface{}) (string, error) {
 	t, err := template.New("main").Parse(pattern)
 	if err != nil {
 		return "", err
 	}
 
 	variables := struct {
-		Data     Data
-		UnixTime int64
-		Extra    map[string]interface{}
+		Role        string
+		Data        Data
+		PlannedTime int64
+		TestTime    int64
+		Extra       map[string]interface{}
 	}{
-		Data:     data,
-		UnixTime: time.Now().Unix(),
-		Extra:    extra,
+		Role:        role,
+		Data:        data,
+		PlannedTime: data.PlannedTime.Unix(),
+		TestTime:    data.TestTime.Unix(),
+		Extra:       extra,
 	}
 
 	var out bytes.Buffer

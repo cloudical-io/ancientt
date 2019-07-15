@@ -34,18 +34,22 @@ func init() {
 // CSV CSV tester structure
 type CSV struct {
 	Output
-	logger *log.Entry
-	config *config.CSV
+	logger  *log.Entry
+	config  *config.CSV
+	files   map[string]*os.File
+	writers map[string]*csv.Writer
 }
 
 // NewCSVOutput return a new CSV tester instance
 func NewCSVOutput(cfg *config.Config, outCfg *config.Output) (Output, error) {
 	c := CSV{
-		logger: log.WithFields(logrus.Fields{"output": NameCSV}),
-		config: outCfg.CSV,
+		logger:  log.WithFields(logrus.Fields{"output": NameCSV}),
+		config:  outCfg.CSV,
+		files:   map[string]*os.File{},
+		writers: map[string]*csv.Writer{},
 	}
 	if c.config.NamePattern != "" {
-		c.config.NamePattern = "{{ .UnixTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv"
+		c.config.NamePattern = "acntt-{{ .PlannedTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv"
 	}
 	return c, nil
 }
@@ -57,33 +61,46 @@ func (c CSV) Do(data Data) error {
 		return fmt.Errorf("data not in table for csv output")
 	}
 
-	filename, err := getFilenameFromPattern(c.config.NamePattern, data, nil)
+	filename, err := getFilenameFromPattern(c.config.NamePattern, "", data, nil)
 	if err != nil {
 		return err
 	}
+
+	var writeHeaders bool
 
 	outPath := filepath.Join(c.config.FilePath, filename)
-	file, err := os.Create(outPath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+	writer, ok := c.writers[outPath]
+	if !ok {
+		file, ok := c.files[outPath]
+		if !ok {
+			file, err = os.Create(outPath)
+			if err != nil {
+				return err
+			}
+			c.files[outPath] = file
+		}
 
-	writer := csv.NewWriter(file)
+		writer = csv.NewWriter(file)
+		c.writers[outPath] = writer
+		writeHeaders = true
+	}
+
 	defer writer.Flush()
 
-	// Iterate over header columns
-	for _, column := range dataTable.Headers {
-		rowCells := []string{}
-		for _, row := range column.Rows {
-			rowCells = append(rowCells, fmt.Sprintf("%v", row.Value))
-		}
-		if len(rowCells) == 0 {
-			continue
-		}
+	if writeHeaders {
+		// Iterate over header columns
+		for _, column := range dataTable.Headers {
+			rowCells := []string{}
+			for _, row := range column.Rows {
+				rowCells = append(rowCells, fmt.Sprintf("%v", row.Value))
+			}
+			if len(rowCells) == 0 {
+				continue
+			}
 
-		if err := writer.Write(rowCells); err != nil {
-			return err
+			if err := writer.Write(rowCells); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -103,4 +120,25 @@ func (c CSV) Do(data Data) error {
 	}
 
 	return nil
+}
+
+// Close close all file descriptors here
+func (c CSV) Close() error {
+	for name, writer := range c.writers {
+		c.logger.WithFields(logrus.Fields{"filepath": name}).Debug("closing file")
+		writer.Flush()
+		if err := writer.Error(); err != nil {
+			c.logger.WithFields(logrus.Fields{"filepath": name}).Errorf("error flushing file. %+v", err)
+		}
+	}
+
+	for name, file := range c.files {
+		c.logger.WithFields(logrus.Fields{"filepath": name}).Debug("closing file")
+		if err := file.Close(); err != nil {
+			c.logger.WithFields(logrus.Fields{"filepath": name}).Errorf("error closing file. %+v", err)
+		}
+	}
+
+	return nil
+
 }

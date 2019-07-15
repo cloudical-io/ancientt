@@ -15,10 +15,11 @@ package config
 
 // Output Output config structure pointing to the other config options for each output
 type Output struct {
-	Name    string   `yaml:"name"`
-	CSV     *CSV     `yaml:"csv"`
-	GoChart *GoChart `yaml:"goChart"`
-	Dump    *Dump    `yaml:"dump"`
+	Name     string    `yaml:"name"`
+	CSV      *CSV      `yaml:"csv"`
+	GoChart  *GoChart  `yaml:"goChart"`
+	Dump     *Dump     `yaml:"dump"`
+	Excelize *Excelize `yaml:"excelize"`
 }
 
 // CSV CSV Output config options
@@ -29,13 +30,19 @@ type CSV struct {
 
 // GoChart GoChart Output config options
 type GoChart struct {
-	Types       []string `yaml:"types"`
 	FilePath    string   `yaml:"filePath"`
 	NamePattern string   `yaml:"namePattern"`
+	Types       []string `yaml:"types"`
 }
 
 // Dump Dump Output config options
 type Dump struct {
+	FilePath    string `yaml:"filePath"`
+	NamePattern string `yaml:"namePattern"`
+}
+
+// Excelize Excelize Output config options. TODO implement
+type Excelize struct {
 	FilePath    string `yaml:"filePath"`
 	NamePattern string `yaml:"namePattern"`
 }

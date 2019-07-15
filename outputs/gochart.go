@@ -45,7 +45,7 @@ func NewGoChartOutput(cfg *config.Config, outCfg *config.Output) (Output, error)
 		config: outCfg.GoChart,
 	}
 	if goChart.config.NamePattern != "" {
-		goChart.config.NamePattern = "{{ .UnixTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Header }}-{{ .Extra.Type }}.png"
+		goChart.config.NamePattern = "acntt-{{ .PlannedTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Header }}-{{ .Extra.Type }}.png"
 	}
 	return goChart, nil
 }
@@ -62,7 +62,7 @@ func (gc GoChart) Do(data Data) error {
 	for _, graphType := range gc.config.Types {
 		for _, column := range dataTable.Headers {
 			for _, row := range column.Rows {
-				filename, err := getFilenameFromPattern(gc.config.NamePattern, data, map[string]interface{}{
+				filename, err := getFilenameFromPattern(gc.config.NamePattern, "", data, map[string]interface{}{
 					"Type":   graphType,
 					"Header": row.Value,
 				})
@@ -103,5 +103,10 @@ func (gc GoChart) Do(data Data) error {
 		}
 	}
 
+	return nil
+}
+
+// Close NOOP, as graph pictures are written once (= closed immediately)
+func (gc GoChart) Close() error {
 	return nil
 }

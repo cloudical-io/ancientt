@@ -13,14 +13,19 @@ limitations under the License.
 
 package config
 
+import (
+	"time"
+)
+
 // Test Config options for each Test
 type Test struct {
 	Type       string     `yaml:"type"`
 	RunOptions RunOptions `yaml:"runOptions"`
+	Outputs    []Output   `yaml:"outputs"`
 	Hosts      TestHosts  `yaml:"hosts"`
 	IPerf3     *IPerf3    `yaml:"iperf3"`
 	Siege      *Siege     `yaml:"siege"`
-	Outputs    []Output   `yaml:"outputs"`
+	Smokeping  *Smokeping `yaml:"smokeping"`
 }
 
 const (
@@ -32,10 +37,10 @@ const (
 
 // RunOptions options for running the tasks
 type RunOptions struct {
-	Rounds        int    `yaml:"rounds"`
-	Interval      string `yaml:"interval"`
-	Mode          string `yaml:"mode"`
-	ParallelCount int    `yaml:"parallelCount"`
+	Rounds        int           `yaml:"rounds"`
+	Interval      time.Duration `yaml:"interval"`
+	Mode          string        `yaml:"mode"`
+	ParallelCount int           `yaml:"parallelCount"`
 }
 
 // TestHosts list of clients and servers hosts for use in the test(s)
@@ -64,4 +69,9 @@ type Siege struct {
 	URLs            []string          `yaml:"urls"`
 	UserAgent       string            `yaml:"userAgent"`
 	// TODO Add more options from SIEGERC config file
+}
+
+// Smokeping Smokeping config structure TODO not implemented yet
+type Smokeping struct {
+	AdditionalFlags AdditionalFlags `yaml:"additionalFlags"`
 }

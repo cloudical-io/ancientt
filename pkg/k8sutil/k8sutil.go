@@ -14,41 +14,60 @@ limitations under the License.
 package k8sutil
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/cloudical-io/acntt/testers"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 )
 
 // PodRecreate delete Pod if it exists and create it again. If the Pod does not exist, create it.
 func PodRecreate(k8sclient *kubernetes.Clientset, pod *corev1.Pod) error {
 	// Delete Pod if it exists
-	if err := k8sclient.CoreV1().Pods(pod.ObjectMeta.Namespace).Delete(pod.ObjectMeta.Name, &metav1.DeleteOptions{}); err != nil {
-		if !errors.IsNotFound(err) {
-			return err
-		}
+	if err := PodDelete(k8sclient, pod); err != nil {
+		return err
 	}
 
 	// Create Pod again
 	if _, err := k8sclient.CoreV1().Pods(pod.ObjectMeta.Namespace).Create(pod); err != nil {
-		if errors.IsAlreadyExists(err) {
+		if !errors.IsAlreadyExists(err) {
 			return err
 		}
 	}
+
 	return nil
 }
 
-// PodDelete delete Pod if it exists
+// PodDelete delete Pod if it exists, wait for it till it has been for 14s deleted
 func PodDelete(k8sclient *kubernetes.Clientset, pod *corev1.Pod) error {
-	if err := k8sclient.CoreV1().Pods(pod.ObjectMeta.Namespace).Delete(pod.ObjectMeta.Name, &metav1.DeleteOptions{}); err != nil {
-		if !errors.IsNotFound(err) {
+	namespace := pod.ObjectMeta.Namespace
+	podName := pod.ObjectMeta.Name
+
+	// Delete Pod
+	if err := k8sclient.CoreV1().Pods(namespace).Delete(podName, &metav1.DeleteOptions{}); err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	for i := 0; i < 15; i++ {
+		// Check if Pod still exists
+		if _, err := k8sclient.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{}); err != nil {
+			if errors.IsNotFound(err) {
+				return nil
+			}
 			return err
 		}
+
+		time.Sleep(2 * time.Second)
 	}
-	return nil
+
+	return fmt.Errorf("pod %s/%s not deleted after 30s", namespace, podName)
 }
 
 // PodDeleteByName delete Pod by namespace and name if it exists
@@ -59,6 +78,36 @@ func PodDeleteByName(k8sclient *kubernetes.Clientset, namespace string, podName 
 			Name:      podName,
 		},
 	})
+}
+
+// PodDeleteByLabels delete Pods by labels
+func PodDeleteByLabels(k8sclient *kubernetes.Clientset, namespace string, selectorLabels map[string]string) error {
+	set := labels.Set(selectorLabels)
+
+	pods, err := k8sclient.CoreV1().Pods(namespace).List(metav1.ListOptions{
+		LabelSelector: set.AsSelector().String(),
+	})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	if pods.Items == nil || len(pods.Items) == 0 {
+		return nil
+	}
+
+	for _, pod := range pods.Items {
+		// Delete Pods by labels
+		if err := k8sclient.CoreV1().Pods(namespace).Delete(pod.ObjectMeta.Name, &metav1.DeleteOptions{}); err != nil {
+			if errors.IsNotFound(err) {
+				return nil
+			}
+			return err
+		}
+	}
+	return nil
 }
 
 // WaitForPodToRun wait for a Pod to be in phase Running. In case of phase Running, return true and no error
@@ -74,8 +123,10 @@ func WaitForPodToRun(k8sclient *kubernetes.Clientset, namespace string, podName 
 		if pod.Status.Phase == corev1.PodRunning {
 			return true, nil
 		}
+
 		time.Sleep(3 * time.Second)
 	}
+
 	return false, nil
 }
 
@@ -90,6 +141,7 @@ func WaitForPodToSucceed(k8sclient *kubernetes.Clientset, namespace string, podN
 		if pod.Status.Phase == corev1.PodSucceeded {
 			return true, nil
 		}
+
 		time.Sleep(3 * time.Second)
 	}
 	return false, nil
