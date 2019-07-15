@@ -58,7 +58,7 @@ type IPAddresses struct {
 type Plan struct {
 	PlannedTime     time.Time         `json:"plannedTime"`
 	AffectedServers map[string]*Host  `json:"affectedServers"`
-	Commands        [][]Task          `json:"commands"`
+	Commands        [][]*Task         `json:"commands"`
 	Tester          string            `json:"tester"`
 	RunOptions      config.RunOptions `json:"runOptions"`
 }
@@ -100,11 +100,18 @@ type Task struct {
 	Args     []string      `json:"args"`
 	Sleep    time.Duration `json:"sleep"`
 	Ports    Ports         `json:"ports"`
-	SubTasks []Task        `json:"tasks"`
+	SubTasks []*Task       `json:"tasks"`
+	Status   Status        `yaml:"status"`
 }
 
 // Ports TCP and UDP ports list
 type Ports struct {
 	TCP []int32
 	UDP []int32
+}
+
+// Status status info for a task
+type Status struct {
+	FailedHosts []string           `json:"failedHosts"`
+	Errors      map[string][]error `json:"errors"`
 }

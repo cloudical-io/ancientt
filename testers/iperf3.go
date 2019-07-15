@@ -52,7 +52,7 @@ func (ip IPerf3) Plan(env *Environment, test *config.Test) (*Plan, error) {
 	plan := &Plan{
 		Tester:          test.Type,
 		AffectedServers: map[string]*Host{},
-		Commands:        make([][]Task, test.RunOptions.Rounds),
+		Commands:        make([][]*Task, test.RunOptions.Rounds),
 	}
 
 	var ports Ports
@@ -68,7 +68,7 @@ func (ip IPerf3) Plan(env *Environment, test *config.Test) (*Plan, error) {
 
 	for i := 0; i < test.RunOptions.Rounds; i++ {
 		for _, server := range env.Hosts.Servers {
-			round := Task{}
+			round := &Task{}
 			// Add server host to AffectedServers list
 			if _, ok := plan.AffectedServers[server.Name]; !ok {
 				plan.AffectedServers[server.Name] = server
@@ -88,18 +88,22 @@ func (ip IPerf3) Plan(env *Environment, test *config.Test) (*Plan, error) {
 
 				// Build the IPerf3 command
 				cmd, args := ip.buildIPerf3ClientCommand(server, client)
-				round.SubTasks = append(round.SubTasks, Task{
+				round.SubTasks = append(round.SubTasks, &Task{
 					Host:    client,
 					Command: cmd,
 					Args:    args,
 					Ports:   ports,
+					Status: Status{
+						Errors:      map[string][]error{},
+						FailedHosts: []string{},
+					},
 				})
 			}
 			plan.Commands[i] = append(plan.Commands[i], round)
 
 			// Add the given interval after each round except the last one
 			if test.RunOptions.Interval != 0 && i != test.RunOptions.Rounds-1 {
-				plan.Commands[i] = append(plan.Commands[i], Task{
+				plan.Commands[i] = append(plan.Commands[i], &Task{
 					Sleep: test.RunOptions.Interval,
 				})
 			}

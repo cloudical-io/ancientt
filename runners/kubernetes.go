@@ -185,12 +185,14 @@ func (k Kubernetes) Execute(plan *testers.Plan, parser chan<- parsers.Input) err
 
 	// Iterate over given plan.Commands to then run each task
 	for round, tasks := range plan.Commands {
-		for _, task := range tasks {
+		log.Infof("running commands round %d of %d", round+1, len(plan.Commands))
+		for i, task := range tasks {
 			if task.Sleep != 0 {
 				k.logger.Infof("waiting %s to pass before continuing next round", task.Sleep.String())
 				time.Sleep(task.Sleep)
 				continue
 			}
+			log.Infof("running task round %d of %d", i+1, len(tasks))
 
 			// Create the Pods for the server task and client tasks
 			if err := k.createPodsForTasks(round, task, plan.PlannedTime, plan.Tester, util.GetTaskName(plan), parser); err != nil {
@@ -229,11 +231,10 @@ func (k Kubernetes) prepareKubernetes() error {
 }
 
 // createPodsForTasks create the Pods that are needed for the task(s)
-func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, plannedTime time.Time, tester string, taskName string, parser chan<- parsers.Input) error {
+func (k Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, plannedTime time.Time, tester string, taskName string, parser chan<- parsers.Input) error {
 	logger := k.logger.WithFields(logrus.Fields{"round": round})
 
 	var wg sync.WaitGroup
-	errs := make(chan error)
 
 	// Create server Pod first
 	serverPodName := util.GetPNameFromTask(round, mainTask, util.PNameRoleServer)
@@ -245,7 +246,7 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, planned
 		ServerPort: 5601,
 	}
 
-	if err := cmdtemplate.Template(&mainTask, templateVars); err != nil {
+	if err := cmdtemplate.Template(mainTask, templateVars); err != nil {
 		return fmt.Errorf("failed to template main task command and / or args. %+v", err)
 	}
 
@@ -253,47 +254,45 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, planned
 
 	logger.WithFields(logrus.Fields{"pod": serverPodName}).Debug("(re)creating server pod")
 	if err := k8sutil.PodRecreate(k.k8sclient, pod, k.config.Timeouts.DeleteTimeout); err != nil {
-		return fmt.Errorf("failed to create pod %s/%s. %+v", k.config.Namespace, serverPodName, err)
+		return fmt.Errorf("failed to create server pod %s/%s. %+v", k.config.Namespace, serverPodName, err)
 	}
 
 	logger.WithFields(logrus.Fields{"pod": serverPodName}).Info("waiting for server pod to run")
 	running, err := k8sutil.WaitForPodToRun(k.k8sclient, k.config.Namespace, serverPodName, k.config.Timeouts.RunningTimeout)
 	if err != nil {
-		return fmt.Errorf("failed to wait for pod %s/%s. %+v", k.config.Namespace, serverPodName, err)
+		return fmt.Errorf("failed to wait for server pod %s/%s. %+v", k.config.Namespace, serverPodName, err)
 	}
 	if !running {
-		return fmt.Errorf("pod %s/%s not running after runTimeout", k.config.Namespace, serverPodName)
+		return fmt.Errorf("server pod %s/%s not running after runTimeout", k.config.Namespace, serverPodName)
 	}
 
 	// Get server Pod to have the server IP for each client task
 	pod, err = k.k8sclient.CoreV1().Pods(k.config.Namespace).Get(serverPodName, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to get pod %s/%s. %+v", k.config.Namespace, serverPodName, err)
+		return fmt.Errorf("failed to get server pod %s/%s. %+v", k.config.Namespace, serverPodName, err)
 	}
 	templateVars.ServerAddress = pod.Status.PodIP
 
-	go func() {
-		// TODO Fix this code to be.. well "good"(?)
-		errsList := []string{}
-		for erro := range errs {
-			logger.Errorf("error during createPodsForTasks. %+v", erro)
-			errsList = append(errsList, erro.Error())
-		}
-	}()
-
-	tasks := []testers.Task{}
+	tasks := []*testers.Task{}
 	tasks = append(tasks, mainTask.SubTasks...)
-	for _, task := range tasks {
+	for i, task := range tasks {
+		log.Infof("running sub task %d of %d", i+1, len(tasks))
+
 		testTime := time.Now()
 
 		wg.Add(1)
-		go func(task testers.Task, testTime time.Time) {
+		go func(task *testers.Task, testTime time.Time) {
 			defer wg.Done()
 			pName := util.GetPNameFromTask(round, task, util.PNameRoleClient)
 
+			// TODO De-duplicate this mess of failed hosts and errors setting
+
 			// Template command and args for each task
-			if err := cmdtemplate.Template(&task, templateVars); err != nil {
-				errs <- fmt.Errorf("failed to template task command and / or args. %+v", err)
+			if err := cmdtemplate.Template(task, templateVars); err != nil {
+				erro := fmt.Errorf("failed to template task command and / or args. %+v", err)
+				logger.Errorf("error during createPodsForTasks. %+v", erro)
+				task.Status.FailedHosts = append(task.Status.FailedHosts, task.Host.Name)
+				task.Status.Errors[task.Host.Name] = append(task.Status.Errors[task.Host.Name], erro)
 				return
 			}
 
@@ -301,30 +300,45 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, planned
 
 			logger.WithFields(logrus.Fields{"pod": pName}).Debug("(re)creating client pod")
 			if err := k8sutil.PodRecreate(k.k8sclient, pod, k.config.Timeouts.DeleteTimeout); err != nil {
-				errs <- fmt.Errorf("failed to create pod %s/%s. %+v", k.config.Namespace, pName, err)
+				erro := fmt.Errorf("failed to create pod %s/%s. %+v", k.config.Namespace, pName, err)
+				logger.Errorf("error during createPodsForTasks. %+v", erro)
+				task.Status.FailedHosts = append(task.Status.FailedHosts, task.Host.Name)
+				task.Status.Errors[task.Host.Name] = append(task.Status.Errors[task.Host.Name], erro)
 				return
 			}
 
 			logger.WithFields(logrus.Fields{"pod": pName}).Info("waiting for client pod to run or succeed")
 			running, err := k8sutil.WaitForPodToRunOrSucceed(k.k8sclient, k.config.Namespace, pName, k.config.Timeouts.RunningTimeout)
 			if err != nil {
-				errs <- fmt.Errorf("failed to wait for pod %s/%s. %+v", k.config.Namespace, pName, err)
+				erro := fmt.Errorf("failed to wait for pod %s/%s. %+v", k.config.Namespace, pName, err)
+				logger.Errorf("error during createPodsForTasks. %+v", erro)
+				task.Status.FailedHosts = append(task.Status.FailedHosts, task.Host.Name)
+				task.Status.Errors[task.Host.Name] = append(task.Status.Errors[task.Host.Name], erro)
 				return
 			}
 			if !running {
-				errs <- fmt.Errorf("pod %s/%s not running after runTimeout", k.config.Namespace, pName)
+				erro := fmt.Errorf("pod %s/%s not running after runTimeout", k.config.Namespace, pName)
+				logger.Errorf("error during createPodsForTasks. %+v", erro)
+				task.Status.FailedHosts = append(task.Status.FailedHosts, task.Host.Name)
+				task.Status.Errors[task.Host.Name] = append(task.Status.Errors[task.Host.Name], erro)
 				return
 			}
 
 			logger.WithFields(logrus.Fields{"pod": pName}).Debug("about to pushLogsToParser")
 			if err := k.pushLogsToParser(parser, plannedTime, testTime, round, tester, mainTask.Host.Name, task.Host.Name, pName); err != nil {
-				errs <- fmt.Errorf("failed to push pod %s/%s logs to parser. %+v", k.config.Namespace, pName, err)
+				erro := fmt.Errorf("failed to push pod %s/%s logs to parser. %+v", k.config.Namespace, pName, err)
+				logger.Errorf("error during createPodsForTasks. %+v", erro)
+				task.Status.FailedHosts = append(task.Status.FailedHosts, task.Host.Name)
+				task.Status.Errors[task.Host.Name] = append(task.Status.Errors[task.Host.Name], erro)
 				return
 			}
 
 			logger.WithFields(logrus.Fields{"pod": pName}).Info("deleting client pod")
 			if err := k8sutil.PodDelete(k.k8sclient, pod, k.config.Timeouts.DeleteTimeout); err != nil {
-				errs <- fmt.Errorf("failed to delete client pod %s/%s. %+v", k.config.Namespace, pName, err)
+				erro := fmt.Errorf("failed to delete client pod %s/%s. %+v", k.config.Namespace, pName, err)
+				logger.Errorf("error during createPodsForTasks. %+v", erro)
+				task.Status.FailedHosts = append(task.Status.FailedHosts, task.Host.Name)
+				task.Status.Errors[task.Host.Name] = append(task.Status.Errors[task.Host.Name], erro)
 				return
 			}
 		}(task, testTime)
@@ -347,7 +361,6 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, planned
 
 	logger.Debug("done running tests in kubernetes for plan")
 
-	close(errs)
 	return nil
 }
 

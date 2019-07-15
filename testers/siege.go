@@ -52,7 +52,7 @@ func (sg Siege) Plan(env *Environment, test *config.Test) (*Plan, error) {
 	plan := &Plan{
 		Tester:          test.Type,
 		AffectedServers: map[string]*Host{},
-		Commands:        make([][]Task, test.RunOptions.Rounds),
+		Commands:        make([][]*Task, test.RunOptions.Rounds),
 	}
 
 	var ports Ports
@@ -62,7 +62,7 @@ func (sg Siege) Plan(env *Environment, test *config.Test) (*Plan, error) {
 
 	for i := 0; i < test.RunOptions.Rounds; i++ {
 		for _, server := range env.Hosts.Servers {
-			round := Task{}
+			round := &Task{}
 			// Add server host to AffectedServers list
 			if _, ok := plan.AffectedServers[server.Name]; !ok {
 				plan.AffectedServers[server.Name] = server
@@ -82,7 +82,7 @@ func (sg Siege) Plan(env *Environment, test *config.Test) (*Plan, error) {
 
 				// Build the Siege command
 				cmd, args := sg.buildSiegeClientCommand(server, client)
-				round.SubTasks = append(round.SubTasks, Task{
+				round.SubTasks = append(round.SubTasks, &Task{
 					Host:    client,
 					Command: cmd,
 					Args:    args,

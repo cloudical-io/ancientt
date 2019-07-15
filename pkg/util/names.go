@@ -32,7 +32,7 @@ const (
 
 // GetPNameFromTask get a "persistent" name for a task
 // This is done by calculating the checksums of the used names.
-func GetPNameFromTask(round int, task testers.Task, role PNameRole) string {
+func GetPNameFromTask(round int, task *testers.Task, role PNameRole) string {
 	data := fmt.Sprintf("%d-%s-%s", round, task.Host.Name, task.Args)
 	return fmt.Sprintf("acntt-%s-%s-%x", role, task.Command, sha1.Sum([]byte(data)))
 }

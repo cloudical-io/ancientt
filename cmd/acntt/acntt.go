@@ -94,7 +94,9 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	for _, test := range cfg.Tests {
+	for i, test := range cfg.Tests {
+		log.Infof("running task %d of %d", i+1, len(cfg.Tests))
+
 		// Get tester for the test
 		var tester testers.Tester
 		testerName := strings.ToLower(test.Type)
@@ -243,12 +245,16 @@ func run(cmd *cobra.Command, args []string) error {
 		if err := runner.Execute(plan, inCh); err != nil {
 			return err
 		}
-		log.WithFields(logrus.Fields{"testers": test.Type}).Debug("runner execute returned, closing doneCh")
+		log.WithFields(logrus.Fields{"testers": test.Type}).Debug("runner execute returned, closing inCh and wg.Wait()")
 
 		close(inCh)
 		wg.Wait()
 
 		close(doneCh)
+
+		if err := checkPlanForErrors(plan); err != nil {
+			return err
+		}
 
 		// Run runners.Cleanup() func if wanted by the user
 		// TODO When wanted, should be run when signal (CTRL+C) received
@@ -261,6 +267,54 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	log.Info("done with tests")
+
+	return nil
+}
+
+// Improve the logic here throughout the runners, parsers and other components that can cause errors
+func checkPlanForErrors(plan *testers.Plan) error {
+	failedServers := []string{}
+	var err error
+	for _, command := range plan.Commands {
+		for _, task := range command {
+			if len(task.Status.Errors) > 0 {
+				for host, errs := range task.Status.Errors {
+					for _, err = range errs {
+						log.WithFields(logrus.Fields{"host": host}).Error(err)
+						failedServers = append(failedServers, host)
+					}
+				}
+			}
+			for _, subtask := range task.SubTasks {
+				for host, errs := range subtask.Status.Errors {
+					for _, err = range errs {
+						log.WithFields(logrus.Fields{"host": host}).Error(err)
+						failedServers = append(failedServers, host)
+					}
+				}
+			}
+		}
+	}
+
+	if len(failedServers) > 0 {
+		fmt.Printf("=> Failed Servers\n")
+
+		// De-Duplicate servers list
+		seen := make(map[string]struct{}, len(failedServers))
+		j := 0
+		for _, v := range failedServers {
+			if _, ok := seen[v]; ok {
+				continue
+			}
+			seen[v] = struct{}{}
+			failedServers[j] = v
+			j++
+		}
+
+		for _, host := range failedServers {
+			fmt.Println(host)
+		}
+	}
 
 	return nil
 }

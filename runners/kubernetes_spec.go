@@ -20,7 +20,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (k Kubernetes) getPodSpec(pName string, taskName string, task testers.Task) *corev1.Pod {
+func (k Kubernetes) getPodSpec(pName string, taskName string, task *testers.Task) *corev1.Pod {
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Annotations: k.config.Annotations,
