@@ -44,6 +44,9 @@ func NewGoChartOutput(cfg *config.Config, outCfg *config.Output) (Output, error)
 		logger: log.WithFields(logrus.Fields{"output": NameGoChart}),
 		config: outCfg.GoChart,
 	}
+	if goChart.config.FilePath == "" {
+		goChart.config.FilePath = "."
+	}
 	if goChart.config.NamePattern != "" {
 		goChart.config.NamePattern = "acntt-{{ .PlannedTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Header }}-{{ .Extra.Type }}.png"
 	}

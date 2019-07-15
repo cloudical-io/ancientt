@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 
 	"github.com/cloudical-io/acntt/pkg/config"
+	"github.com/cloudical-io/acntt/pkg/util"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
@@ -48,7 +49,10 @@ func NewCSVOutput(cfg *config.Config, outCfg *config.Output) (Output, error) {
 		files:   map[string]*os.File{},
 		writers: map[string]*csv.Writer{},
 	}
-	if c.config.NamePattern != "" {
+	if c.config.FilePath == "" {
+		c.config.FilePath = "."
+	}
+	if c.config.NamePattern == "" {
 		c.config.NamePattern = "acntt-{{ .PlannedTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv"
 	}
 	return c, nil
@@ -92,7 +96,7 @@ func (c CSV) Do(data Data) error {
 		for _, column := range dataTable.Headers {
 			rowCells := []string{}
 			for _, row := range column.Rows {
-				rowCells = append(rowCells, fmt.Sprintf("%v", row.Value))
+				rowCells = append(rowCells, util.CastToString(row.Value))
 			}
 			if len(rowCells) == 0 {
 				continue
@@ -108,7 +112,7 @@ func (c CSV) Do(data Data) error {
 	for _, column := range dataTable.Columns {
 		rowCells := []string{}
 		for _, row := range column.Rows {
-			rowCells = append(rowCells, fmt.Sprintf("%v", row.Value))
+			rowCells = append(rowCells, util.CastToString(row.Value))
 		}
 		if len(rowCells) == 0 {
 			continue

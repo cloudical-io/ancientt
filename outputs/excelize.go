@@ -43,6 +43,9 @@ func NewExcelizeOutput(cfg *config.Config, outCfg *config.Output) (Output, error
 		config: outCfg.Excelize,
 		files:  map[string]*os.File{},
 	}
+	if excelize.config.FilePath == "" {
+		excelize.config.FilePath = "."
+	}
 	if excelize.config.NamePattern != "" {
 		excelize.config.NamePattern = "acntt-{{ .PlannedTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.xlsx"
 	}

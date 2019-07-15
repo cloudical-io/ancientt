@@ -15,7 +15,6 @@ package util
 
 import (
 	"math/rand"
-	"reflect"
 	"time"
 
 	"github.com/cloudical-io/acntt/pkg/config"
@@ -24,15 +23,6 @@ import (
 
 // FilterHostsList filter a given host list
 func FilterHostsList(inHosts []*testers.Host, filter config.Hosts) ([]*testers.Host, error) {
-	// Create and seed randomness source for the `random` selection of hosts
-	s := rand.NewSource(time.Now().Unix())
-	r := rand.New(s)
-	r.Seed(time.Now().UnixNano())
-
-	if filter.All {
-		return inHosts, nil
-	}
-
 	hosts := []*testers.Host{}
 
 	if len(filter.Hosts) > 0 {
@@ -46,6 +36,19 @@ func FilterHostsList(inHosts []*testers.Host, filter config.Hosts) ([]*testers.H
 
 	filteredHosts := filterHostsByLabels(inHosts, filter.HostSelector)
 
+	if len(filteredHosts) == 0 {
+		return filteredHosts, nil
+	}
+
+	if filter.All {
+		return filteredHosts, nil
+	}
+
+	// Create and seed randomness source for the `random` selection of hosts
+	s := rand.NewSource(time.Now().Unix())
+	r := rand.New(s)
+	r.Seed(time.Now().UnixNano())
+
 	// Get random server(s)
 	if filter.Random {
 		for i := 0; i < filter.Count; i++ {
@@ -58,18 +61,27 @@ func FilterHostsList(inHosts []*testers.Host, filter config.Hosts) ([]*testers.H
 	return hosts, nil
 }
 
-// filterHostsByLabels
+// filterHostsByLabels all labels must match
 func filterHostsByLabels(hosts []*testers.Host, labels map[string]string) []*testers.Host {
 	if len(labels) == 0 {
 		return hosts
 	}
 	filtered := []*testers.Host{}
 	for _, host := range hosts {
-		// Compare host and filter labels list
-		if reflect.DeepEqual(host.Labels, labels) {
-			filtered = append(filtered, host)
-			continue
+		// Compare host and filter labels list, all labels list must match
+		match := true
+		for k, v := range labels {
+			if labelValue, ok := host.Labels[k]; ok {
+				if labelValue != v {
+					match = false
+					continue
+				}
+			}
 		}
+		if match {
+			filtered = append(filtered, host)
+		}
+
 		// TODO implement anti affinity logic based on labels
 	}
 

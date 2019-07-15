@@ -22,10 +22,25 @@ type Runner struct {
 
 // RunnerKubernetes Kubernetes Runner config options
 type RunnerKubernetes struct {
-	Kubeconfig  string `yaml:"kubeconfig"`
-	Image       string `yaml:"image"`
-	Namespace   string `yaml:"namespace"`
-	HostNetwork bool   `yaml:"hostNetwork"`
+	Kubeconfig  string              `yaml:"kubeconfig"`
+	Image       string              `yaml:"image"`
+	Namespace   string              `yaml:"namespace"`
+	HostNetwork bool                `yaml:"hostNetwork"`
+	Timeouts    *KubernetesTimeouts `yaml:"timeouts"`
+	Annotations map[string]string   `yaml:"annotations"`
+	Hosts       *KubernetesHosts    `yaml:"hosts"`
+}
+
+// KubernetesTimeouts timeouts for operations with Kubernetess
+type KubernetesTimeouts struct {
+	DeleteTimeout  int `yaml:"deleteTimeout"`
+	RunningTimeout int `yaml:"runningTimeout"`
+	SucceedTimeout int `yaml:"succeedTimeout"`
+}
+
+// KubernetesHosts
+type KubernetesHosts struct {
+	IgnoreSchedulingDisabled bool `yaml:"ignoreSchedulingDisabled"`
 }
 
 // RunnerMock Mock Runner config options (here for good measure)

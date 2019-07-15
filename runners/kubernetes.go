@@ -15,7 +15,6 @@ package runners
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -74,8 +73,25 @@ func NewKubernetesRunner(cfg *config.Config) (Runner, error) {
 		k8sConfig = &config.RunnerKubernetes{}
 	}
 
+	if k8sConfig.Annotations == nil {
+		k8sConfig.Annotations = map[string]string{}
+	}
+
+	if k8sConfig.Hosts == nil {
+		k8sConfig.Hosts = &config.KubernetesHosts{
+			IgnoreSchedulingDisabled: true,
+		}
+	}
+
 	if k8sConfig.Namespace == "" {
 		k8sConfig.Namespace = "acntt"
+	}
+	if k8sConfig.Timeouts == nil {
+		k8sConfig.Timeouts = &config.KubernetesTimeouts{
+			DeleteTimeout:  20,
+			RunningTimeout: 35,
+			SucceedTimeout: 60,
+		}
 	}
 
 	return Kubernetes{
@@ -134,8 +150,15 @@ func (k Kubernetes) k8sNodesToHosts() ([]*testers.Host, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	// Quick conversion from a Kubernetes CoreV1 Nodes object to testers.Host
 	for _, node := range nodes.Items {
+		// Check if node is unschedulable
+		// TODO Add checks for taints (e.g., https://github.com/rook/rook/blob/master/pkg/operator/k8sutil/node.go)
+		if k.config.Hosts.IgnoreSchedulingDisabled && node.Spec.Unschedulable {
+			k.logger.WithFields(logrus.Fields{"node": node.ObjectMeta.Name}).Debug("skipping unschedulable node")
+			continue
+		}
 		hosts = append(hosts, &testers.Host{
 			Labels: node.ObjectMeta.Labels,
 			Name:   node.ObjectMeta.Name,
@@ -229,17 +252,17 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, planned
 	pod := k.getPodSpec(serverPodName, taskName, mainTask)
 
 	logger.WithFields(logrus.Fields{"pod": serverPodName}).Debug("(re)creating server pod")
-	if err := k8sutil.PodRecreate(k.k8sclient, pod); err != nil {
+	if err := k8sutil.PodRecreate(k.k8sclient, pod, k.config.Timeouts.DeleteTimeout); err != nil {
 		return fmt.Errorf("failed to create pod %s/%s. %+v", k.config.Namespace, serverPodName, err)
 	}
 
 	logger.WithFields(logrus.Fields{"pod": serverPodName}).Info("waiting for server pod to run")
-	running, err := k8sutil.WaitForPodToRun(k.k8sclient, k.config.Namespace, serverPodName)
+	running, err := k8sutil.WaitForPodToRun(k.k8sclient, k.config.Namespace, serverPodName, k.config.Timeouts.RunningTimeout)
 	if err != nil {
 		return fmt.Errorf("failed to wait for pod %s/%s. %+v", k.config.Namespace, serverPodName, err)
 	}
 	if !running {
-		return fmt.Errorf("pod %s/%s not running after 10 tries", k.config.Namespace, serverPodName)
+		return fmt.Errorf("pod %s/%s not running after runTimeout", k.config.Namespace, serverPodName)
 	}
 
 	// Get server Pod to have the server IP for each client task
@@ -248,6 +271,15 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, planned
 		return fmt.Errorf("failed to get pod %s/%s. %+v", k.config.Namespace, serverPodName, err)
 	}
 	templateVars.ServerAddress = pod.Status.PodIP
+
+	go func() {
+		// TODO Fix this code to be.. well "good"(?)
+		errsList := []string{}
+		for erro := range errs {
+			logger.Errorf("error during createPodsForTasks. %+v", erro)
+			errsList = append(errsList, erro.Error())
+		}
+	}()
 
 	tasks := []testers.Task{}
 	tasks = append(tasks, mainTask.SubTasks...)
@@ -268,29 +300,30 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, planned
 			pod = k.getPodSpec(pName, taskName, task)
 
 			logger.WithFields(logrus.Fields{"pod": pName}).Debug("(re)creating client pod")
-			if err := k8sutil.PodRecreate(k.k8sclient, pod); err != nil {
+			if err := k8sutil.PodRecreate(k.k8sclient, pod, k.config.Timeouts.DeleteTimeout); err != nil {
 				errs <- fmt.Errorf("failed to create pod %s/%s. %+v", k.config.Namespace, pName, err)
 				return
 			}
 
-			logger.WithFields(logrus.Fields{"pod": pName}).Info("waiting for client pod to run")
-			running, err := k8sutil.WaitForPodToRun(k.k8sclient, k.config.Namespace, pName)
+			logger.WithFields(logrus.Fields{"pod": pName}).Info("waiting for client pod to run or succeed")
+			running, err := k8sutil.WaitForPodToRunOrSucceed(k.k8sclient, k.config.Namespace, pName, k.config.Timeouts.RunningTimeout)
 			if err != nil {
 				errs <- fmt.Errorf("failed to wait for pod %s/%s. %+v", k.config.Namespace, pName, err)
 				return
 			}
 			if !running {
-				errs <- fmt.Errorf("pod %s/%s not running after 10 tries", k.config.Namespace, pName)
+				errs <- fmt.Errorf("pod %s/%s not running after runTimeout", k.config.Namespace, pName)
 				return
 			}
 
+			logger.WithFields(logrus.Fields{"pod": pName}).Debug("about to pushLogsToParser")
 			if err := k.pushLogsToParser(parser, plannedTime, testTime, round, tester, mainTask.Host.Name, task.Host.Name, pName); err != nil {
 				errs <- fmt.Errorf("failed to push pod %s/%s logs to parser. %+v", k.config.Namespace, pName, err)
 				return
 			}
 
 			logger.WithFields(logrus.Fields{"pod": pName}).Info("deleting client pod")
-			if err := k8sutil.PodDelete(k.k8sclient, pod); err != nil {
+			if err := k8sutil.PodDelete(k.k8sclient, pod, k.config.Timeouts.DeleteTimeout); err != nil {
 				errs <- fmt.Errorf("failed to delete client pod %s/%s. %+v", k.config.Namespace, pName, err)
 				return
 			}
@@ -303,7 +336,7 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, planned
 
 	// Delete server pod
 	logger.WithFields(logrus.Fields{"pod": serverPodName}).Info("deleting server pod")
-	if err := k8sutil.PodDeleteByName(k.k8sclient, k.config.Namespace, serverPodName); err != nil {
+	if err := k8sutil.PodDeleteByName(k.k8sclient, k.config.Namespace, serverPodName, k.config.Timeouts.DeleteTimeout); err != nil {
 		logger.WithFields(logrus.Fields{"pod": serverPodName}).Errorf("failed to delete server pod. %+v", err)
 	}
 
@@ -314,22 +347,13 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask testers.Task, planned
 
 	logger.Debug("done running tests in kubernetes for plan")
 
-	select {
-	case <-errs:
-		// TODO Fix this code to be.. well "good"(?)
-		errsList := []string{}
-		for erro := range errs {
-			errsList = append(errsList, erro.Error())
-		}
-		return fmt.Errorf(strings.Join(errsList, "\n"))
-	default:
-		return nil
-	}
+	close(errs)
+	return nil
 }
 
 func (k Kubernetes) pushLogsToParser(parserInput chan<- parsers.Input, plannedTime time.Time, testTime time.Time, round int, tester string, serverHost string, clientHost string, podName string) error {
 	// Wait for the Pod to succeed because that is the "sign" that the test for that Pod is done.
-	succeeded, err := k8sutil.WaitForPodToSucceed(k.k8sclient, k.config.Namespace, podName)
+	succeeded, err := k8sutil.WaitForPodToSucceed(k.k8sclient, k.config.Namespace, podName, k.config.Timeouts.SucceedTimeout)
 	if err != nil {
 		return err
 	}

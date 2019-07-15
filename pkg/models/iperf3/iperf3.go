@@ -32,7 +32,7 @@ type Start struct {
 	SockBufsize   int64            `json:"sock_bufsize"`
 	SndbufActual  int64            `json:"sndbuf_actual"`
 	RcvbufActual  int64            `json:"rcvbuf_actual"`
-	PlannedTime     PlannedTime        `json:"test_start"`
+	PlannedTime   PlannedTime      `json:"test_start"`
 }
 
 // ConnectedEntry

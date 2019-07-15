@@ -26,9 +26,9 @@ import (
 )
 
 // PodRecreate delete Pod if it exists and create it again. If the Pod does not exist, create it.
-func PodRecreate(k8sclient *kubernetes.Clientset, pod *corev1.Pod) error {
+func PodRecreate(k8sclient *kubernetes.Clientset, pod *corev1.Pod, delTimeout int) error {
 	// Delete Pod if it exists
-	if err := PodDelete(k8sclient, pod); err != nil {
+	if err := PodDelete(k8sclient, pod, delTimeout); err != nil {
 		return err
 	}
 
@@ -42,8 +42,8 @@ func PodRecreate(k8sclient *kubernetes.Clientset, pod *corev1.Pod) error {
 	return nil
 }
 
-// PodDelete delete Pod if it exists, wait for it till it has been for 14s deleted
-func PodDelete(k8sclient *kubernetes.Clientset, pod *corev1.Pod) error {
+// PodDelete delete Pod if it exists, wait for it till it has been for custom amount deleted
+func PodDelete(k8sclient *kubernetes.Clientset, pod *corev1.Pod, timeout int) error {
 	namespace := pod.ObjectMeta.Namespace
 	podName := pod.ObjectMeta.Name
 
@@ -55,7 +55,7 @@ func PodDelete(k8sclient *kubernetes.Clientset, pod *corev1.Pod) error {
 		return err
 	}
 
-	for i := 0; i < 15; i++ {
+	for i := 0; i < timeout; i++ {
 		// Check if Pod still exists
 		if _, err := k8sclient.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{}); err != nil {
 			if errors.IsNotFound(err) {
@@ -64,20 +64,20 @@ func PodDelete(k8sclient *kubernetes.Clientset, pod *corev1.Pod) error {
 			return err
 		}
 
-		time.Sleep(2 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 
 	return fmt.Errorf("pod %s/%s not deleted after 30s", namespace, podName)
 }
 
 // PodDeleteByName delete Pod by namespace and name if it exists
-func PodDeleteByName(k8sclient *kubernetes.Clientset, namespace string, podName string) error {
+func PodDeleteByName(k8sclient *kubernetes.Clientset, namespace string, podName string, timeout int) error {
 	return PodDelete(k8sclient, &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      podName,
 		},
-	})
+	}, timeout)
 }
 
 // PodDeleteByLabels delete Pods by labels
@@ -111,9 +111,8 @@ func PodDeleteByLabels(k8sclient *kubernetes.Clientset, namespace string, select
 }
 
 // WaitForPodToRun wait for a Pod to be in phase Running. In case of phase Running, return true and no error
-func WaitForPodToRun(k8sclient *kubernetes.Clientset, namespace string, podName string) (bool, error) {
-	// 10 tries with 3 second sleep so 30 seconds in total
-	for i := 0; i < 10; i++ {
+func WaitForPodToRun(k8sclient *kubernetes.Clientset, namespace string, podName string, timeout int) (bool, error) {
+	for i := 0; i < timeout; i++ {
 		pod, err := k8sclient.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
 		if err != nil {
 			if !errors.IsAlreadyExists(err) {
@@ -124,16 +123,15 @@ func WaitForPodToRun(k8sclient *kubernetes.Clientset, namespace string, podName 
 			return true, nil
 		}
 
-		time.Sleep(3 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 
 	return false, nil
 }
 
 // WaitForPodToSucceed wait for a Pod to be in phase Succeeded. In case of phase Succeeded, return true and no error
-func WaitForPodToSucceed(k8sclient *kubernetes.Clientset, namespace string, podName string) (bool, error) {
-	// 15 tries with 3 second sleep so 45 seconds in total
-	for i := 0; i < 15; i++ {
+func WaitForPodToSucceed(k8sclient *kubernetes.Clientset, namespace string, podName string, timeout int) (bool, error) {
+	for i := 0; i < timeout; i++ {
 		pod, err := k8sclient.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
 		if err != nil {
 			return false, err
@@ -142,8 +140,26 @@ func WaitForPodToSucceed(k8sclient *kubernetes.Clientset, namespace string, podN
 			return true, nil
 		}
 
-		time.Sleep(3 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
+
+	return false, nil
+}
+
+// WaitForPodToRunOrSucceed wait for a Pod to be in phase Running or Succeeded. In case of one of the phases, return true and no error
+func WaitForPodToRunOrSucceed(k8sclient *kubernetes.Clientset, namespace string, podName string, timeout int) (bool, error) {
+	for i := 0; i < timeout; i++ {
+		pod, err := k8sclient.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
+		if err != nil {
+			return false, err
+		}
+		if pod.Status.Phase == corev1.PodRunning || pod.Status.Phase == corev1.PodSucceeded {
+			return true, nil
+		}
+
+		time.Sleep(1 * time.Second)
+	}
+
 	return false, nil
 }
 

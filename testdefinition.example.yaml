@@ -6,6 +6,12 @@ runner:
     kubeconfig: /home/atrost/.kube/config
     image: quay.io/galexrt/container-toolbox
     namespace: acntt
+    timeouts:
+      deleteTimeout: 20
+      runningTimeout: 35
+      succeedTimeout: 60
+    hosts:
+      ignoreSchedulingDisabled: true
 tests:
 - type: iperf3
   outputs:

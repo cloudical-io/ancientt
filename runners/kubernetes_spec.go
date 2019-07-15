@@ -23,9 +23,10 @@ import (
 func (k Kubernetes) getPodSpec(pName string, taskName string, task testers.Task) *corev1.Pod {
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:    k8sutil.GetPodLabels(pName, taskName),
-			Name:      pName,
-			Namespace: k.config.Namespace,
+			Annotations: k.config.Annotations,
+			Labels:      k8sutil.GetPodLabels(pName, taskName),
+			Name:        pName,
+			Namespace:   k.config.Namespace,
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
@@ -36,6 +37,10 @@ func (k Kubernetes) getPodSpec(pName string, taskName string, task testers.Task)
 					Args:    task.Args,
 					Ports:   k8sutil.PortsListToPorts(task.Ports),
 				},
+			},
+			NodeSelector: map[string]string{
+				// TODO Use official Kubernetes pkg constant
+				"kubernetes.io/hostname": task.Host.Name,
 			},
 			HostNetwork:   k.config.HostNetwork,
 			RestartPolicy: corev1.RestartPolicyOnFailure,

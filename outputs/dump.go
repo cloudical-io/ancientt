@@ -46,6 +46,9 @@ func NewDumpOutput(cfg *config.Config, outCfg *config.Output) (Output, error) {
 		config: outCfg.Dump,
 		files:  map[string]*os.File{},
 	}
+	if dump.config.FilePath == "" {
+		dump.config.FilePath = "."
+	}
 	if dump.config.NamePattern != "" {
 		dump.config.NamePattern = "acntt-{{ .PlannedTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.txt"
 	}
