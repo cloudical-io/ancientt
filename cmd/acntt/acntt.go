@@ -114,10 +114,11 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// TODO Take care of these "low" level errors
 	var testErrors []error
 
 	for i, test := range cfg.Tests {
-		log.Infof("running task %d of %d", i+1, len(cfg.Tests))
+		log.Infof("starting test %d of %d", i+1, len(cfg.Tests))
 
 		tester, parser, outputsAssembled, err := prepare(test)
 		if err != nil {
@@ -213,7 +214,6 @@ func run(cmd *cobra.Command, args []string) error {
 
 		close(inCh)
 
-		// TODO Do error checking here
 		if err := checkForErrors(plan); err != nil {
 			if !test.RunOptions.ContinueOnError {
 				log.Error(err)
@@ -227,7 +227,6 @@ func run(cmd *cobra.Command, args []string) error {
 		close(doneCh)
 
 		// Run runners.Cleanup() func if wanted by the user
-		// TODO When wanted, should be run when signal (CTRL+C) received
 		if !viper.GetBool("no-cleanup") {
 			if err := runnerCleanup(runner, plan); err != nil {
 				return err
@@ -249,6 +248,7 @@ func askUserForYes() error {
 		if err != nil {
 			return err
 		}
+
 		userInput = strings.TrimSpace(strings.ToLower(userInput))
 		if userInput == "yes" || userInput == "y" {
 			break
