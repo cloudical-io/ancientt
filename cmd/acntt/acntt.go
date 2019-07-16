@@ -329,6 +329,7 @@ func checkForErrors(plan *testers.Plan) error {
 
 	for _, command := range plan.Commands {
 		for _, task := range command {
+			fmt.Printf("TEST: %+v\n", task.Status)
 			// FailedHosts
 			if len(task.Status.FailedHosts.Servers) > 0 {
 				errorOccured = true
@@ -359,9 +360,6 @@ func checkForErrors(plan *testers.Plan) error {
 				fmt.Println("-> Successful Server Hosts")
 				for host, count := range task.Status.SuccessfulHosts.Servers {
 					fmt.Printf("%s - %d\n", host, count)
-					for _, err := range task.Status.Errors[host] {
-						fmt.Print(err)
-					}
 				}
 				fmt.Println("=> Successful Server Hosts")
 			}
@@ -370,9 +368,6 @@ func checkForErrors(plan *testers.Plan) error {
 				fmt.Println("-> Successful Client Hosts")
 				for host, count := range task.Status.SuccessfulHosts.Clients {
 					fmt.Printf("%s - %d\n", host, count)
-					for _, err := range task.Status.Errors[host] {
-						fmt.Print(err)
-					}
 				}
 				fmt.Println("=> Successful Client Hosts")
 			}
