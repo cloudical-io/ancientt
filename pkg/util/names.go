@@ -39,5 +39,5 @@ func GetPNameFromTask(round int, task *testers.Task, role PNameRole) string {
 
 // GetTaskName get a task name
 func GetTaskName(plan *testers.Plan) string {
-	return fmt.Sprintf("acntt-%s-%d", plan.Tester, plan.PlannedTime.Unix())
+	return fmt.Sprintf("acntt-%s-%d", plan.Tester, plan.TestStartTime.Unix())
 }

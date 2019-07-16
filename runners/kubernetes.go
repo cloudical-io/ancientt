@@ -102,7 +102,7 @@ func NewKubernetesRunner(cfg *config.Config) (Runner, error) {
 }
 
 // GetHostsForTest return a mocked list of hots for the given test config
-func (k Kubernetes) GetHostsForTest(test config.Test) (*testers.Hosts, error) {
+func (k Kubernetes) GetHostsForTest(test *config.Test) (*testers.Hosts, error) {
 	hosts := &testers.Hosts{
 		Clients: map[string]*testers.Host{},
 		Servers: map[string]*testers.Host{},
@@ -195,8 +195,11 @@ func (k Kubernetes) Execute(plan *testers.Plan, parser chan<- parsers.Input) err
 			log.Infof("running task round %d of %d", i+1, len(tasks))
 
 			// Create the Pods for the server task and client tasks
-			if err := k.createPodsForTasks(round, task, plan.PlannedTime, plan.Tester, util.GetTaskName(plan), parser); err != nil {
-				return err
+			if err := k.createPodsForTasks(round, task, plan.TestStartTime, plan.Tester, util.GetTaskName(plan), parser); err != nil {
+				if !plan.RunOptions.ContinueOnError {
+					return err
+				}
+				k.logger.Warnf("continuing after err. %+v", err)
 			}
 		}
 	}
@@ -247,52 +250,69 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, planne
 	}
 
 	if err := cmdtemplate.Template(mainTask, templateVars); err != nil {
-		return fmt.Errorf("failed to template main task command and / or args. %+v", err)
+		erro := fmt.Errorf("failed to template main task command and / or args. %+v", err)
+		k.logger.Error(erro)
+		mainTask.Status.AddFailedServer(mainTask.Host, erro)
+		return nil
 	}
 
 	pod := k.getPodSpec(serverPodName, taskName, mainTask)
 
 	logger.WithFields(logrus.Fields{"pod": serverPodName}).Debug("(re)creating server pod")
 	if err := k8sutil.PodRecreate(k.k8sclient, pod, k.config.Timeouts.DeleteTimeout); err != nil {
-		return fmt.Errorf("failed to create server pod %s/%s. %+v", k.config.Namespace, serverPodName, err)
+		erro := fmt.Errorf("failed to create server pod %s/%s. %+v", k.config.Namespace, serverPodName, err)
+		k.logger.Error(erro)
+		mainTask.Status.AddFailedServer(mainTask.Host, erro)
+		return nil
 	}
 
 	logger.WithFields(logrus.Fields{"pod": serverPodName}).Info("waiting for server pod to run")
 	running, err := k8sutil.WaitForPodToRun(k.k8sclient, k.config.Namespace, serverPodName, k.config.Timeouts.RunningTimeout)
 	if err != nil {
-		return fmt.Errorf("failed to wait for server pod %s/%s. %+v", k.config.Namespace, serverPodName, err)
+		erro := fmt.Errorf("failed to wait for server pod %s/%s. %+v", k.config.Namespace, serverPodName, err)
+		k.logger.Error(erro)
+		mainTask.Status.AddFailedServer(mainTask.Host, erro)
+		return nil
 	}
 	if !running {
-		return fmt.Errorf("server pod %s/%s not running after runTimeout", k.config.Namespace, serverPodName)
+		erro := fmt.Errorf("server pod %s/%s not running after runTimeout", k.config.Namespace, serverPodName)
+		k.logger.Error(erro)
+		mainTask.Status.AddFailedServer(mainTask.Host, erro)
+		return nil
 	}
 
 	// Get server Pod to have the server IP for each client task
 	pod, err = k.k8sclient.CoreV1().Pods(k.config.Namespace).Get(serverPodName, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to get server pod %s/%s. %+v", k.config.Namespace, serverPodName, err)
+		erro := fmt.Errorf("failed to get server pod %s/%s. %+v", k.config.Namespace, serverPodName, err)
+		k.logger.Error(erro)
+		mainTask.Status.AddFailedServer(mainTask.Host, erro)
+		return nil
 	}
+	if pod.Status.PodIP == "" {
+		mainTask.Status.AddFailedServer(mainTask.Host,
+			fmt.Errorf("failed to get server pod %s/%s IP, got '%s'", k.config.Namespace, serverPodName, pod.Status.PodIP))
+		return nil
+	}
+
 	templateVars.ServerAddress = pod.Status.PodIP
 
-	tasks := []*testers.Task{}
-	tasks = append(tasks, mainTask.SubTasks...)
-	for i, task := range tasks {
-		log.Infof("running sub task %d of %d", i+1, len(tasks))
-
-		testTime := time.Now()
+	for i, task := range mainTask.SubTasks {
+		log.Infof("running sub task %d of %d", i+1, len(mainTask.SubTasks))
 
 		wg.Add(1)
-		go func(task *testers.Task, testTime time.Time) {
+		go func(task *testers.Task) {
 			defer wg.Done()
-			pName := util.GetPNameFromTask(round, task, util.PNameRoleClient)
 
-			// TODO De-duplicate this mess of failed hosts and errors setting
+			testTime := time.Now()
+
+			pName := util.GetPNameFromTask(round, task, util.PNameRoleClient)
 
 			// Template command and args for each task
 			if err := cmdtemplate.Template(task, templateVars); err != nil {
 				erro := fmt.Errorf("failed to template task command and / or args. %+v", err)
 				logger.Errorf("error during createPodsForTasks. %+v", erro)
-				task.Status.FailedHosts = append(task.Status.FailedHosts, task.Host.Name)
-				task.Status.Errors[task.Host.Name] = append(task.Status.Errors[task.Host.Name], erro)
+				mainTask.Status.AddFailedClient(task.Host, erro)
 				return
 			}
 
@@ -302,8 +322,7 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, planne
 			if err := k8sutil.PodRecreate(k.k8sclient, pod, k.config.Timeouts.DeleteTimeout); err != nil {
 				erro := fmt.Errorf("failed to create pod %s/%s. %+v", k.config.Namespace, pName, err)
 				logger.Errorf("error during createPodsForTasks. %+v", erro)
-				task.Status.FailedHosts = append(task.Status.FailedHosts, task.Host.Name)
-				task.Status.Errors[task.Host.Name] = append(task.Status.Errors[task.Host.Name], erro)
+				mainTask.Status.AddFailedClient(task.Host, erro)
 				return
 			}
 
@@ -312,15 +331,13 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, planne
 			if err != nil {
 				erro := fmt.Errorf("failed to wait for pod %s/%s. %+v", k.config.Namespace, pName, err)
 				logger.Errorf("error during createPodsForTasks. %+v", erro)
-				task.Status.FailedHosts = append(task.Status.FailedHosts, task.Host.Name)
-				task.Status.Errors[task.Host.Name] = append(task.Status.Errors[task.Host.Name], erro)
+				mainTask.Status.AddFailedClient(task.Host, erro)
 				return
 			}
 			if !running {
 				erro := fmt.Errorf("pod %s/%s not running after runTimeout", k.config.Namespace, pName)
 				logger.Errorf("error during createPodsForTasks. %+v", erro)
-				task.Status.FailedHosts = append(task.Status.FailedHosts, task.Host.Name)
-				task.Status.Errors[task.Host.Name] = append(task.Status.Errors[task.Host.Name], erro)
+				mainTask.Status.AddFailedClient(task.Host, erro)
 				return
 			}
 
@@ -328,8 +345,7 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, planne
 			if err := k.pushLogsToParser(parser, plannedTime, testTime, round, tester, mainTask.Host.Name, task.Host.Name, pName); err != nil {
 				erro := fmt.Errorf("failed to push pod %s/%s logs to parser. %+v", k.config.Namespace, pName, err)
 				logger.Errorf("error during createPodsForTasks. %+v", erro)
-				task.Status.FailedHosts = append(task.Status.FailedHosts, task.Host.Name)
-				task.Status.Errors[task.Host.Name] = append(task.Status.Errors[task.Host.Name], erro)
+				mainTask.Status.AddFailedClient(task.Host, erro)
 				return
 			}
 
@@ -337,27 +353,33 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, planne
 			if err := k8sutil.PodDelete(k.k8sclient, pod, k.config.Timeouts.DeleteTimeout); err != nil {
 				erro := fmt.Errorf("failed to delete client pod %s/%s. %+v", k.config.Namespace, pName, err)
 				logger.Errorf("error during createPodsForTasks. %+v", erro)
-				task.Status.FailedHosts = append(task.Status.FailedHosts, task.Host.Name)
-				task.Status.Errors[task.Host.Name] = append(task.Status.Errors[task.Host.Name], erro)
+				mainTask.Status.AddFailedClient(task.Host, erro)
 				return
 			}
-		}(task, testTime)
+
+			mainTask.Status.AddSuccessfulClient(task.Host)
+		}(task)
 
 		if k.runOptions.Mode != config.RunModeParallel {
 			wg.Wait()
 		}
 	}
 
-	// Delete server pod
-	logger.WithFields(logrus.Fields{"pod": serverPodName}).Info("deleting server pod")
-	if err := k8sutil.PodDeleteByName(k.k8sclient, k.config.Namespace, serverPodName, k.config.Timeouts.DeleteTimeout); err != nil {
-		logger.WithFields(logrus.Fields{"pod": serverPodName}).Errorf("failed to delete server pod. %+v", err)
-	}
-
 	// When RunOptions.Mode `parallel` then we wait after all test tasks have been run
 	if k.runOptions.Mode == config.RunModeParallel {
 		wg.Wait()
 	}
+
+	// Delete server pod
+	logger.WithFields(logrus.Fields{"pod": serverPodName}).Info("deleting server pod")
+	if err := k8sutil.PodDeleteByName(k.k8sclient, k.config.Namespace, serverPodName, k.config.Timeouts.DeleteTimeout); err != nil {
+		erro := fmt.Errorf("failed to delete server pod. %+v", err)
+		logger.WithFields(logrus.Fields{"pod": serverPodName}).Error(erro)
+		mainTask.Status.AddFailedServer(mainTask.Host, erro)
+		return nil
+	}
+
+	mainTask.Status.AddSuccessfulServer(mainTask.Host)
 
 	logger.Debug("done running tests in kubernetes for plan")
 
@@ -384,7 +406,7 @@ func (k Kubernetes) pushLogsToParser(parserInput chan<- parsers.Input, plannedTi
 
 		// Send the logs to the parser.InputChan
 		parserInput <- parsers.Input{
-			PlannedTime:    plannedTime,
+			TestStartTime:  plannedTime,
 			TestTime:       testTime,
 			Round:          round,
 			DataStream:     &podLogs,

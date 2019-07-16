@@ -37,10 +37,11 @@ const (
 
 // RunOptions options for running the tasks
 type RunOptions struct {
-	Rounds        int           `yaml:"rounds"`
-	Interval      time.Duration `yaml:"interval"`
-	Mode          string        `yaml:"mode"`
-	ParallelCount int           `yaml:"parallelCount"`
+	ContinueOnError bool          `yaml:"continueOnError"`
+	Rounds          int           `yaml:"rounds"`
+	Interval        time.Duration `yaml:"interval"`
+	Mode            string        `yaml:"mode"`
+	ParallelCount   int           `yaml:"parallelCount"`
 }
 
 // TestHosts list of clients and servers hosts for use in the test(s)

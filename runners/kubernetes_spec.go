@@ -39,8 +39,7 @@ func (k Kubernetes) getPodSpec(pName string, taskName string, task *testers.Task
 				},
 			},
 			NodeSelector: map[string]string{
-				// TODO Use official Kubernetes pkg constant
-				"kubernetes.io/hostname": task.Host.Name,
+				corev1.LabelHostname: task.Host.Name,
 			},
 			HostNetwork:   k.config.HostNetwork,
 			RestartPolicy: corev1.RestartPolicyOnFailure,

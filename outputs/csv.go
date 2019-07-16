@@ -53,7 +53,7 @@ func NewCSVOutput(cfg *config.Config, outCfg *config.Output) (Output, error) {
 		c.config.FilePath = "."
 	}
 	if c.config.NamePattern == "" {
-		c.config.NamePattern = "acntt-{{ .PlannedTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv"
+		c.config.NamePattern = "acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv"
 	}
 	return c, nil
 }

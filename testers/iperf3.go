@@ -68,7 +68,19 @@ func (ip IPerf3) Plan(env *Environment, test *config.Test) (*Plan, error) {
 
 	for i := 0; i < test.RunOptions.Rounds; i++ {
 		for _, server := range env.Hosts.Servers {
-			round := &Task{}
+			round := &Task{
+				Status: &Status{
+					SuccessfulHosts: StatusHosts{
+						Servers: map[string]int{},
+						Clients: map[string]int{},
+					},
+					FailedHosts: StatusHosts{
+						Servers: map[string]int{},
+						Clients: map[string]int{},
+					},
+					Errors: map[string][]error{},
+				},
+			}
 			// Add server host to AffectedServers list
 			if _, ok := plan.AffectedServers[server.Name]; !ok {
 				plan.AffectedServers[server.Name] = server
@@ -93,10 +105,6 @@ func (ip IPerf3) Plan(env *Environment, test *config.Test) (*Plan, error) {
 					Command: cmd,
 					Args:    args,
 					Ports:   ports,
-					Status: Status{
-						Errors:      map[string][]error{},
-						FailedHosts: []string{},
-					},
 				})
 			}
 			plan.Commands[i] = append(plan.Commands[i], round)

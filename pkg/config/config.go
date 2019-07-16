@@ -15,9 +15,9 @@ package config
 
 // Config Config object for the config file
 type Config struct {
-	Version string `yaml:"version"`
-	Runner  Runner `yaml:"runner"`
-	Tests   []Test `yaml:"tests"`
+	Version string  `yaml:"version"`
+	Runner  Runner  `yaml:"runner"`
+	Tests   []*Test `yaml:"tests"`
 }
 
 // KeyValuePair key value string pair

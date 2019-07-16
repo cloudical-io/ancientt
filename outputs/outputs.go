@@ -35,7 +35,7 @@ type Output interface {
 
 // Data structured parsed data
 type Data struct {
-	PlannedTime    time.Time
+	TestStartTime    time.Time
 	TestTime       time.Time
 	Tester         string
 	ServerHost     string
@@ -77,13 +77,13 @@ func getFilenameFromPattern(pattern string, role string, data Data, extra map[st
 	variables := struct {
 		Role        string
 		Data        Data
-		PlannedTime int64
+		TestStartTime int64
 		TestTime    int64
 		Extra       map[string]interface{}
 	}{
 		Role:        role,
 		Data:        data,
-		PlannedTime: data.PlannedTime.Unix(),
+		TestStartTime: data.TestStartTime.Unix(),
 		TestTime:    data.TestTime.Unix(),
 		Extra:       extra,
 	}

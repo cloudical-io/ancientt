@@ -26,7 +26,7 @@ var Factories = make(map[string]func(cfg *config.Config) (Runner, error))
 // Runner is the interface a runner has to implement.
 type Runner interface {
 	// GetHostsForTest return a list of hots from the Runner
-	GetHostsForTest(test config.Test) (*testers.Hosts, error)
+	GetHostsForTest(test *config.Test) (*testers.Hosts, error)
 	// Prepare run steps to prepare the Runner and / or itself to things.
 	Prepare(runOpts config.RunOptions, plan *testers.Plan) error
 	// Execute run / execute certain commands and so that are in the testers.Plan

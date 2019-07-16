@@ -13,19 +13,21 @@ runner:
     hosts:
       ignoreSchedulingDisabled: true
 tests:
-- type: iperf3
+- name: iperf3-one-rand-to-one-rand
+  type: iperf3
   outputs:
   - name: csv
     csv:
       filePath: /tmp/
-      namePattern: 'acntt-{{ .PlannedTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv'
+      namePattern: 'acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv'
 #  - name: gochart
 #    goChart:
 #      types:
 #        - single_axis
 #      filePath: /tmp
-#      namePattern: 'acntt-{{ .PlannedTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Type }}.csv'
+#      namePattern: 'acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Type }}.csv'
   runOptions:
+    continueOnError: true
     rounds: 2
     # wait 10 seconds between each round
     interval: 10s

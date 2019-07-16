@@ -48,7 +48,7 @@ func NewMockRunner(cfg *config.Config) (Runner, error) {
 }
 
 // GetHostsForTest return a mocked list of hots for the given test config
-func (m Mock) GetHostsForTest(test config.Test) (*testers.Hosts, error) {
+func (m Mock) GetHostsForTest(test *config.Test) (*testers.Hosts, error) {
 	// Pre create the structure to return
 	hosts := &testers.Hosts{
 		Clients: map[string]*testers.Host{},

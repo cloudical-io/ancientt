@@ -56,7 +56,7 @@ type IPAddresses struct {
 
 // Plan contains the information needed to execute the plan
 type Plan struct {
-	PlannedTime     time.Time         `json:"plannedTime"`
+	TestStartTime   time.Time         `json:"plannedTime"`
 	AffectedServers map[string]*Host  `json:"affectedServers"`
 	Commands        [][]*Task         `json:"commands"`
 	Tester          string            `json:"tester"`
@@ -83,7 +83,7 @@ func (p Plan) PrettyPrint() {
 			fmt.Printf("----> RUN %s %s (Additional info: %+v; %+v)\n", command.Command, command.Args, command.Ports, command.Sleep)
 			for _, task := range command.SubTasks {
 				fmt.Printf("-----> BEGIN Client %s\n", task.Host.Name)
-				fmt.Printf("------> RUN %s %s (Additional info: %+v; %+v)\n", task.Command, task.Args, task.Ports, task.Sleep)
+				fmt.Printf("------> RUN %s %s (Additional info: %+v)\n", task.Command, task.Args, task.Ports)
 				fmt.Printf("=====> END Client %s\n", task.Host.Name)
 			}
 			fmt.Printf("===> END Server %s\n", command.Host.Name)
@@ -100,8 +100,8 @@ type Task struct {
 	Args     []string      `json:"args"`
 	Sleep    time.Duration `json:"sleep"`
 	Ports    Ports         `json:"ports"`
-	SubTasks []*Task       `json:"tasks"`
-	Status   Status        `yaml:"status"`
+	SubTasks []*Task       `json:"subTasks"`
+	Status   *Status       `yaml:"status"`
 }
 
 // Ports TCP and UDP ports list
@@ -112,6 +112,63 @@ type Ports struct {
 
 // Status status info for a task
 type Status struct {
-	FailedHosts []string           `json:"failedHosts"`
-	Errors      map[string][]error `json:"errors"`
+	SuccessfulHosts StatusHosts        `json:"successfulHosts"`
+	FailedHosts     StatusHosts        `json:"failedHosts"`
+	Errors          map[string][]error `json:"errors"`
+}
+
+// StatusHosts status per servers and clients list with counter
+type StatusHosts struct {
+	Servers map[string]int `json:"servers"`
+	Clients map[string]int `json:"clients"`
+}
+
+// AddFailedServer add a server host that failed with error to the Status list
+func (st *Status) AddFailedServer(host *Host, err error) {
+	if _, ok := st.Errors[host.Name]; !ok {
+		st.Errors[host.Name] = []error{}
+	}
+	st.Errors[host.Name] = append(st.Errors[host.Name], err)
+
+	// Increase failed host counter
+	if _, ok := st.FailedHosts.Servers[host.Name]; !ok {
+		st.FailedHosts.Servers[host.Name] = 1
+	} else {
+		st.FailedHosts.Servers[host.Name]++
+	}
+}
+
+// AddFailedClient add a client host that failed with error to the Status list
+func (st *Status) AddFailedClient(host *Host, err error) {
+	if _, ok := st.Errors[host.Name]; !ok {
+		st.Errors[host.Name] = []error{}
+	}
+	st.Errors[host.Name] = append(st.Errors[host.Name], err)
+
+	// Increase failed host counter
+	if _, ok := st.FailedHosts.Clients[host.Name]; !ok {
+		st.FailedHosts.Clients[host.Name] = 1
+	} else {
+		st.FailedHosts.Clients[host.Name]++
+	}
+}
+
+// AddSuccessfulServer add a successful server host to the list
+func (st *Status) AddSuccessfulServer(host *Host) {
+	// Increase successful host counter
+	if _, ok := st.SuccessfulHosts.Servers[host.Name]; !ok {
+		st.SuccessfulHosts.Servers[host.Name] = 1
+	} else {
+		st.SuccessfulHosts.Servers[host.Name]++
+	}
+}
+
+// AddSuccessfulClient add a successful client host to the list
+func (st *Status) AddSuccessfulClient(host *Host) {
+	// Increase successful host counter
+	if _, ok := st.SuccessfulHosts.Clients[host.Name]; !ok {
+		st.SuccessfulHosts.Clients[host.Name] = 1
+	} else {
+		st.SuccessfulHosts.Clients[host.Name]++
+	}
 }

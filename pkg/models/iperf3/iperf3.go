@@ -32,7 +32,7 @@ type Start struct {
 	SockBufsize   int64            `json:"sock_bufsize"`
 	SndbufActual  int64            `json:"sndbuf_actual"`
 	RcvbufActual  int64            `json:"rcvbuf_actual"`
-	PlannedTime   PlannedTime      `json:"test_start"`
+	TestStart     TestStart        `json:"test_start"`
 }
 
 // ConnectedEntry
@@ -56,8 +56,8 @@ type ConnectingTo struct {
 	Port int32  `json:"port"`
 }
 
-// PlannedTime
-type PlannedTime struct {
+// TestStart
+type TestStart struct {
 	Protocol   string `json:"protocol"`
 	NumStreams int64  `json:"num_streams"`
 	BlkSize    int64  `json:"blksize"`
