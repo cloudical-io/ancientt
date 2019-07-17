@@ -114,15 +114,17 @@ func run(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// TODO Take care of these "low" level errors
-	var testErrors []error
-
 	for i, test := range cfg.Tests {
-		log.Infof("starting test %d of %d", i+1, len(cfg.Tests))
+		log.WithFields(logrus.Fields{"runner": runnerName}).Infof("starting test %d of %d", i+1, len(cfg.Tests))
 
-		tester, parser, outputsAssembled, err := prepare(test)
+		logger, tester, parser, outputsAssembled, err := prepare(test)
+		logger.WithFields(logrus.Fields{"runner": runnerName})
 		if err != nil {
-			return err
+			if !test.RunOptions.ContinueOnError {
+				return err
+			}
+			logger.Warnf("skippinmg test %d of %d due to error in initial prepare step", i+1, len(cfg.Tests))
+			continue
 		}
 
 		// Get hosts for the test
@@ -156,7 +158,7 @@ func run(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		log.WithFields(logrus.Fields{"tester": test.Type}).Info("preparing test")
+		logger.Info("preparing test")
 
 		// Prepare the runner for the plan
 		if err = runner.Prepare(test.RunOptions, plan); err != nil {
@@ -173,8 +175,7 @@ func run(cmd *cobra.Command, args []string) error {
 		go func() {
 			select {
 			case erro := <-errCh:
-				testErrors = append(testErrors, erro)
-				log.Error(erro.Error())
+				logger.Error(erro.Error())
 			case <-doneCh:
 				return
 			}
@@ -186,7 +187,6 @@ func run(cmd *cobra.Command, args []string) error {
 			// Close dataCh as there won't be anything else coming through
 			defer close(dataCh)
 			if err := parser.Parse(doneCh, inCh, dataCh); err != nil {
-				log.Error(err)
 				errCh <- err
 				return
 			}
@@ -197,29 +197,27 @@ func run(cmd *cobra.Command, args []string) error {
 		go func() {
 			defer wg.Done()
 			if err := doOutputs(outputsAssembled, test, doneCh, dataCh); err != nil {
-				log.Error(err)
 				errCh <- err
 				return
 			}
 		}()
 
-		log.WithFields(logrus.Fields{"tester": test.Type}).Info("executing test")
+		logger.Info("executing test")
 
 		// Execute the plan
 		if err := runner.Execute(plan, inCh); err != nil {
-			log.Error(err)
 			errCh <- err
 		}
-		log.WithFields(logrus.Fields{"runner": runnerName}).Debug("runner execute returned, closing inCh and wg.Wait()")
+		logger.Debug("runner execute returned, closing inCh and wg.Wait()")
 
 		close(inCh)
 
 		if err := checkForErrors(plan); err != nil {
+			logger.Error(err)
 			if !test.RunOptions.ContinueOnError {
-				log.Error(err)
 				return err
 			}
-			log.Warnf("continuing after err. %+v", err)
+			logger.Warnf("continue on error run option given for test, continuing")
 		}
 
 		wg.Wait()
@@ -261,7 +259,7 @@ func askUserForYes() error {
 	return nil
 }
 
-func prepare(test *config.Test) (testers.Tester, parsers.Parser, map[string]outputs.Output, error) {
+func prepare(test *config.Test) (*log.Entry, testers.Tester, parsers.Parser, map[string]outputs.Output, error) {
 	var tester testers.Tester
 	var parser parsers.Parser
 	outputsAssembled := map[string]outputs.Output{}
@@ -270,20 +268,20 @@ func prepare(test *config.Test) (testers.Tester, parsers.Parser, map[string]outp
 	testerName := strings.ToLower(test.Type)
 	testerNewFunc, ok := testers.Factories[testerName]
 	if !ok {
-		return nil, nil, nil, fmt.Errorf("tester with name %s not found", testerName)
+		return nil, nil, nil, nil, fmt.Errorf("tester with name %s not found", testerName)
 	}
 	var err error
 	if tester, err = testerNewFunc(cfg, test); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	// Get parser for the tester output
 	parserNewFunc, ok := parsers.Factories[testerName]
 	if !ok {
-		return nil, nil, nil, fmt.Errorf("parser with name %s not found", testerName)
+		return nil, nil, nil, nil, fmt.Errorf("parser with name %s not found", testerName)
 	}
 	if parser, err = parserNewFunc(cfg, test); err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	for _, outputItem := range test.Outputs {
@@ -291,16 +289,18 @@ func prepare(test *config.Test) (testers.Tester, parsers.Parser, map[string]outp
 
 		outputNewFunc, ok := outputs.Factories[outputName]
 		if !ok {
-			return nil, nil, nil, fmt.Errorf("output with name %s not found", outputName)
+			return nil, nil, nil, nil, fmt.Errorf("output with name %s not found", outputName)
 		}
 		var err error
 		outputsAssembled[outputName], err = outputNewFunc(cfg, &outputItem)
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, nil, nil, nil, err
 		}
 	}
 
-	return tester, parser, outputsAssembled, err
+	logger := log.WithFields(logrus.Fields{"tester": testerName, "parser": testerName})
+
+	return logger, tester, parser, outputsAssembled, err
 }
 
 func doOutputs(outputsAssembled map[string]outputs.Output, test *config.Test, doneCh chan struct{}, dataCh chan outputs.Data) error {
@@ -329,7 +329,10 @@ func checkForErrors(plan *testers.Plan) error {
 
 	for _, command := range plan.Commands {
 		for _, task := range command {
-			fmt.Printf("TEST: %+v\n", task.Status)
+			if task.Status == nil || task.Sleep != 0 {
+				log.Debug("task status is empty or is sleep task, continuing")
+				continue
+			}
 			// FailedHosts
 			if len(task.Status.FailedHosts.Servers) > 0 {
 				errorOccured = true
@@ -337,10 +340,9 @@ func checkForErrors(plan *testers.Plan) error {
 				for host, count := range task.Status.FailedHosts.Servers {
 					fmt.Printf("%s - %d\n", host, count)
 					for _, err := range task.Status.Errors[host] {
-						fmt.Print(err)
+						fmt.Println(err)
 					}
 				}
-				fmt.Println("=> Failed Server Hosts")
 			}
 			if len(task.Status.FailedHosts.Clients) > 0 {
 				errorOccured = true
@@ -348,28 +350,23 @@ func checkForErrors(plan *testers.Plan) error {
 				for host, count := range task.Status.FailedHosts.Clients {
 					fmt.Printf("%s - %d\n", host, count)
 					for _, err := range task.Status.Errors[host] {
-						fmt.Print(err)
+						fmt.Println(err)
 					}
 				}
-				fmt.Println("=> Failed Client Hosts")
 			}
 
 			// SuccessfulHosts
 			if len(task.Status.SuccessfulHosts.Servers) > 0 {
-				errorOccured = true
 				fmt.Println("-> Successful Server Hosts")
 				for host, count := range task.Status.SuccessfulHosts.Servers {
 					fmt.Printf("%s - %d\n", host, count)
 				}
-				fmt.Println("=> Successful Server Hosts")
 			}
 			if len(task.Status.SuccessfulHosts.Clients) > 0 {
-				errorOccured = true
 				fmt.Println("-> Successful Client Hosts")
 				for host, count := range task.Status.SuccessfulHosts.Clients {
 					fmt.Printf("%s - %d\n", host, count)
 				}
-				fmt.Println("=> Successful Client Hosts")
 			}
 		}
 	}

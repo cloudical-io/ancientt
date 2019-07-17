@@ -19,6 +19,7 @@ import (
 
 // Test Config options for each Test
 type Test struct {
+	Name       string     `yaml:"name"`
 	Type       string     `yaml:"type"`
 	RunOptions RunOptions `yaml:"runOptions"`
 	Outputs    []Output   `yaml:"outputs"`

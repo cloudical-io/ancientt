@@ -28,7 +28,7 @@ tests:
 #      namePattern: 'acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Type }}.csv'
   runOptions:
     continueOnError: true
-    rounds: 2
+    rounds: 1
     # wait 10 seconds between each round
     interval: 10s
     mode: "sequential"

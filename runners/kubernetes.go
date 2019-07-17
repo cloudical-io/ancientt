@@ -381,7 +381,7 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, planne
 
 	mainTask.Status.AddSuccessfulServer(mainTask.Host)
 
-	logger.Debug("done running tests in kubernetes for plan")
+	logger.Debug("done running tasks for test in kubernetes for plan")
 
 	return nil
 }
