@@ -18,7 +18,7 @@ tests:
   outputs:
   - name: csv
     csv:
-      filePath: /tmp/
+      filePath: /tmp
       namePattern: 'acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv'
 #  - name: gochart
 #    goChart:
@@ -26,6 +26,15 @@ tests:
 #        - single_axis
 #      filePath: /tmp
 #      namePattern: 'acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Type }}.csv'
+#  - name: sqlite
+#    sqlite:
+#      filePath: /tmp
+#      namePattern: 'acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.sqlite3'
+#      tableNamePattern: 'acntt{{ .TestStartTime }}{{ .Data.Tester }}{{ .Data.ServerHost }}{{ .Data.ClientHost }}'
+#  - name: mysql
+#    mysql:
+#      dsn: "username:password@127.0.0.1/mydb"
+#      tableNamePattern: 'acntt{{ .TestStartTime }}{{ .Data.Tester }}{{ .Data.ServerHost }}{{ .Data.ClientHost }}'
   runOptions:
     continueOnError: true
     rounds: 1

@@ -34,6 +34,5 @@ func CastToString(val interface{}) string {
 	} else if cVal, ok := val.(int64); ok {
 		return fmt.Sprintf("%d", cVal)
 	}
-
 	return fmt.Sprintf("%v", val)
 }

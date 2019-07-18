@@ -44,23 +44,23 @@ type Data struct {
 	Data           DataFormat
 }
 
-// DataFormat
+// DataFormat DataFormat interface that must be implemented by data formats, e.g., Table.
 type DataFormat interface {
 }
 
-// Table
+// Table Data format for data in Table form
 type Table struct {
 	DataFormat
 	Headers []Column
 	Columns []Column
 }
 
-// Column
+// Column Column of the Table data format
 type Column struct {
 	Rows []Row
 }
 
-// Row
+// Row Row of the Table data format
 type Row struct {
 	Value interface{}
 }

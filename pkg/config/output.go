@@ -20,6 +20,8 @@ type Output struct {
 	GoChart  *GoChart  `yaml:"goChart"`
 	Dump     *Dump     `yaml:"dump"`
 	Excelize *Excelize `yaml:"excelize"`
+	SQLite   *SQLite   `yaml:"sqlite"`
+	MySQL    *MySQL    `yaml:"mysql"`
 }
 
 // CSV CSV Output config options
@@ -45,4 +47,17 @@ type Dump struct {
 type Excelize struct {
 	FilePath    string `yaml:"filePath"`
 	NamePattern string `yaml:"namePattern"`
+}
+
+// SQLite SQLite Output config options
+type SQLite struct {
+	FilePath         string `yaml:"filePath"`
+	NamePattern      string `yaml:"namePattern"`
+	TableNamePattern string `yaml:"tableNamePattern"`
+}
+
+// MySQL MySQL Output config options
+type MySQL struct {
+	DSN              string `yaml:"dsn"`
+	TableNamePattern string `yaml:"tableNamePattern"`
 }

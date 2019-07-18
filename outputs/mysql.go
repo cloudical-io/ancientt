@@ -1,0 +1,234 @@
+/*
+Copyright 2019 Cloudical Deutschland GmbH. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package outputs
+
+import (
+	"fmt"
+
+	"github.com/cloudical-io/acntt/pkg/config"
+	"github.com/cloudical-io/acntt/pkg/util"
+	"github.com/jmoiron/sqlx"
+	// Include MySQL driver for mysql output
+	_ "github.com/go-sql-driver/mysql"
+
+	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
+)
+
+// NameMySQL MySQL output name
+const (
+	NameMySQL      = "mysql"
+	MySQLIntType   = "BIGINT"
+	MySQLFloatType = "FLOAT"
+	MySQLBoolType  = "BOOLEAN"
+)
+
+func init() {
+	Factories[NameMySQL] = NewMySQLOutput
+}
+
+// MySQL MySQL tester structure
+type MySQL struct {
+	Output
+	logger *log.Entry
+	config *config.MySQL
+	dbCons map[string]*sqlx.DB
+}
+
+const (
+	mysqlDefaultTableNamePattern = "acntt{{ .TestStartTime }}{{ .Data.Tester }}{{ .Data.ServerHost }}{{ .Data.ClientHost }}"
+
+	mysqlCheckIfTableExistsQuery = "SELECT 1 FROM `%s` LIMIT 1;"
+	mysqlCreateTableBeginQuery   = "CREATE TABLE IF NOT EXISTS `%s` (\n"
+	mysqlCreateTableEndQuery     = `);`
+	mysqlInsertDataBeginQuery    = "INSERT INTO %s VALUES ("
+	mysqlInsertDataEndQuery      = `);`
+)
+
+// NewMySQLOutput return a new MySQL tester instance
+func NewMySQLOutput(cfg *config.Config, outCfg *config.Output) (Output, error) {
+	if outCfg == nil {
+		outCfg = &config.Output{
+			MySQL: &config.MySQL{},
+		}
+	}
+	m := MySQL{
+		logger: log.WithFields(logrus.Fields{"output": NameMySQL}),
+		config: outCfg.MySQL,
+		dbCons: map[string]*sqlx.DB{},
+	}
+	if m.config.DSN == "" {
+		return nil, fmt.Errorf("no DSN for mysql connection given")
+	}
+	if m.config.TableNamePattern == "" {
+		m.config.TableNamePattern = mysqlDefaultTableNamePattern
+	}
+
+	return m, nil
+}
+
+// Do make MySQL outputs
+func (m MySQL) Do(data Data) error {
+	dataTable, ok := data.Data.(Table)
+	if !ok {
+		return fmt.Errorf("data not in table for mysql output")
+	}
+
+	tableName, err := getFilenameFromPattern(m.config.TableNamePattern, "", data, nil)
+	if err != nil {
+		return err
+	}
+
+	dbPath := fmt.Sprintf("%s-%s", m.config.DSN, tableName)
+
+	db, ok := m.dbCons[dbPath]
+	if !ok {
+		db, err = sqlx.Connect("mysql", dbPath)
+		if err != nil {
+			return err
+		}
+
+		m.dbCons[dbPath] = db
+	}
+
+	if err := m.createTable(db, dataTable, tableName); err != nil {
+		return err
+	}
+
+	// Iterate over data columns
+	for _, column := range dataTable.Columns {
+		dataColumn := []interface{}{}
+		for _, row := range column.Rows {
+			dataColumn = append(dataColumn, row.Value)
+		}
+		if len(dataColumn) == 0 {
+			continue
+		}
+
+		query := m.buildInsertQuery(tableName, len(dataColumn))
+		if _, err := db.Exec(query, dataColumn...); err != nil {
+			return fmt.Errorf("couldn't insert data in mysql database. %+v", err)
+		}
+	}
+
+	return nil
+}
+
+func (m MySQL) createTable(db *sqlx.DB, dataTable Table, tableName string) error {
+	// Iterate over headers
+	headerColumns := []string{}
+	for _, column := range dataTable.Headers {
+		for _, row := range column.Rows {
+			headerColumns = append(headerColumns, util.CastToString(row.Value))
+		}
+		if len(headerColumns) == 0 {
+			continue
+		}
+
+	}
+
+	// Iterate over data columns to get the first row of data.
+	// The first row of data is needed to set the types on the to be created MySQL table
+	dataColumn := []interface{}{}
+	for _, column := range dataTable.Columns {
+		for _, row := range column.Rows {
+			dataColumn = append(dataColumn, row.Value)
+		}
+		if len(dataColumn) == 0 {
+			continue
+		}
+		// Break after first round as we only need the first row!
+		break
+	}
+
+	// The error should not return an error when the table exists, try to create the database
+	if _, err := db.Exec(fmt.Sprintf(mysqlCheckIfTableExistsQuery, tableName)); err != nil {
+		// Start transaction, exec the CREATE TABLE query and commit the result
+		tx, err := db.Begin()
+		if err != nil {
+			return fmt.Errorf("couldn't begin transaction in mysql database. %+v", err)
+		}
+		tx.Exec(m.buildCreateTableQuery(tableName, headerColumns, dataColumn))
+		if err := tx.Commit(); err != nil {
+			return fmt.Errorf("couldn't create table in mysql database. %+v", err)
+		}
+	}
+
+	return nil
+}
+
+func (m MySQL) buildCreateTableQuery(tableName string, columns []string, firstRow []interface{}) string {
+	query := fmt.Sprintf(mysqlCreateTableBeginQuery, tableName)
+
+	for i, c := range columns {
+		cType := "TEXT"
+
+		if len(firstRow) >= i+1 {
+			switch firstRow[i].(type) {
+			case bool:
+				cType = MySQLBoolType
+			case float32:
+				cType = MySQLFloatType
+			case float64:
+				cType = MySQLFloatType
+			case int:
+				cType = MySQLIntType
+			case int8:
+				cType = MySQLIntType
+			case int16:
+				cType = MySQLIntType
+			case int32:
+				cType = MySQLIntType
+			case int64:
+				cType = MySQLIntType
+			}
+		}
+		query += fmt.Sprintf("    `%s` %s", c, cType)
+		if len(columns) != i+1 {
+			query += ","
+		}
+		query += "\n"
+	}
+
+	query += mysqlCreateTableEndQuery
+
+	return query
+}
+
+func (m MySQL) buildInsertQuery(tableName string, count int) string {
+	query := fmt.Sprintf(mysqlInsertDataBeginQuery, tableName)
+
+	// Generate the placeholder `$1` and so on
+	for i := 1; i <= count; i++ {
+		query += fmt.Sprintf("$%d", i)
+		if count >= i+1 {
+			query += ", "
+		}
+	}
+
+	query += mysqlInsertDataEndQuery
+	return query
+}
+
+// Close closes all MySQL connections
+func (m MySQL) Close() error {
+	for name, db := range m.dbCons {
+		m.logger.WithFields(logrus.Fields{"filepath": name}).Debug("closing db connection")
+		if err := db.Close(); err != nil {
+			m.logger.WithFields(logrus.Fields{"filepath": name}).Errorf("error closing db connection. %+v", err)
+		}
+	}
+
+	return nil
+}
