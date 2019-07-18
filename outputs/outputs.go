@@ -35,7 +35,7 @@ type Output interface {
 
 // Data structured parsed data
 type Data struct {
-	TestStartTime    time.Time
+	TestStartTime  time.Time
 	TestTime       time.Time
 	Tester         string
 	ServerHost     string
@@ -65,8 +65,6 @@ type Row struct {
 	Value interface{}
 }
 
-// TODO Add more ways to transmit data from parsers.Parser.Parse() func to outputs.Output.Do() func
-
 // getFilenameFromPattern
 func getFilenameFromPattern(pattern string, role string, data Data, extra map[string]interface{}) (string, error) {
 	t, err := template.New("main").Parse(pattern)
@@ -75,17 +73,17 @@ func getFilenameFromPattern(pattern string, role string, data Data, extra map[st
 	}
 
 	variables := struct {
-		Role        string
-		Data        Data
+		Role          string
+		Data          Data
 		TestStartTime int64
-		TestTime    int64
-		Extra       map[string]interface{}
+		TestTime      int64
+		Extra         map[string]interface{}
 	}{
-		Role:        role,
-		Data:        data,
+		Role:          role,
+		Data:          data,
 		TestStartTime: data.TestStartTime.Unix(),
-		TestTime:    data.TestTime.Unix(),
-		Extra:       extra,
+		TestTime:      data.TestTime.Unix(),
+		Extra:         extra,
 	}
 
 	var out bytes.Buffer

@@ -30,8 +30,6 @@ type Variables struct {
 func Template(task *testers.Task, variables Variables) error {
 	templatedArgs := []string{}
 
-	// TODO take care of what variables to give because,
-	// e.g., hosts with or without IPv6 must only get IPv4 addresses
 	var err error
 	task.Command, err = templateString(task.Command, variables)
 	if err != nil {

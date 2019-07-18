@@ -243,8 +243,6 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, planne
 	serverPodName := util.GetPNameFromTask(round, mainTask, util.PNameRoleServer)
 
 	// Create initial cmdtemplate.Variables
-	// TODO the port does not need to be mapped in Kubernetes case, but for other runners (e.g., Ansible) need to map the port
-	// Find a way to do so, in a good way.
 	templateVars := cmdtemplate.Variables{
 		ServerPort: 5601,
 	}
