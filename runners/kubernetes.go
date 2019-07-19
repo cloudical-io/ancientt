@@ -80,6 +80,7 @@ func NewKubernetesRunner(cfg *config.Config) (Runner, error) {
 	if k8sConfig.Hosts == nil {
 		k8sConfig.Hosts = &config.KubernetesHosts{
 			IgnoreSchedulingDisabled: true,
+			Tolerations:              []corev1.Toleration{},
 		}
 	}
 
@@ -154,11 +155,16 @@ func (k Kubernetes) k8sNodesToHosts() ([]*testers.Host, error) {
 	// Quick conversion from a Kubernetes CoreV1 Nodes object to testers.Host
 	for _, node := range nodes.Items {
 		// Check if node is unschedulable
-		// TODO Add checks for taints (e.g., https://github.com/rook/rook/blob/master/pkg/operator/k8sutil/node.go)
 		if k.config.Hosts.IgnoreSchedulingDisabled && node.Spec.Unschedulable {
 			k.logger.WithFields(logrus.Fields{"node": node.ObjectMeta.Name}).Debug("skipping unschedulable node")
 			continue
 		}
+
+		// Check if the taints on the node match the given tolerations
+		if !k8sutil.NodeIsTolerable(node, k.config.Hosts.Tolerations) {
+			continue
+		}
+
 		hosts = append(hosts, &testers.Host{
 			Labels: node.ObjectMeta.Labels,
 			Name:   node.ObjectMeta.Name,

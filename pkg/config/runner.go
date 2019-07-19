@@ -13,6 +13,10 @@ limitations under the License.
 
 package config
 
+import (
+	corev1 "k8s.io/api/core/v1"
+)
+
 // Runner structure with all available runners config options
 type Runner struct {
 	Name       string            `yaml:"name"`
@@ -40,7 +44,8 @@ type KubernetesTimeouts struct {
 
 // KubernetesHosts hosts selection options for Kubernetes
 type KubernetesHosts struct {
-	IgnoreSchedulingDisabled bool `yaml:"ignoreSchedulingDisabled"`
+	IgnoreSchedulingDisabled bool                `yaml:"ignoreSchedulingDisabled"`
+	Tolerations              []corev1.Toleration `yaml:"tolerations"`
 }
 
 // RunnerMock Mock Runner config options (here for good measure)

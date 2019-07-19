@@ -12,6 +12,7 @@ runner:
       succeedTimeout: 60
     hosts:
       ignoreSchedulingDisabled: true
+      tolerations: []
 tests:
 - name: iperf3-one-rand-to-one-rand
   type: iperf3
