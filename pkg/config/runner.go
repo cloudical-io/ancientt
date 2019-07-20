@@ -38,7 +38,7 @@ type KubernetesTimeouts struct {
 	SucceedTimeout int `yaml:"succeedTimeout"`
 }
 
-// KubernetesHosts
+// KubernetesHosts hosts selection options for Kubernetes
 type KubernetesHosts struct {
 	IgnoreSchedulingDisabled bool `yaml:"ignoreSchedulingDisabled"`
 }
