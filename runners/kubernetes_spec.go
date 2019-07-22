@@ -43,6 +43,7 @@ func (k Kubernetes) getPodSpec(pName string, taskName string, task *testers.Task
 			},
 			HostNetwork:   k.config.HostNetwork,
 			RestartPolicy: corev1.RestartPolicyOnFailure,
+			Tolerations:   k.config.Hosts.Tolerations,
 		},
 	}
 }
