@@ -65,8 +65,8 @@ type Row struct {
 	Value interface{}
 }
 
-// getFilenameFromPattern
-func getFilenameFromPattern(pattern string, role string, data Data, extra map[string]interface{}) (string, error) {
+// GetFilenameFromPattern get filename from given pattern, data and extra data for templating.
+func GetFilenameFromPattern(pattern string, role string, data Data, extra map[string]interface{}) (string, error) {
 	t, err := template.New("main").Parse(pattern)
 	if err != nil {
 		return "", err

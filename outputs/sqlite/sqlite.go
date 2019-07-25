@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package outputs
+package sqlite
 
 import (
 	"fmt"
@@ -24,6 +24,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/sirupsen/logrus"
+	"github.com/cloudical-io/acntt/outputs"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -35,29 +36,29 @@ const (
 	SQLiteFloatType = "FLOAT"
 	SQLiteBoolType  = "BOOLEAN"
 
-	sqliteDefaultNamePattern      = "acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.sqlite3"
-	sqliteDefaultTableNamePattern = "acntt{{ .TestStartTime }}{{ .Data.Tester }}{{ .Data.ServerHost }}{{ .Data.ClientHost }}"
+	defaultNamePattern      = "acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.sqlite3"
+	defaultTableNamePattern = "acntt{{ .TestStartTime }}{{ .Data.Tester }}{{ .Data.ServerHost }}{{ .Data.ClientHost }}"
 
-	sqliteCreateTableBeginQuery = "CREATE TABLE IF NOT EXISTS `%s` (\n"
-	sqliteCreateTableEndQuery   = `);`
-	sqliteInsertDataBeginQuery  = "INSERT INTO %s VALUES ("
-	sqliteInsertDataEndQuery    = `);`
+	createTableBeginQuery = "CREATE TABLE IF NOT EXISTS `%s` (\n"
+	createTableEndQuery   = `);`
+	insertDataBeginQuery  = "INSERT INTO %s VALUES ("
+	insertDataEndQuery    = `);`
 )
 
 func init() {
-	Factories[NameSQLite] = NewSQLiteOutput
+	outputs.Factories[NameSQLite] = NewSQLiteOutput
 }
 
 // SQLite SQLite tester structure
 type SQLite struct {
-	Output
+	outputs.Output
 	logger *log.Entry
 	config *config.SQLite
 	dbCons map[string]*sqlx.DB
 }
 
 // NewSQLiteOutput return a new SQLite tester instance
-func NewSQLiteOutput(cfg *config.Config, outCfg *config.Output) (Output, error) {
+func NewSQLiteOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output, error) {
 	if outCfg == nil {
 		outCfg = &config.Output{
 			SQLite: &config.SQLite{},
@@ -72,28 +73,28 @@ func NewSQLiteOutput(cfg *config.Config, outCfg *config.Output) (Output, error) 
 		s.config.FilePath = "."
 	}
 	if s.config.NamePattern == "" {
-		s.config.NamePattern = sqliteDefaultNamePattern
+		s.config.NamePattern = defaultNamePattern
 	}
 	if s.config.TableNamePattern == "" {
-		s.config.TableNamePattern = sqliteDefaultTableNamePattern
+		s.config.TableNamePattern = defaultTableNamePattern
 	}
 
 	return s, nil
 }
 
 // Do make SQLite outputs
-func (s SQLite) Do(data Data) error {
-	dataTable, ok := data.Data.(Table)
+func (s SQLite) Do(data outputs.Data) error {
+	dataTable, ok := data.Data.(outputs.Table)
 	if !ok {
 		return fmt.Errorf("data not in table for sqlite output")
 	}
 
-	filename, err := getFilenameFromPattern(s.config.NamePattern, "", data, nil)
+	filename, err := outputs.GetFilenameFromPattern(s.config.NamePattern, "", data, nil)
 	if err != nil {
 		return err
 	}
 
-	tableName, err := getFilenameFromPattern(s.config.TableNamePattern, "", data, nil)
+	tableName, err := outputs.GetFilenameFromPattern(s.config.TableNamePattern, "", data, nil)
 	if err != nil {
 		return err
 	}
@@ -169,7 +170,7 @@ func (s SQLite) Do(data Data) error {
 }
 
 func (s SQLite) buildCreateTableQuery(tableName string, columns []string, firstRow []interface{}) string {
-	query := fmt.Sprintf(sqliteCreateTableBeginQuery, tableName)
+	query := fmt.Sprintf(createTableBeginQuery, tableName)
 
 	for i, c := range columns {
 		cType := "TEXT"
@@ -201,13 +202,13 @@ func (s SQLite) buildCreateTableQuery(tableName string, columns []string, firstR
 		query += "\n"
 	}
 
-	query += sqliteCreateTableEndQuery
+	query += createTableEndQuery
 
 	return query
 }
 
 func (s SQLite) buildInsertQuery(tableName string, count int) string {
-	query := fmt.Sprintf(sqliteInsertDataBeginQuery, tableName)
+	query := fmt.Sprintf(insertDataBeginQuery, tableName)
 
 	// Generate the placeholder `$1` and so on
 	for i := 1; i <= count; i++ {
@@ -217,7 +218,7 @@ func (s SQLite) buildInsertQuery(tableName string, count int) string {
 		}
 	}
 
-	query += sqliteInsertDataEndQuery
+	query += insertDataEndQuery
 	return query
 }
 

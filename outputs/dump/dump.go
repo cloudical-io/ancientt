@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package outputs
+package dump
 
 import (
 	"fmt"
@@ -21,6 +21,7 @@ import (
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/k0kubun/pp"
 	"github.com/sirupsen/logrus"
+	"github.com/cloudical-io/acntt/outputs"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -28,19 +29,19 @@ import (
 const NameDump = "dump"
 
 func init() {
-	Factories[NameDump] = NewDumpOutput
+	outputs.Factories[NameDump] = NewDumpOutput
 }
 
 // Dump Dump tester structure
 type Dump struct {
-	Output
+	outputs.Output
 	logger *log.Entry
 	config *config.Dump
 	files  map[string]*os.File
 }
 
 // NewDumpOutput return a new Dump tester instance
-func NewDumpOutput(cfg *config.Config, outCfg *config.Output) (Output, error) {
+func NewDumpOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output, error) {
 	dump := Dump{
 		logger: log.WithFields(logrus.Fields{"output": NameDump}),
 		config: outCfg.Dump,
@@ -56,13 +57,13 @@ func NewDumpOutput(cfg *config.Config, outCfg *config.Output) (Output, error) {
 }
 
 // Do make Dump outputs
-func (d Dump) Do(data Data) error {
-	dataTable, ok := data.Data.(Table)
+func (d Dump) Do(data outputs.Data) error {
+	dataTable, ok := data.Data.(outputs.Table)
 	if !ok {
 		return fmt.Errorf("data not in table for dump output")
 	}
 
-	filename, err := getFilenameFromPattern(d.config.NamePattern, "", data, nil)
+	filename, err := outputs.GetFilenameFromPattern(d.config.NamePattern, "", data, nil)
 	if err != nil {
 		return err
 	}

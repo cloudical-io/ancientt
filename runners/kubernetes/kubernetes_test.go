@@ -11,17 +11,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package runners
+package kubernetes
 
-import (
-	"fmt"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-)
-
-func TestGenerateMockServers(t *testing.T) {
-	mockServers := generateMockServers()
-	assert.Equal(t, 10, len(mockServers))
-	assert.Equal(t, fmt.Sprintf(mockServerNamePattern, 5), mockServers[5].Name)
-}
+// TODO add tests

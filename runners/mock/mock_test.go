@@ -11,35 +11,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package testers
+package mock
 
 import (
+	"fmt"
 	"testing"
 
-	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func TestIPerf3Plan(t *testing.T) {
-	tester, err := NewIPerf3Tester(nil, nil)
-	assert.Nil(t, err)
-	assert.NotNil(t, tester)
-
-	env := &Environment{
-		Hosts: &Hosts{
-			Clients: map[string]*Host{},
-			Servers: map[string]*Host{},
-		},
-	}
-	test := &config.Test{
-		Type: "iperf3",
-	}
-
-	plan, err := tester.Plan(env, test)
-	assert.Nil(t, err)
-	require.NotNil(t, plan)
-	assert.Equal(t, "iperf3", plan.Tester)
-	assert.Equal(t, 0, len(plan.AffectedServers))
-	assert.Equal(t, 0, len(plan.Commands))
+func TestGenerateMockServers(t *testing.T) {
+	mockServers := generateMockServers()
+	assert.Equal(t, 10, len(mockServers))
+	assert.Equal(t, fmt.Sprintf(mockServerNamePattern, 5), mockServers[5].Name)
 }

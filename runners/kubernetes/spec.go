@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package runners
+package kubernetes
 
 import (
 	"github.com/cloudical-io/acntt/pkg/k8sutil"

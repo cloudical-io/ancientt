@@ -11,12 +11,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package runners
+package mock
 
 import (
 	"fmt"
 
 	"github.com/cloudical-io/acntt/parsers"
+	"github.com/cloudical-io/acntt/runners"
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/cloudical-io/acntt/pkg/util"
 	"github.com/cloudical-io/acntt/testers"
@@ -31,17 +32,17 @@ const (
 )
 
 func init() {
-	Factories[NameMock] = NewMockRunner
+	runners.Factories[NameMock] = NewMockRunner
 }
 
 // Mock Mock Runner struct
 type Mock struct {
-	Runner
+	runners.Runner
 	logger *log.Entry
 }
 
 // NewMockRunner returns a new Mock Runner
-func NewMockRunner(cfg *config.Config) (Runner, error) {
+func NewMockRunner(cfg *config.Config) (runners.Runner, error) {
 	return Mock{
 		logger: log.WithFields(logrus.Fields{"runner": NameMock}),
 	}, nil

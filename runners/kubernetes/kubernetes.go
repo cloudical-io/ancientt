@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package runners
+package kubernetes
 
 import (
 	"fmt"
@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/cloudical-io/acntt/parsers"
+	"github.com/cloudical-io/acntt/runners"
 	"github.com/cloudical-io/acntt/pkg/cmdtemplate"
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/cloudical-io/acntt/pkg/k8sutil"
@@ -37,12 +38,12 @@ import (
 const NameKubernetes = "kubernetes"
 
 func init() {
-	Factories[NameKubernetes] = NewKubernetesRunner
+	runners.Factories[NameKubernetes] = NewKubernetesRunner
 }
 
 // Kubernetes Kubernetes runner struct
 type Kubernetes struct {
-	Runner
+	runners.Runner
 	logger     *log.Entry
 	config     *config.RunnerKubernetes
 	k8sclient  *kubernetes.Clientset
@@ -50,7 +51,7 @@ type Kubernetes struct {
 }
 
 // NewKubernetesRunner return a new Kubernetes Runner
-func NewKubernetesRunner(cfg *config.Config) (Runner, error) {
+func NewKubernetesRunner(cfg *config.Config) (runners.Runner, error) {
 	if cfg.Runner.Kubernetes == nil {
 		return nil, fmt.Errorf("no kubernetes runner config")
 	}
