@@ -11,9 +11,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package testers
+package iperf3
 
 import (
+	"github.com/cloudical-io/acntt/testers"
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
@@ -23,18 +24,18 @@ import (
 const NameIPerf3 = "iperf3"
 
 func init() {
-	Factories[NameIPerf3] = NewIPerf3Tester
+	testers.Factories[NameIPerf3] = NewIPerf3Tester
 }
 
 // IPerf3 IPerf3 tester structure
 type IPerf3 struct {
-	Tester
+	testers.Tester
 	logger *log.Entry
 	config *config.IPerf3
 }
 
 // NewIPerf3Tester return a new IPerf3 tester instance
-func NewIPerf3Tester(cfg *config.Config, test *config.Test) (Tester, error) {
+func NewIPerf3Tester(cfg *config.Config, test *config.Test) (testers.Tester, error) {
 	if test == nil {
 		test = &config.Test{
 			IPerf3: &config.IPerf3{},
@@ -48,33 +49,33 @@ func NewIPerf3Tester(cfg *config.Config, test *config.Test) (Tester, error) {
 }
 
 // Plan return a plan to run IPerf3 from the given config.Test and Environment information (hosts)
-func (ip IPerf3) Plan(env *Environment, test *config.Test) (*Plan, error) {
-	plan := &Plan{
+func (ip IPerf3) Plan(env *testers.Environment, test *config.Test) (*testers.Plan, error) {
+	plan := &testers.Plan{
 		Tester:          test.Type,
-		AffectedServers: map[string]*Host{},
-		Commands:        make([][]*Task, test.RunOptions.Rounds),
+		AffectedServers: map[string]*testers.Host{},
+		Commands:        make([][]*testers.Task, test.RunOptions.Rounds),
 	}
 
-	var ports Ports
+	var ports testers.Ports
 	if ip.config.UDP != nil && *ip.config.UDP {
-		ports = Ports{
+		ports = testers.Ports{
 			UDP: []int32{5601},
 		}
 	} else {
-		ports = Ports{
+		ports = testers.Ports{
 			TCP: []int32{5601},
 		}
 	}
 
 	for i := 0; i < test.RunOptions.Rounds; i++ {
 		for _, server := range env.Hosts.Servers {
-			round := &Task{
-				Status: &Status{
-					SuccessfulHosts: StatusHosts{
+			round := &testers.Task{
+				Status: &testers.Status{
+					SuccessfulHosts: testers.StatusHosts{
 						Servers: map[string]int{},
 						Clients: map[string]int{},
 					},
-					FailedHosts: StatusHosts{
+					FailedHosts: testers.StatusHosts{
 						Servers: map[string]int{},
 						Clients: map[string]int{},
 					},
@@ -100,7 +101,7 @@ func (ip IPerf3) Plan(env *Environment, test *config.Test) (*Plan, error) {
 
 				// Build the IPerf3 command
 				cmd, args := ip.buildIPerf3ClientCommand(server, client)
-				round.SubTasks = append(round.SubTasks, &Task{
+				round.SubTasks = append(round.SubTasks, &testers.Task{
 					Host:    client,
 					Command: cmd,
 					Args:    args,
@@ -111,7 +112,7 @@ func (ip IPerf3) Plan(env *Environment, test *config.Test) (*Plan, error) {
 
 			// Add the given interval after each round except the last one
 			if test.RunOptions.Interval != 0 && i != test.RunOptions.Rounds-1 {
-				plan.Commands[i] = append(plan.Commands[i], &Task{
+				plan.Commands[i] = append(plan.Commands[i], &testers.Task{
 					Sleep: test.RunOptions.Interval,
 				})
 			}
@@ -122,7 +123,7 @@ func (ip IPerf3) Plan(env *Environment, test *config.Test) (*Plan, error) {
 }
 
 // buildIPerf3ServerCommand generate IPer3 server command
-func (ip IPerf3) buildIPerf3ServerCommand(server *Host) (string, []string) {
+func (ip IPerf3) buildIPerf3ServerCommand(server *testers.Host) (string, []string) {
 	// Base command and args
 	cmd := "iperf3"
 	args := []string{
@@ -143,7 +144,7 @@ func (ip IPerf3) buildIPerf3ServerCommand(server *Host) (string, []string) {
 }
 
 // buildIPerf3ClientCommand generate IPer3 client command
-func (ip IPerf3) buildIPerf3ClientCommand(server *Host, client *Host) (string, []string) {
+func (ip IPerf3) buildIPerf3ClientCommand(server *testers.Host, client *testers.Host) (string, []string) {
 	// Base command and args
 	cmd := "iperf3"
 	args := []string{

@@ -11,11 +11,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package testers
+package siege
 
 import (
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/sirupsen/logrus"
+	"github.com/cloudical-io/acntt/testers"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -23,18 +24,18 @@ import (
 const NameSiege = "siege"
 
 func init() {
-	Factories[NameSiege] = NewSiegeTester
+	testers.Factories[NameSiege] = NewSiegeTester
 }
 
 // Siege Siege tester structure
 type Siege struct {
-	Tester
+	testers.Tester
 	logger *log.Entry
 	config *config.Siege
 }
 
 // NewSiegeTester return a new Siege tester instance
-func NewSiegeTester(cfg *config.Config, test *config.Test) (Tester, error) {
+func NewSiegeTester(cfg *config.Config, test *config.Test) (testers.Tester, error) {
 	if test == nil {
 		test = &config.Test{
 			Siege: &config.Siege{},
@@ -48,21 +49,21 @@ func NewSiegeTester(cfg *config.Config, test *config.Test) (Tester, error) {
 }
 
 // Plan return a plan to run Siege from the given config.Test and Environment information (hosts)
-func (sg Siege) Plan(env *Environment, test *config.Test) (*Plan, error) {
-	plan := &Plan{
+func (sg Siege) Plan(env *testers.Environment, test *config.Test) (*testers.Plan, error) {
+	plan := &testers.Plan{
 		Tester:          test.Type,
-		AffectedServers: map[string]*Host{},
-		Commands:        make([][]*Task, test.RunOptions.Rounds),
+		AffectedServers: map[string]*testers.Host{},
+		Commands:        make([][]*testers.Task, test.RunOptions.Rounds),
 	}
 
-	var ports Ports
-	ports = Ports{
+	var ports testers.Ports
+	ports = testers.Ports{
 		TCP: []int32{80},
 	}
 
 	for i := 0; i < test.RunOptions.Rounds; i++ {
 		for _, server := range env.Hosts.Servers {
-			round := &Task{}
+			round := &testers.Task{}
 			// Add server host to AffectedServers list
 			if _, ok := plan.AffectedServers[server.Name]; !ok {
 				plan.AffectedServers[server.Name] = server
@@ -82,7 +83,7 @@ func (sg Siege) Plan(env *Environment, test *config.Test) (*Plan, error) {
 
 				// Build the Siege command
 				cmd, args := sg.buildSiegeClientCommand(server, client)
-				round.SubTasks = append(round.SubTasks, &Task{
+				round.SubTasks = append(round.SubTasks, &testers.Task{
 					Host:    client,
 					Command: cmd,
 					Args:    args,
@@ -97,7 +98,7 @@ func (sg Siege) Plan(env *Environment, test *config.Test) (*Plan, error) {
 }
 
 // buildSiegeServerCommand generate IPer3 server command
-func (sg Siege) buildSiegeServerCommand(server *Host) (string, []string) {
+func (sg Siege) buildSiegeServerCommand(server *testers.Host) (string, []string) {
 	// Base command and args
 	cmd := "nginx"
 	args := []string{
@@ -112,7 +113,7 @@ func (sg Siege) buildSiegeServerCommand(server *Host) (string, []string) {
 }
 
 // buildSiegeClientCommand generate IPer3 client command
-func (sg Siege) buildSiegeClientCommand(server *Host, client *Host) (string, []string) {
+func (sg Siege) buildSiegeClientCommand(server *testers.Host, client *testers.Host) (string, []string) {
 	// Base command and args
 	cmd := "siege"
 	args := []string{}

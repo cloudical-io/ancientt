@@ -11,39 +11,40 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package outputs
+package tests
 
 import (
 	"time"
+	"github.com/cloudical-io/acntt/outputs"
 )
 
-func generateMockTableData(length int) Data {
-	table := Table{
-		Headers: []Column{
-			Column{
-				Rows: []Row{
-					Row{Value: "isthisfloat64"},
-					Row{Value: "isthisinteger64"},
-					Row{Value: "isittrue"},
-					Row{Value: "data"},
+func GenerateMockTableData(length int) outputs.Data {
+	table := outputs.Table{
+		Headers: []outputs.Column{
+			outputs.Column{
+				Rows: []outputs.Row{
+					outputs.Row{Value: "isthisfloat64"},
+					outputs.Row{Value: "isthisinteger64"},
+					outputs.Row{Value: "isittrue"},
+					outputs.Row{Value: "data"},
 				},
 			},
 		},
-		Columns: []Column{},
+		Columns: []outputs.Column{},
 	}
-	column := Column{
-		Rows: []Row{
-			Row{Value: float64(123.456789)},
-			Row{Value: int64(35671233)},
-			Row{Value: true},
-			Row{Value: "data"},
+	column := outputs.Column{
+		Rows: []outputs.Row{
+			outputs.Row{Value: float64(123.456789)},
+			outputs.Row{Value: int64(35671233)},
+			outputs.Row{Value: true},
+			outputs.Row{Value: "data"},
 		},
 	}
 	for i := 0; i < length; i++ {
 		table.Columns = append(table.Columns, column)
 	}
 
-	return Data{
+	return outputs.Data{
 		AdditionalInfo: "mock data generated",
 		ClientHost:     "host1",
 		ServerHost:     "host2",

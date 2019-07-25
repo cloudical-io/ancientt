@@ -11,59 +11,58 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package outputs
+package mysql
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/cloudical-io/acntt/pkg/config"
+	"github.com/cloudical-io/acntt/outputs"
+	"github.com/cloudical-io/acntt/outputs/tests"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestSQLite(t *testing.T) {
+func TestMySQL(t *testing.T) {
 	// Create mock database
 	db, mock, err := sqlmock.New()
 	require.Nil(t, err)
 
-	tempDir := os.TempDir()
-	outName := fmt.Sprintf("acntt-test-%s.sqlite3", t.Name())
 	outCfg := &config.Output{
-		SQLite: &config.SQLite{
-			FilePath:    tempDir,
-			NamePattern: outName,
+		MySQL: &config.MySQL{
+			// Set a non-empty DSN, otherwise we get an error
+			DSN: "username:password@127.0.0.1/mydb",
 		},
 	}
 
 	// Generate mock Data with Table data
-	data := generateMockTableData(5)
+	data := tests.GenerateMockTableData(5)
 
-	filename, err := getFilenameFromPattern(outCfg.SQLite.NamePattern, "", data, nil)
-	require.Nil(t, err)
-
-	tableName, err := getFilenameFromPattern(outCfg.SQLite.TableNamePattern, "", data, nil)
+	tableName, err := outputs.GetFilenameFromPattern(defaultTableNamePattern, "", data, nil)
 	require.Nil(t, err)
 
 	// Because the db driver already exists, the "CREATE TABLE" query is not triggered
 	// Match the two inserts
-	mock.ExpectExec(fmt.Sprintf("INSERT INTO %s", tableName))
+	mock.ExpectExec(fmt.Sprintf("SELECT 1 FROM `%s` LIMIT 1", tableName)).WillReturnError(fmt.Errorf("table does not exist fake error"))
+	mock.ExpectBegin()
+	mock.ExpectExec(fmt.Sprintf("CREATE TABLE IF NOT EXISTS `%s`", tableName))
+	mock.ExpectCommit()
+	mock.ExpectExec(fmt.Sprintf("INSERT INTO %s .*", tableName))
 	mock.ExpectClose()
 
 	dbx := sqlx.NewDb(db, "sqlmock")
 
-	m, err := NewSQLiteOutput(nil, outCfg)
+	m, err := NewMySQLOutput(nil, outCfg)
 	assert.Nil(t, err)
 
 	// Cast the outputs.Output to the SQLite so we can manipulate the object
-	ms, ok := m.(SQLite)
+	ms, ok := m.(MySQL)
 	require.True(t, ok)
 
-	outPath := filepath.Join(outCfg.SQLite.FilePath, filename)
+	outPath := fmt.Sprintf("%s-%s", outCfg.MySQL.DSN, tableName)
 	ms.dbCons[outPath] = dbx
 
 	// Do() and Close() to run the database flow

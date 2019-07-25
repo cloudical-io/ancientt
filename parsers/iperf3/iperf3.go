@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package parsers
+package iperf3
 
 import (
 	"bytes"
@@ -20,6 +20,7 @@ import (
 	"io"
 
 	"github.com/cloudical-io/acntt/outputs"
+	"github.com/cloudical-io/acntt/parsers"
 	"github.com/cloudical-io/acntt/pkg/config"
 	iperf3models "github.com/cloudical-io/acntt/pkg/models/iperf3"
 	"github.com/cloudical-io/acntt/pkg/util"
@@ -31,18 +32,18 @@ import (
 const NameIPerf3 = "iperf3"
 
 func init() {
-	Factories[NameIPerf3] = NewIPerf3Tester
+	parsers.Factories[NameIPerf3] = NewIPerf3Tester
 }
 
 // IPerf3 IPerf3 tester structure
 type IPerf3 struct {
-	Parser
+	parsers.Parser
 	logger *log.Entry
 	config *config.Test
 }
 
 // NewIPerf3Tester return a new IPerf3 tester instance
-func NewIPerf3Tester(cfg *config.Config, test *config.Test) (Parser, error) {
+func NewIPerf3Tester(cfg *config.Config, test *config.Test) (parsers.Parser, error) {
 	return IPerf3{
 		logger: log.WithFields(logrus.Fields{"parers": NameIPerf3}),
 		config: test,
@@ -50,7 +51,7 @@ func NewIPerf3Tester(cfg *config.Config, test *config.Test) (Parser, error) {
 }
 
 // Parse parse IPerf3 JSON responses
-func (ip IPerf3) Parse(doneCh chan struct{}, inCh <-chan Input, dataCh chan<- outputs.Data) error {
+func (ip IPerf3) Parse(doneCh chan struct{}, inCh <-chan parsers.Input, dataCh chan<- outputs.Data) error {
 	for {
 		select {
 		case <-doneCh:
@@ -71,7 +72,7 @@ func (ip IPerf3) Parse(doneCh chan struct{}, inCh <-chan Input, dataCh chan<- ou
 	}
 }
 
-func (ip IPerf3) parse(input Input, dataCh chan<- outputs.Data) error {
+func (ip IPerf3) parse(input parsers.Input, dataCh chan<- outputs.Data) error {
 	var logs *bytes.Buffer
 	if input.DataStream != nil {
 		logs = new(bytes.Buffer)

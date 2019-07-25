@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package outputs
+package mysql
 
 import (
 	"fmt"
@@ -23,6 +23,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/sirupsen/logrus"
+	"github.com/cloudical-io/acntt/outputs"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -35,29 +36,29 @@ const (
 )
 
 func init() {
-	Factories[NameMySQL] = NewMySQLOutput
+	outputs.Factories[NameMySQL] = NewMySQLOutput
 }
 
 // MySQL MySQL tester structure
 type MySQL struct {
-	Output
+	outputs.Output
 	logger *log.Entry
 	config *config.MySQL
 	dbCons map[string]*sqlx.DB
 }
 
 const (
-	mysqlDefaultTableNamePattern = "acntt{{ .TestStartTime }}{{ .Data.Tester }}{{ .Data.ServerHost }}{{ .Data.ClientHost }}"
+	defaultTableNamePattern = "acntt{{ .TestStartTime }}{{ .Data.Tester }}{{ .Data.ServerHost }}{{ .Data.ClientHost }}"
 
-	mysqlCheckIfTableExistsQuery = "SELECT 1 FROM `%s` LIMIT 1;"
-	mysqlCreateTableBeginQuery   = "CREATE TABLE IF NOT EXISTS `%s` (\n"
-	mysqlCreateTableEndQuery     = `);`
-	mysqlInsertDataBeginQuery    = "INSERT INTO %s VALUES ("
-	mysqlInsertDataEndQuery      = `);`
+	checkIfTableExistsQuery = "SELECT 1 FROM `%s` LIMIT 1;"
+	createTableBeginQuery   = "CREATE TABLE IF NOT EXISTS `%s` (\n"
+	createTableEndQuery     = `);`
+	insertDataBeginQuery    = "INSERT INTO %s VALUES ("
+	insertDataEndQuery      = `);`
 )
 
 // NewMySQLOutput return a new MySQL tester instance
-func NewMySQLOutput(cfg *config.Config, outCfg *config.Output) (Output, error) {
+func NewMySQLOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output, error) {
 	if outCfg == nil {
 		outCfg = &config.Output{
 			MySQL: &config.MySQL{},
@@ -72,20 +73,20 @@ func NewMySQLOutput(cfg *config.Config, outCfg *config.Output) (Output, error) {
 		return nil, fmt.Errorf("no DSN for mysql connection given")
 	}
 	if m.config.TableNamePattern == "" {
-		m.config.TableNamePattern = mysqlDefaultTableNamePattern
+		m.config.TableNamePattern = defaultTableNamePattern
 	}
 
 	return m, nil
 }
 
 // Do make MySQL outputs
-func (m MySQL) Do(data Data) error {
-	dataTable, ok := data.Data.(Table)
+func (m MySQL) Do(data outputs.Data) error {
+	dataTable, ok := data.Data.(outputs.Table)
 	if !ok {
 		return fmt.Errorf("data not in table for mysql output")
 	}
 
-	tableName, err := getFilenameFromPattern(m.config.TableNamePattern, "", data, nil)
+	tableName, err := outputs.GetFilenameFromPattern(m.config.TableNamePattern, "", data, nil)
 	if err != nil {
 		return err
 	}
@@ -125,7 +126,7 @@ func (m MySQL) Do(data Data) error {
 	return nil
 }
 
-func (m MySQL) createTable(db *sqlx.DB, dataTable Table, tableName string) error {
+func (m MySQL) createTable(db *sqlx.DB, dataTable outputs.Table, tableName string) error {
 	// Iterate over headers
 	headerColumns := []string{}
 	for _, column := range dataTable.Headers {
@@ -153,7 +154,7 @@ func (m MySQL) createTable(db *sqlx.DB, dataTable Table, tableName string) error
 	}
 
 	// The error should not return an error when the table exists, try to create the database
-	if _, err := db.Exec(fmt.Sprintf(mysqlCheckIfTableExistsQuery, tableName)); err != nil {
+	if _, err := db.Exec(fmt.Sprintf(checkIfTableExistsQuery, tableName)); err != nil {
 		// Start transaction, exec the CREATE TABLE query and commit the result
 		tx, err := db.Begin()
 		if err != nil {
@@ -169,7 +170,7 @@ func (m MySQL) createTable(db *sqlx.DB, dataTable Table, tableName string) error
 }
 
 func (m MySQL) buildCreateTableQuery(tableName string, columns []string, firstRow []interface{}) string {
-	query := fmt.Sprintf(mysqlCreateTableBeginQuery, tableName)
+	query := fmt.Sprintf(createTableBeginQuery, tableName)
 
 	for i, c := range columns {
 		cType := "TEXT"
@@ -201,13 +202,13 @@ func (m MySQL) buildCreateTableQuery(tableName string, columns []string, firstRo
 		query += "\n"
 	}
 
-	query += mysqlCreateTableEndQuery
+	query += createTableEndQuery
 
 	return query
 }
 
 func (m MySQL) buildInsertQuery(tableName string, count int) string {
-	query := fmt.Sprintf(mysqlInsertDataBeginQuery, tableName)
+	query := fmt.Sprintf(insertDataBeginQuery, tableName)
 
 	// Generate the placeholder `$1` and so on
 	for i := 1; i <= count; i++ {
@@ -217,7 +218,7 @@ func (m MySQL) buildInsertQuery(tableName string, count int) string {
 		}
 	}
 
-	query += mysqlInsertDataEndQuery
+	query += insertDataEndQuery
 	return query
 }
 

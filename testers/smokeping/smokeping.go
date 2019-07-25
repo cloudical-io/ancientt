@@ -11,9 +11,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package testers
+package smokeping
 
 import (
+	"github.com/cloudical-io/acntt/testers"
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
@@ -23,18 +24,18 @@ import (
 const NameSmokeping = "smokeping"
 
 func init() {
-	Factories[NameSmokeping] = NewSmokepingTester
+	testers.Factories[NameSmokeping] = NewSmokepingTester
 }
 
 // Smokeping Smokeping tester structure
 type Smokeping struct {
-	Tester
+	testers.Tester
 	logger *log.Entry
 	config *config.Smokeping
 }
 
 // NewSmokepingTester return a new Smokeping tester instance
-func NewSmokepingTester(cfg *config.Config, test *config.Test) (Tester, error) {
+func NewSmokepingTester(cfg *config.Config, test *config.Test) (testers.Tester, error) {
 	if test == nil {
 		test = &config.Test{
 			Smokeping: &config.Smokeping{},
@@ -48,21 +49,21 @@ func NewSmokepingTester(cfg *config.Config, test *config.Test) (Tester, error) {
 }
 
 // Plan return a plan to run Smokeping from the given config.Test and Environment information (hosts)
-func (sp Smokeping) Plan(env *Environment, test *config.Test) (*Plan, error) {
-	plan := &Plan{
+func (sp Smokeping) Plan(env *testers.Environment, test *config.Test) (*testers.Plan, error) {
+	plan := &testers.Plan{
 		Tester:          test.Type,
-		AffectedServers: map[string]*Host{},
-		Commands:        make([][]*Task, test.RunOptions.Rounds),
+		AffectedServers: map[string]*testers.Host{},
+		Commands:        make([][]*testers.Task, test.RunOptions.Rounds),
 	}
 
-	var ports Ports
-	ports = Ports{
+	var ports testers.Ports
+	ports = testers.Ports{
 		TCP: []int32{80},
 	}
 
 	for i := 0; i < test.RunOptions.Rounds; i++ {
 		for _, server := range env.Hosts.Servers {
-			round := &Task{}
+			round := &testers.Task{}
 			// Add server host to AffectedServers list
 			if _, ok := plan.AffectedServers[server.Name]; !ok {
 				plan.AffectedServers[server.Name] = server
@@ -82,7 +83,7 @@ func (sp Smokeping) Plan(env *Environment, test *config.Test) (*Plan, error) {
 
 				// Build the Smokeping command
 				cmd, args := sp.buildSmokepingClientCommand(server, client)
-				round.SubTasks = append(round.SubTasks, &Task{
+				round.SubTasks = append(round.SubTasks, &testers.Task{
 					Host:    client,
 					Command: cmd,
 					Args:    args,
@@ -97,7 +98,7 @@ func (sp Smokeping) Plan(env *Environment, test *config.Test) (*Plan, error) {
 }
 
 // buildSmokepingServerCommand generate IPer3 server command
-func (sp Smokeping) buildSmokepingServerCommand(server *Host) (string, []string) {
+func (sp Smokeping) buildSmokepingServerCommand(server *testers.Host) (string, []string) {
 	// Base command and args
 	cmd := "smokeping"
 	args := []string{}
@@ -111,7 +112,7 @@ func (sp Smokeping) buildSmokepingServerCommand(server *Host) (string, []string)
 }
 
 // buildSmokepingClientCommand generate IPer3 client command
-func (sp Smokeping) buildSmokepingClientCommand(server *Host, client *Host) (string, []string) {
+func (sp Smokeping) buildSmokepingClientCommand(server *testers.Host, client *testers.Host) (string, []string) {
 	// Base command and args
 	cmd := "smokeping"
 	args := []string{}

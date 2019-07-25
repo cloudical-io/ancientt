@@ -11,13 +11,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package outputs
+package excelize
 
 import (
 	"os"
 
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/sirupsen/logrus"
+	"github.com/cloudical-io/acntt/outputs"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -25,19 +26,19 @@ import (
 const NameExcelize = "excelize"
 
 func init() {
-	Factories[NameExcelize] = NewExcelizeOutput
+	outputs.Factories[NameExcelize] = NewExcelizeOutput
 }
 
 // Excelize Excelize tester structure
 type Excelize struct {
-	Output
+	outputs.Output
 	logger *log.Entry
 	config *config.Excelize
 	files  map[string]*os.File
 }
 
 // NewExcelizeOutput return a new Excelize tester instance
-func NewExcelizeOutput(cfg *config.Config, outCfg *config.Output) (Output, error) {
+func NewExcelizeOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output, error) {
 	excelize := Excelize{
 		logger: log.WithFields(logrus.Fields{"output": NameExcelize}),
 		config: outCfg.Excelize,
@@ -53,7 +54,7 @@ func NewExcelizeOutput(cfg *config.Config, outCfg *config.Output) (Output, error
 }
 
 // Do TODO Implement
-func (e Excelize) Do(data Data) error {
+func (e Excelize) Do(data outputs.Data) error {
 	return nil
 }
 

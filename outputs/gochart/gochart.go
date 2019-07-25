@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package outputs
+package gochart
 
 import (
 	"bytes"
@@ -20,6 +20,7 @@ import (
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/cloudical-io/acntt/pkg/util"
 	"github.com/sirupsen/logrus"
+	"github.com/cloudical-io/acntt/outputs"
 	log "github.com/sirupsen/logrus"
 	chart "github.com/wcharczuk/go-chart"
 )
@@ -28,18 +29,18 @@ import (
 const NameGoChart = "gochart"
 
 func init() {
-	Factories[NameGoChart] = NewGoChartOutput
+	outputs.Factories[NameGoChart] = NewGoChartOutput
 }
 
 // GoChart GoChart tester structure
 type GoChart struct {
-	Output
+	outputs.Output
 	logger *log.Entry
 	config *config.GoChart
 }
 
 // NewGoChartOutput return a new GoChart tester instance
-func NewGoChartOutput(cfg *config.Config, outCfg *config.Output) (Output, error) {
+func NewGoChartOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output, error) {
 	goChart := GoChart{
 		logger: log.WithFields(logrus.Fields{"output": NameGoChart}),
 		config: outCfg.GoChart,
@@ -54,8 +55,8 @@ func NewGoChartOutput(cfg *config.Config, outCfg *config.Output) (Output, error)
 }
 
 // Do make GoChart charts
-func (gc GoChart) Do(data Data) error {
-	dataTable, ok := data.Data.(Table)
+func (gc GoChart) Do(data outputs.Data) error {
+	dataTable, ok := data.Data.(outputs.Table)
 	if !ok {
 		return fmt.Errorf("data not in table for csv output")
 	}
@@ -65,7 +66,7 @@ func (gc GoChart) Do(data Data) error {
 	for _, graphType := range gc.config.Types {
 		for _, column := range dataTable.Headers {
 			for _, row := range column.Rows {
-				filename, err := getFilenameFromPattern(gc.config.NamePattern, "", data, map[string]interface{}{
+				filename, err := outputs.GetFilenameFromPattern(gc.config.NamePattern, "", data, map[string]interface{}{
 					"Type":   graphType,
 					"Header": row.Value,
 				})

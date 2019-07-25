@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package outputs
+package csv
 
 import (
 	"encoding/csv"
@@ -21,6 +21,7 @@ import (
 
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/cloudical-io/acntt/pkg/util"
+	"github.com/cloudical-io/acntt/outputs"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
@@ -29,12 +30,12 @@ import (
 const NameCSV = "csv"
 
 func init() {
-	Factories[NameCSV] = NewCSVOutput
+	outputs.Factories[NameCSV] = NewCSVOutput
 }
 
 // CSV CSV tester structure
 type CSV struct {
-	Output
+	outputs.Output
 	logger  *log.Entry
 	config  *config.CSV
 	files   map[string]*os.File
@@ -42,7 +43,7 @@ type CSV struct {
 }
 
 // NewCSVOutput return a new CSV tester instance
-func NewCSVOutput(cfg *config.Config, outCfg *config.Output) (Output, error) {
+func NewCSVOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output, error) {
 	c := CSV{
 		logger:  log.WithFields(logrus.Fields{"output": NameCSV}),
 		config:  outCfg.CSV,
@@ -59,13 +60,13 @@ func NewCSVOutput(cfg *config.Config, outCfg *config.Output) (Output, error) {
 }
 
 // Do make CSV outputs
-func (c CSV) Do(data Data) error {
-	dataTable, ok := data.Data.(Table)
+func (c CSV) Do(data outputs.Data) error {
+	dataTable, ok := data.Data.(outputs.Table)
 	if !ok {
 		return fmt.Errorf("data not in table for csv output")
 	}
 
-	filename, err := getFilenameFromPattern(c.config.NamePattern, "", data, nil)
+	filename, err := outputs.GetFilenameFromPattern(c.config.NamePattern, "", data, nil)
 	if err != nil {
 		return err
 	}
