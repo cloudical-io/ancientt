@@ -52,6 +52,8 @@ tests:
     - name: one-randomly-selected-server
       random: true
       count: 1
+    #  hostSelector:
+    #    nope: foo
     #- name: all-hosts
     #  all: true
       #hosts:
@@ -61,6 +63,8 @@ tests:
     - name: one-randomly-selected-server
       random: true
       count: 1
+    #  hostSelector:
+    #    nope: foo
     #- name: different-hosts-1
     #  random: true
     #  count: 2 # when more than one hosts is wanted,
