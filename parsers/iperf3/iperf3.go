@@ -163,7 +163,7 @@ func (ip IPerf3) parse(input parsers.Input, dataCh chan<- outputs.Data) error {
 
 	// Transform Input into outputs.Data struct
 	data := outputs.Data{
-		TestStartTime:    input.TestStartTime,
+		TestStartTime:  input.TestStartTime,
 		TestTime:       input.TestTime,
 		AdditionalInfo: input.AdditionalInfo,
 		ServerHost:     input.ServerHost,

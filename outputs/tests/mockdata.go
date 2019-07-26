@@ -14,8 +14,8 @@ limitations under the License.
 package tests
 
 import (
-	"time"
 	"github.com/cloudical-io/acntt/outputs"
+	"time"
 )
 
 func GenerateMockTableData(length int) outputs.Data {

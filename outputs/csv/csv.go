@@ -19,9 +19,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/cloudical-io/acntt/outputs"
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/cloudical-io/acntt/pkg/util"
-	"github.com/cloudical-io/acntt/outputs"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )

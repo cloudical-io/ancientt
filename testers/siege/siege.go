@@ -15,8 +15,8 @@ package siege
 
 import (
 	"github.com/cloudical-io/acntt/pkg/config"
-	"github.com/sirupsen/logrus"
 	"github.com/cloudical-io/acntt/testers"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 

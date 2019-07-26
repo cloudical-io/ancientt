@@ -23,8 +23,8 @@ import (
 	// Include sqlite driver for sqlite output
 	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/sirupsen/logrus"
 	"github.com/cloudical-io/acntt/outputs"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 

@@ -17,10 +17,10 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/cloudical-io/acntt/outputs"
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/cloudical-io/acntt/pkg/util"
 	"github.com/sirupsen/logrus"
-	"github.com/cloudical-io/acntt/outputs"
 	log "github.com/sirupsen/logrus"
 	chart "github.com/wcharczuk/go-chart"
 )

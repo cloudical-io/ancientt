@@ -22,8 +22,8 @@ import (
 	// Include MySQL driver for mysql output
 	_ "github.com/go-sql-driver/mysql"
 
-	"github.com/sirupsen/logrus"
 	"github.com/cloudical-io/acntt/outputs"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 

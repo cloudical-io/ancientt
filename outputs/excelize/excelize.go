@@ -16,9 +16,9 @@ package excelize
 import (
 	"os"
 
+	"github.com/cloudical-io/acntt/outputs"
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/sirupsen/logrus"
-	"github.com/cloudical-io/acntt/outputs"
 	log "github.com/sirupsen/logrus"
 )
 
