@@ -58,7 +58,7 @@ func FilterHostsList(inHosts []*testers.Host, filter config.Hosts) ([]*testers.H
 		return hosts, nil
 	}
 
-	return hosts, nil
+	return filteredHosts, nil
 }
 
 // filterHostsByLabels all labels must match
@@ -66,6 +66,7 @@ func filterHostsByLabels(hosts []*testers.Host, labels map[string]string) []*tes
 	if len(labels) == 0 {
 		return hosts
 	}
+
 	filtered := []*testers.Host{}
 	for _, host := range hosts {
 		// Compare host and filter labels list, all labels list must match
@@ -74,8 +75,10 @@ func filterHostsByLabels(hosts []*testers.Host, labels map[string]string) []*tes
 			if labelValue, ok := host.Labels[k]; ok {
 				if labelValue != v {
 					match = false
-					continue
+					break
 				}
+			} else {
+				match = false
 			}
 		}
 		if match {
