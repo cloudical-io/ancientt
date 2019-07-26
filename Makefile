@@ -37,4 +37,7 @@ vet:
 	@echo ">> vetting code"
 	@$(GO) vet $(pkgs)
 
+docs: pkg/config/config.go
+	$(GO) run ./cmd/docgen/ api pkg/config/*.go > docs/config-structure.md
+
 .PHONY: all build crossbuild docker format promu style tarball test vet

@@ -8,3 +8,15 @@ Automated Continuous network testing tool using existing projects like iperf3, s
 * "Runner" interface, e.g., for Kubernetes, Ansible, etc. The "runner" abstracts the "how it is run", e.g., for Kubernetes creates a Job, Ansible (download and) trigger a playbook to run the test.
 * Store result data in, e.g., graph database https://dgraph.io/ or a TSDB?
 * Visualization for humans.
+
+## Usage
+
+Compile or download the ACNTT binary.
+
+```
+acntt -c your-testdefinitions.yaml
+```
+
+## Building
+
+**Golang version**: `v1.12` or higher (tested with `v1.12.7` on `linux/amd64`)
