@@ -14,8 +14,8 @@ limitations under the License.
 package iperf3
 
 import (
-	"github.com/cloudical-io/acntt/testers"
 	"github.com/cloudical-io/acntt/pkg/config"
+	"github.com/cloudical-io/acntt/testers"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )

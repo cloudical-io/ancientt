@@ -19,11 +19,11 @@ import (
 	"time"
 
 	"github.com/cloudical-io/acntt/parsers"
-	"github.com/cloudical-io/acntt/runners"
 	"github.com/cloudical-io/acntt/pkg/cmdtemplate"
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/cloudical-io/acntt/pkg/k8sutil"
 	"github.com/cloudical-io/acntt/pkg/util"
+	"github.com/cloudical-io/acntt/runners"
 	"github.com/cloudical-io/acntt/testers"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"

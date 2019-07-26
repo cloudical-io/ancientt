@@ -35,7 +35,7 @@ type Parser interface {
 
 // Input structured parse
 type Input struct {
-	TestStartTime    time.Time
+	TestStartTime  time.Time
 	TestTime       time.Time
 	Round          int
 	DataStream     *io.ReadCloser
