@@ -36,6 +36,11 @@ tests:
 #    mysql:
 #      dsn: "username:password@127.0.0.1/mydb"
 #      tableNamePattern: 'acntt{{ .TestStartTime }}{{ .Data.Tester }}{{ .Data.ServerHost }}{{ .Data.ClientHost }}'
+#  - name: excelize
+#    excelize:
+#      filePath: /tmp
+#      namePattern: "acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.xlsx"
+#      saveAfterRows: 200
   runOptions:
     continueOnError: true
     rounds: 1
