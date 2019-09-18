@@ -1,12 +1,19 @@
-FROM fedora:30
+FROM golang:1.13.0-buster AS go-build
+
+WORKDIR /go/src/app
+COPY . .
+
+RUN go get -v ./... && \
+    go install -v ./...
+
+# TODO Use fixed tag
+FROM galexrt/container-toolbox:latest
 LABEL maintainer="Alexander Trost <galexrt@googlemail.com>"
 
-COPY packages /packages
+COPY --from=go-build /go/bin/app /bin/acntt
 
-RUN dnf -q update -y && \
-    dnf --setopt=install_weak_deps=False --best install -y iperf iperf3 siege && \
-    dnf clean all && \
-    mkdir /workdir
+RUN chmod 755 /bin/acntt
 
-USER root
-WORKDIR /workdir
+ENTRYPOINT ["/bin/acntt"]
+
+CMD ["--help"]
