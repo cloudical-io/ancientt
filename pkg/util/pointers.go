@@ -11,16 +11,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package config
+package util
 
-// Hosts options for hosts selection for a Test
-type Hosts struct {
-	Name         string            `yaml:"name"`
-	All          bool              `yaml:"all"`
-	Random       bool              `yaml:"random"`
-	Count        int               `yaml:"count"`
-	Hosts        []string          `yaml:"hosts"`
-	HostSelector map[string]string `yaml:"hostSelector"`
-	// AntiAffinity not implemented yet
-	AntiAffinity []KeyValuePair `yaml:"antiAffinity"`
+// BoolPointer return the given bool as a pointer
+func BoolPointer(in bool) *bool {
+	return &in
 }

@@ -20,13 +20,13 @@ import (
 	"github.com/cloudical-io/acntt/testers"
 )
 
-// PNameRole
+// PNameRole task role names type
 type PNameRole string
 
 const (
-	// PNameRoleClient
+	// PNameRoleClient Client role name
 	PNameRoleClient PNameRole = "client"
-	// PNameRoleServer
+	// PNameRoleServer Server role name
 	PNameRoleServer PNameRole = "server"
 )
 

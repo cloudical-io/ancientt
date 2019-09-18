@@ -36,6 +36,8 @@ func FilterHostsList(inHosts []*testers.Host, filter config.Hosts) ([]*testers.H
 
 	filteredHosts := filterHostsByLabels(inHosts, filter.HostSelector)
 
+	filteredHosts = checkAntiAffinity(filteredHosts, filter.AntiAffinity)
+
 	if len(filteredHosts) == 0 {
 		return filteredHosts, nil
 	}
@@ -84,9 +86,43 @@ func filterHostsByLabels(hosts []*testers.Host, labels map[string]string) []*tes
 		if match {
 			filtered = append(filtered, host)
 		}
-
-		// TODO implement anti affinity logic based on labels
 	}
 
+	return filtered
+}
+
+func checkAntiAffinity(hosts []*testers.Host, labels []string) []*testers.Host {
+	if len(labels) == 0 {
+		return hosts
+	}
+
+	filtered := []*testers.Host{}
+	usedLabels := map[string][]string{}
+
+	for _, host := range hosts {
+		// Compare host and filter labels list, all labels list must match
+		match := true
+		for _, label := range labels {
+			hostLabelVal, ok := host.Labels[label]
+			if !ok {
+				continue
+			}
+			// Check if label and value is in usedLabels list and if it is the host should not be added
+			if usedLabelValues, ok := usedLabels[label]; ok {
+				for _, usedLabelVal := range usedLabelValues {
+					if usedLabelVal == hostLabelVal {
+						match = false
+						break
+					}
+				}
+				usedLabels[label] = append(usedLabels[label], hostLabelVal)
+			} else {
+				usedLabels[label] = []string{hostLabelVal}
+			}
+		}
+		if match {
+			filtered = append(filtered, host)
+		}
+	}
 	return filtered
 }

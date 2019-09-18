@@ -36,11 +36,12 @@ tests:
 #    mysql:
 #      dsn: "username:password@127.0.0.1/mydb"
 #      tableNamePattern: 'acntt{{ .TestStartTime }}{{ .Data.Tester }}{{ .Data.ServerHost }}{{ .Data.ClientHost }}'
+#      autoCreateTables: true
 #  - name: excelize
 #    excelize:
 #      filePath: /tmp
 #      namePattern: "acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.xlsx"
-#      saveAfterRows: 200
+#      saveAfterRows: 200 outputs mysql: added AutoCreateTables option
   runOptions:
     continueOnError: true
     rounds: 1
@@ -76,7 +77,7 @@ tests:
     #  hostSelector: # For Labels in K8s and Variables of hosts in Ansible
     #    network-tests-run-here: "true"
     #  antiAffinity:
-    #    - key: "openstack-region" # this makes sure hosts with different "openstack-region" are picked
+    #    - openstack-region # this makes sure hosts with each different "openstack-region" are picked
     #- name: specific-hosts
     #  hosts:
     #    - serverabc123
