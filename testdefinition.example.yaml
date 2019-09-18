@@ -77,7 +77,7 @@ tests:
     #  hostSelector: # For Labels in K8s and Variables of hosts in Ansible
     #    network-tests-run-here: "true"
     #  antiAffinity:
-    #    - key: "openstack-region" # this makes sure hosts with different "openstack-region" are picked
+    #    - openstack-region # this makes sure hosts with each different "openstack-region" are picked
     #- name: specific-hosts
     #  hosts:
     #    - serverabc123

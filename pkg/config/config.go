@@ -26,14 +26,6 @@ type Config struct {
 	Tests   []*Test `yaml:"tests"`
 }
 
-// KeyValuePair key value string pair
-type KeyValuePair struct {
-	// Key of the key value pair
-	Key string `yaml:"key"`
-	// Value of the key value pair
-	Value string `yaml:"value"`
-}
-
 // New return a new Config object with the `Version` set by default
 func New() *Config {
 	return &Config{
@@ -58,7 +50,7 @@ type Hosts struct {
 	// "Label" selector for the dynamically generated hosts list, e.g., Kubernetes label selector
 	HostSelector map[string]string `yaml:"hostSelector"`
 	// AntiAffinity not implemented yet
-	AntiAffinity []KeyValuePair `yaml:"antiAffinity"`
+	AntiAffinity []string `yaml:"antiAffinity"`
 }
 
 // Output Output config structure pointing to the other config options for each output

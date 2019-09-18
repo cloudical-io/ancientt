@@ -14,7 +14,6 @@ This Document documents the types introduced by ACNTT for configuration to be us
 * [GoChart](#gochart)
 * [Hosts](#hosts)
 * [IPerf3](#iperf3)
-* [KeyValuePair](#keyvaluepair)
 * [KubernetesHosts](#kuberneteshosts)
 * [KubernetesTimeouts](#kubernetestimeouts)
 * [MySQL](#mysql)
@@ -108,7 +107,7 @@ Hosts options for hosts selection for a Test
 | Count | Used with Random to randomly select the Count of hosts. | int | true |
 | Hosts | Static list of hosts (this list is not checked for accuracy) | []string | true |
 | HostSelector | \"Label\" selector for the dynamically generated hosts list, e.g., Kubernetes label selector | map[string]string | true |
-| AntiAffinity | AntiAffinity not implemented yet | [][KeyValuePair](#keyvaluepair) | true |
+| AntiAffinity | AntiAffinity not implemented yet | []string | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -120,17 +119,6 @@ IPerf3 IPerf3 config structure for testers.Tester config
 | ----- | ----------- | ------ | -------- |
 | AdditionalFlags | Additional flags for client and server | [AdditionalFlags](#additionalflags) | true |
 | UDP | If UDP should be used for the IPerf3 test | *bool | true |
-
-[Back to TOC](#table-of-contents)
-
-## KeyValuePair
-
-KeyValuePair key value string pair
-
-| Field | Description | Scheme | Required |
-| ----- | ----------- | ------ | -------- |
-| Key | Key of the key value pair | string | true |
-| Value | Value of the key value pair | string | true |
 
 [Back to TOC](#table-of-contents)
 
