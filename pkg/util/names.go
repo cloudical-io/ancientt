@@ -20,7 +20,7 @@ import (
 	"github.com/cloudical-io/acntt/testers"
 )
 
-// PNameRole
+// PNameRole task role names type
 type PNameRole string
 
 const (
