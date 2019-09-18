@@ -61,8 +61,13 @@ const (
 func NewMySQLOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output, error) {
 	if outCfg == nil {
 		outCfg = &config.Output{
-			MySQL: &config.MySQL{},
+			MySQL: &config.MySQL{
+				AutoCreateTables: util.BoolPointer(true),
+			},
 		}
+	}
+	if outCfg.MySQL.AutoCreateTables == nil {
+		outCfg.MySQL.AutoCreateTables = util.BoolPointer(true)
 	}
 	m := MySQL{
 		logger: log.WithFields(logrus.Fields{"output": NameMySQL}),
@@ -155,14 +160,19 @@ func (m MySQL) createTable(db *sqlx.DB, dataTable outputs.Table, tableName strin
 
 	// The error should not return an error when the table exists, try to create the database
 	if _, err := db.Exec(fmt.Sprintf(checkIfTableExistsQuery, tableName)); err != nil {
-		// Start transaction, exec the CREATE TABLE query and commit the result
-		tx, err := db.Begin()
-		if err != nil {
-			return fmt.Errorf("couldn't begin transaction in mysql database. %+v", err)
-		}
-		tx.Exec(m.buildCreateTableQuery(tableName, headerColumns, dataColumn))
-		if err := tx.Commit(); err != nil {
-			return fmt.Errorf("couldn't create table in mysql database. %+v", err)
+		// Only auto create tables when enabled
+		if *m.config.AutoCreateTables {
+			// Start transaction, exec the CREATE TABLE query and commit the result
+			tx, err := db.Begin()
+			if err != nil {
+				return fmt.Errorf("couldn't begin transaction in mysql database. %+v", err)
+			}
+			tx.Exec(m.buildCreateTableQuery(tableName, headerColumns, dataColumn))
+			if err := tx.Commit(); err != nil {
+				return fmt.Errorf("couldn't create table in mysql database. %+v", err)
+			}
+		} else {
+			return fmt.Errorf("table %s doesn't exist in mysql database and AutoCreateTables is false", tableName)
 		}
 	}
 
