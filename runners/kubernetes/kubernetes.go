@@ -15,6 +15,7 @@ package kubernetes
 
 import (
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -31,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -55,10 +57,28 @@ func NewKubernetesRunner(cfg *config.Config) (runners.Runner, error) {
 	if cfg.Runner.Kubernetes == nil {
 		return nil, fmt.Errorf("no kubernetes runner config")
 	}
-	// Use the current context in kubeconfig
-	k8sconfig, err := clientcmd.BuildConfigFromFlags("", cfg.Runner.Kubernetes.Kubeconfig)
-	if err != nil {
-		return nil, fmt.Errorf("kubeconfig configuration error. %+v", err)
+
+	var kubeconfig string
+	if cfg.Runner.Kubernetes.Kubeconfig == "" {
+		kubeconfig = cfg.Runner.Kubernetes.Kubeconfig
+	} else {
+		kubeconfig = os.Getenv("KUBECONFIG")
+	}
+
+	var k8sconfig *rest.Config
+	if cfg.Runner.Kubernetes.InClusterConfig {
+		var err error
+		k8sconfig, err = rest.InClusterConfig()
+		if err != nil {
+			return nil, fmt.Errorf("kubeconfig in-cluster configuration error. %+v", err)
+		}
+	} else {
+		var err error
+		// This will simply use the current context in kubeconfig
+		k8sconfig, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+		if err != nil {
+			return nil, fmt.Errorf("kubeconfig out-of-cluster configuration error. %+v", err)
+		}
 	}
 
 	// Create the clientset
