@@ -48,7 +48,7 @@ func NewGoChartOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output
 	if goChart.config.FilePath == "" {
 		goChart.config.FilePath = "."
 	}
-	if goChart.config.NamePattern != "" {
+	if goChart.config.NamePattern == "" {
 		goChart.config.NamePattern = "acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Header }}-{{ .Extra.Type }}.png"
 	}
 	return goChart, nil

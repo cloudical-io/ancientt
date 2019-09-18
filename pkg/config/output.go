@@ -45,8 +45,9 @@ type Dump struct {
 
 // Excelize Excelize Output config options. TODO implement
 type Excelize struct {
-	FilePath    string `yaml:"filePath"`
-	NamePattern string `yaml:"namePattern"`
+	FilePath      string `yaml:"filePath"`
+	NamePattern   string `yaml:"namePattern"`
+	SaveAfterRows int    `yaml:"saveAfterRows"`
 }
 
 // SQLite SQLite Output config options

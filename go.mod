@@ -3,6 +3,7 @@ module github.com/cloudical-io/acntt
 go 1.12
 
 require (
+	github.com/360EntSecGroup-Skylar/excelize/v2 v2.0.1
 	github.com/DATA-DOG/go-sqlmock v1.3.3
 	github.com/blend/go-sdk v2.0.0+incompatible // indirect
 	github.com/go-sql-driver/mysql v1.4.0
