@@ -1,6 +1,6 @@
 # Config Examples
 
-## Kubernetes + IPerf3 between all hosts
+## Kubernetes + IPerf3 = CSV Output: IPerf3 test between all to all Nodes
 
 ```yaml
 version: '0'
@@ -29,8 +29,9 @@ tests:
       namePattern: 'acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv'
   runOptions:
     continueOnError: true
-    rounds: 2
-    # wait 10 seconds between each round
+    # If you wanna do the test(s) more than once in one go, set to higher than 1
+    rounds: 1
+    # Wait 10 seconds between each round
     interval: 10s
     mode: "sequential"
     parallelcount: 1

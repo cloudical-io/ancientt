@@ -48,7 +48,7 @@ func toSectionLink(name string) string {
 }
 
 func printTOC(types []KubeTypes) {
-	fmt.Printf("\n## Table of Contents\n")
+	fmt.Printf("\n## Table of Contents\n\n")
 	for _, t := range types {
 		strukt := t[0]
 		fmt.Printf("* [%s](#%s)\n", strukt.Name, toSectionLink(strukt.Name))

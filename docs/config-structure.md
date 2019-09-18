@@ -5,6 +5,7 @@ This Document documents the types introduced by ACNTT for configuration to be us
 > Note this document is generated from code comments. When contributing a change to this document please do so by changing the code comments.
 
 ## Table of Contents
+
 * [AdditionalFlags](#additionalflags)
 * [CSV](#csv)
 * [Config](#config)
@@ -24,7 +25,6 @@ This Document documents the types introduced by ACNTT for configuration to be us
 * [RunnerMock](#runnermock)
 * [SQLite](#sqlite)
 * [Siege](#siege)
-* [Smokeping](#smokeping)
 * [Test](#test)
 * [TestHosts](#testhosts)
 
@@ -34,8 +34,8 @@ AdditionalFlags additional flags structure for Server and Clients
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| Clients |  | []string | true |
-| Server |  | []string | true |
+| Clients | \n List of additional flags for clients | []string | true |
+| Server | \n List of additional flags for server | []string | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -45,8 +45,8 @@ CSV CSV Output config options
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| FilePath |  | string | true |
-| NamePattern |  | string | true |
+| FilePath | File base path for output | string | true |
+| NamePattern | File name pattern templated from various availables during output generation | string | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -68,8 +68,8 @@ Dump Dump Output config options
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| FilePath |  | string | true |
-| NamePattern |  | string | true |
+| FilePath | File base path for output | string | true |
+| NamePattern | File name pattern templated from various availables during output generation | string | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -79,8 +79,8 @@ Excelize Excelize Output config options. TODO implement
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| FilePath |  | string | true |
-| NamePattern |  | string | true |
+| FilePath | File base path for output | string | true |
+| NamePattern | File name pattern templated from various availables during output generation | string | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -90,9 +90,9 @@ GoChart GoChart Output config options
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| FilePath |  | string | true |
-| NamePattern |  | string | true |
-| Types |  | []string | true |
+| FilePath | File base path for output | string | true |
+| NamePattern | File name pattern templated from various availables during output generation | string | true |
+| Types | Types of charts to produce from the testers output data | []string | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -106,8 +106,8 @@ Hosts options for hosts selection for a Test
 | All | If all hosts available should be used. | bool | true |
 | Random | Select `Count` Random hosts from the available hosts list. | bool | true |
 | Count | Used with Random to randomly select the Count of hosts. | int | true |
-| Hosts |  | []string | true |
-| HostSelector |  | map[string]string | true |
+| Hosts | Static list of hosts (this list is not checked for accuracy) | []string | true |
+| HostSelector | \"Label\" selector for the dynamically generated hosts list, e.g., Kubernetes label selector | map[string]string | true |
 | AntiAffinity | AntiAffinity not implemented yet | [][KeyValuePair](#keyvaluepair) | true |
 
 [Back to TOC](#table-of-contents)
@@ -118,8 +118,8 @@ IPerf3 IPerf3 config structure for testers.Tester config
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| AdditionalFlags |  | [AdditionalFlags](#additionalflags) | true |
-| UDP |  | *bool | true |
+| AdditionalFlags | Additional flags for client and server | [AdditionalFlags](#additionalflags) | true |
+| UDP | If UDP should be used for the IPerf3 test | *bool | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -129,8 +129,8 @@ KeyValuePair key value string pair
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| Key |  | string | true |
-| Value |  | string | true |
+| Key | Key of the key value pair | string | true |
+| Value | Value of the key value pair | string | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -140,8 +140,8 @@ KubernetesHosts hosts selection options for Kubernetes
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| IgnoreSchedulingDisabled |  | bool | true |
-| Tolerations |  | [][corev1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#toleration-v1-core) | true |
+| IgnoreSchedulingDisabled | If Nodes that are `SchedulingDisabled` should be ignored | bool | true |
+| Tolerations | List of Kubernetes corev1.Toleration to tolerate when selecting Nodes | [][corev1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#toleration-v1-core) | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -151,9 +151,9 @@ KubernetesTimeouts timeouts for operations with Kubernetess
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| DeleteTimeout |  | int | true |
-| RunningTimeout |  | int | true |
-| SucceedTimeout |  | int | true |
+| DeleteTimeout | Timeout for object deletion | int | true |
+| RunningTimeout | Timeout for \"Pod running\" check | int | true |
+| SucceedTimeout | Timeout for \"Pod succeded\" check (e.g., client Pod exits after Pod) | int | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -163,8 +163,9 @@ MySQL MySQL Output config options
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| DSN |  | string | true |
-| TableNamePattern |  | string | true |
+| DSN | MySQL DSN, format `[username[:password]@][protocol[(address)]]/dbname[?param1=value1&...&paramN=valueN]`, for more information see https://github.com/go-sql-driver/mysql#dsn-data-source-name | string | true |
+| TableNamePattern | Pattern used for templating the name of the table used in the MySQL database, the tables are created automatically when MySQL.AutoCreateTables is set to `true` | string | true |
+| AutoCreateTables | Automatically create tables in the MySQL database (default `true`) | *bool | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -174,13 +175,13 @@ Output Output config structure pointing to the other config options for each out
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| Name |  | string | true |
-| CSV |  | *[CSV](#csv) | true |
-| GoChart |  | *[GoChart](#gochart) | true |
-| Dump |  | *[Dump](#dump) | true |
-| Excelize |  | *[Excelize](#excelize) | true |
-| SQLite |  | *[SQLite](#sqlite) | true |
-| MySQL |  | *[MySQL](#mysql) | true |
+| Name | Name of this output | string | true |
+| CSV | CSV output options | *[CSV](#csv) | true |
+| GoChart | GoChart output options | *[GoChart](#gochart) | true |
+| Dump | Dump output options | *[Dump](#dump) | true |
+| Excelize | Excelize output options | *[Excelize](#excelize) | true |
+| SQLite | SQLite output options | *[SQLite](#sqlite) | true |
+| MySQL | MySQL output options | *[MySQL](#mysql) | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -191,10 +192,10 @@ RunOptions options for running the tasks
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
 | ContinueOnError |  | bool | true |
-| Rounds |  | int | true |
-| Interval |  | time.Duration | true |
-| Mode |  | string | true |
-| ParallelCount |  | int | true |
+| Rounds | Amount of test rounds (repetitions) to do for a test plan | int | true |
+| Interval | Time interval to sleep / wait between | time.Duration | true |
+| Mode | Run mode can be `parallel` or `sequential` (default is `sequential`) | string | true |
+| ParallelCount | **NOT IMPLEMENTED YET** amount of test tasks to run when using `parallel` RunOptions.Mode | int | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -204,9 +205,9 @@ Runner structure with all available runners config options
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| Name |  | string | true |
-| Kubernetes |  | *[RunnerKubernetes](#runnerkubernetes) | true |
-| Mock |  | *[RunnerMock](#runnermock) | true |
+| Name | Name of the runner | string | true |
+| Kubernetes | Kubernetes runner options | *[RunnerKubernetes](#runnerkubernetes) | true |
+| Mock | Mock runner options (userd for testing purposes) | *[RunnerMock](#runnermock) | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -216,13 +217,14 @@ RunnerKubernetes Kubernetes Runner config options
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| Kubeconfig |  | string | true |
-| Image |  | string | true |
-| Namespace |  | string | true |
-| HostNetwork |  | bool | true |
-| Timeouts |  | *[KubernetesTimeouts](#kubernetestimeouts) | true |
-| Annotations |  | map[string]string | true |
-| Hosts |  | *[KubernetesHosts](#kuberneteshosts) | true |
+| InClusterConfig | If the Kubernetes client should use the in-cluster config for the cluster communication | bool | true |
+| Kubeconfig | Path to your kubeconfig file, if not set the `KUBECONFIG` env var will be used and then the default | string | true |
+| Image | The image used for the spawned Pods for the tests (default: `quay.io/galexrt/container-toolbox`) | string | true |
+| Namespace | Namespace to execute the tests in | string | true |
+| HostNetwork | If `hostNetwork` mode should be used for the test Pods | bool | true |
+| Timeouts | Timeout settings for operations against the Kubernetes API | *[KubernetesTimeouts](#kubernetestimeouts) | true |
+| Annotations | Annotations to put on the test Pods | map[string]string | true |
+| Hosts | Host selection specific options | *[KubernetesHosts](#kuberneteshosts) | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -241,9 +243,9 @@ SQLite SQLite Output config options
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| FilePath |  | string | true |
-| NamePattern |  | string | true |
-| TableNamePattern |  | string | true |
+| FilePath | File base path for output | string | true |
+| NamePattern | File name pattern templated from various availables during output generation | string | true |
+| TableNamePattern | Pattern used for templating the name of the table used in the SQLite database, the tables are created automatically | string | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -253,21 +255,11 @@ Siege Siege config structure TODO not implemented yet
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| AdditionalFlags |  | [AdditionalFlags](#additionalflags) | true |
+| AdditionalFlags | Additional flags for client and server | [AdditionalFlags](#additionalflags) | true |
 | Benchmark |  | bool | true |
 | Headers |  | map[string]string | true |
 | URLs |  | []string | true |
 | UserAgent |  | string | true |
-
-[Back to TOC](#table-of-contents)
-
-## Smokeping
-
-Smokeping Smokeping config structure TODO not implemented yet
-
-| Field | Description | Scheme | Required |
-| ----- | ----------- | ------ | -------- |
-| AdditionalFlags |  | [AdditionalFlags](#additionalflags) | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -277,14 +269,13 @@ Test Config options for each Test
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| Name |  | string | true |
-| Type |  | string | true |
-| RunOptions |  | [RunOptions](#runoptions) | true |
-| Outputs |  | [][Output](#output) | true |
-| Hosts |  | [TestHosts](#testhosts) | true |
-| IPerf3 |  | *[IPerf3](#iperf3) | true |
-| Siege |  | *[Siege](#siege) | true |
-| Smokeping |  | *[Smokeping](#smokeping) | true |
+| Name | Test name | string | true |
+| Type | The tester to use, e.g., for `iperf3` set to `iperf3` and so on | string | true |
+| RunOptions | Options for the execution of the test | [RunOptions](#runoptions) | true |
+| Outputs | List of Outputs to use for processing data from the testers. | [][Output](#output) | true |
+| Hosts | Hosts selection for client and server | [TestHosts](#testhosts) | true |
+| IPerf3 | IPerf3 test options | *[IPerf3](#iperf3) | true |
+| Siege | **NOT IMPLEMENTED** Siege test options | *[Siege](#siege) | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -294,7 +285,7 @@ TestHosts list of clients and servers hosts for use in the test(s)
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| Clients |  | [][Hosts](#hosts) | true |
-| Servers |  | [][Hosts](#hosts) | true |
+| Clients | Static list of hosts to use as clients | [][Hosts](#hosts) | true |
+| Servers | Static list of hosts to use as server | [][Hosts](#hosts) | true |
 
 [Back to TOC](#table-of-contents)

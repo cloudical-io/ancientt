@@ -28,7 +28,9 @@ type Config struct {
 
 // KeyValuePair key value string pair
 type KeyValuePair struct {
-	Key   string `yaml:"key"`
+	// Key of the key value pair
+	Key string `yaml:"key"`
+	// Value of the key value pair
 	Value string `yaml:"value"`
 }
 
@@ -50,8 +52,10 @@ type Hosts struct {
 	// Select `Count` Random hosts from the available hosts list.
 	Random bool `yaml:"random"`
 	// Used with Random to randomly select the Count of hosts.
-	Count        int               `yaml:"count"`
-	Hosts        []string          `yaml:"hosts"`
+	Count int `yaml:"count"`
+	// Static list of hosts (this list is not checked for accuracy)
+	Hosts []string `yaml:"hosts"`
+	// "Label" selector for the dynamically generated hosts list, e.g., Kubernetes label selector
 	HostSelector map[string]string `yaml:"hostSelector"`
 	// AntiAffinity not implemented yet
 	AntiAffinity []KeyValuePair `yaml:"antiAffinity"`
@@ -59,82 +63,122 @@ type Hosts struct {
 
 // Output Output config structure pointing to the other config options for each output
 type Output struct {
-	Name     string    `yaml:"name"`
-	CSV      *CSV      `yaml:"csv"`
-	GoChart  *GoChart  `yaml:"goChart"`
-	Dump     *Dump     `yaml:"dump"`
+	// Name of this output
+	Name string `yaml:"name"`
+	// CSV output options
+	CSV *CSV `yaml:"csv"`
+	// GoChart output options
+	GoChart *GoChart `yaml:"goChart"`
+	// Dump output options
+	Dump *Dump `yaml:"dump"`
+	// Excelize output options
 	Excelize *Excelize `yaml:"excelize"`
-	SQLite   *SQLite   `yaml:"sqlite"`
-	MySQL    *MySQL    `yaml:"mysql"`
+	// SQLite output options
+	SQLite *SQLite `yaml:"sqlite"`
+	// MySQL output options
+	MySQL *MySQL `yaml:"mysql"`
 }
 
 // CSV CSV Output config options
 type CSV struct {
-	FilePath    string `yaml:"filePath"`
+	// File base path for output
+	FilePath string `yaml:"filePath"`
+	// File name pattern templated from various availables during output generation
 	NamePattern string `yaml:"namePattern"`
 }
 
 // GoChart GoChart Output config options
 type GoChart struct {
-	FilePath    string   `yaml:"filePath"`
-	NamePattern string   `yaml:"namePattern"`
-	Types       []string `yaml:"types"`
+	// File base path for output
+	FilePath string `yaml:"filePath"`
+	// File name pattern templated from various availables during output generation
+	NamePattern string `yaml:"namePattern"`
+	// Types of charts to produce from the testers output data
+	Types []string `yaml:"types"`
 }
 
 // Dump Dump Output config options
 type Dump struct {
-	FilePath    string `yaml:"filePath"`
+	// File base path for output
+	FilePath string `yaml:"filePath"`
+	// File name pattern templated from various availables during output generation
 	NamePattern string `yaml:"namePattern"`
 }
 
 // Excelize Excelize Output config options. TODO implement
 type Excelize struct {
-	FilePath    string `yaml:"filePath"`
+	// File base path for output
+	FilePath string `yaml:"filePath"`
+	// File name pattern templated from various availables during output generation
 	NamePattern string `yaml:"namePattern"`
 }
 
 // SQLite SQLite Output config options
 type SQLite struct {
-	FilePath         string `yaml:"filePath"`
-	NamePattern      string `yaml:"namePattern"`
+	// File base path for output
+	FilePath string `yaml:"filePath"`
+	// File name pattern templated from various availables during output generation
+	NamePattern string `yaml:"namePattern"`
+	// Pattern used for templating the name of the table used in the SQLite database, the tables are created automatically
 	TableNamePattern string `yaml:"tableNamePattern"`
 }
 
 // MySQL MySQL Output config options
 type MySQL struct {
-	DSN              string `yaml:"dsn"`
+	// MySQL DSN, format `[username[:password]@][protocol[(address)]]/dbname[?param1=value1&...&paramN=valueN]`, for more information see https://github.com/go-sql-driver/mysql#dsn-data-source-name
+	DSN string `yaml:"dsn"`
+	// Pattern used for templating the name of the table used in the MySQL database, the tables are created automatically when MySQL.AutoCreateTables is set to `true`
 	TableNamePattern string `yaml:"tableNamePattern"`
+	// Automatically create tables in the MySQL database (default `true`)
+	AutoCreateTables *bool `yaml:"autoCreateTables"`
 }
 
 // Runner structure with all available runners config options
 type Runner struct {
-	Name       string            `yaml:"name"`
+	// Name of the runner
+	Name string `yaml:"name"`
+	// Kubernetes runner options
 	Kubernetes *RunnerKubernetes `yaml:"kubernetes"`
-	Mock       *RunnerMock       `yaml:"mock"`
+	// Mock runner options (userd for testing purposes)
+	Mock *RunnerMock `yaml:"mock"`
 }
 
 // RunnerKubernetes Kubernetes Runner config options
 type RunnerKubernetes struct {
-	Kubeconfig  string              `yaml:"kubeconfig"`
-	Image       string              `yaml:"image"`
-	Namespace   string              `yaml:"namespace"`
-	HostNetwork bool                `yaml:"hostNetwork"`
-	Timeouts    *KubernetesTimeouts `yaml:"timeouts"`
-	Annotations map[string]string   `yaml:"annotations"`
-	Hosts       *KubernetesHosts    `yaml:"hosts"`
+	// If the Kubernetes client should use the in-cluster config for the cluster communication
+	InClusterConfig bool `yaml:"inClusterConfig"`
+	// Path to your kubeconfig file, if not set the `KUBECONFIG` env var will be used and then the default
+	Kubeconfig string `yaml:"kubeconfig"`
+	// The image used for the spawned Pods for the tests (default: `quay.io/galexrt/container-toolbox`)
+	Image string `yaml:"image"`
+	// Namespace to execute the tests in
+	Namespace string `yaml:"namespace"`
+	// If `hostNetwork` mode should be used for the test Pods
+	HostNetwork bool `yaml:"hostNetwork"`
+	// Timeout settings for operations against the Kubernetes API
+	Timeouts *KubernetesTimeouts `yaml:"timeouts"`
+	// Annotations to put on the test Pods
+	Annotations map[string]string `yaml:"annotations"`
+	// Host selection specific options
+	Hosts *KubernetesHosts `yaml:"hosts"`
 }
 
 // KubernetesTimeouts timeouts for operations with Kubernetess
 type KubernetesTimeouts struct {
-	DeleteTimeout  int `yaml:"deleteTimeout"`
+	// Timeout for object deletion
+	DeleteTimeout int `yaml:"deleteTimeout"`
+	// Timeout for "Pod running" check
 	RunningTimeout int `yaml:"runningTimeout"`
+	// Timeout for "Pod succeded" check (e.g., client Pod exits after Pod)
 	SucceedTimeout int `yaml:"succeedTimeout"`
 }
 
 // KubernetesHosts hosts selection options for Kubernetes
 type KubernetesHosts struct {
-	IgnoreSchedulingDisabled bool                `yaml:"ignoreSchedulingDisabled"`
-	Tolerations              []corev1.Toleration `yaml:"tolerations"`
+	// If Nodes that are `SchedulingDisabled` should be ignored
+	IgnoreSchedulingDisabled bool `yaml:"ignoreSchedulingDisabled"`
+	// List of Kubernetes corev1.Toleration to tolerate when selecting Nodes
+	Tolerations []corev1.Toleration `yaml:"tolerations"`
 }
 
 // RunnerMock Mock Runner config options (here for good measure)
@@ -143,14 +187,20 @@ type RunnerMock struct {
 
 // Test Config options for each Test
 type Test struct {
-	Name       string     `yaml:"name"`
-	Type       string     `yaml:"type"`
+	// Test name
+	Name string `yaml:"name"`
+	// The tester to use, e.g., for `iperf3` set to `iperf3` and so on
+	Type string `yaml:"type"`
+	// Options for the execution of the test
 	RunOptions RunOptions `yaml:"runOptions"`
-	Outputs    []Output   `yaml:"outputs"`
-	Hosts      TestHosts  `yaml:"hosts"`
-	IPerf3     *IPerf3    `yaml:"iperf3"`
-	Siege      *Siege     `yaml:"siege"`
-	Smokeping  *Smokeping `yaml:"smokeping"`
+	// List of Outputs to use for processing data from the testers.
+	Outputs []Output `yaml:"outputs"`
+	// Hosts selection for client and server
+	Hosts TestHosts `yaml:"hosts"`
+	// IPerf3 test options
+	IPerf3 *IPerf3 `yaml:"iperf3"`
+	// **NOT IMPLEMENTED** Siege test options
+	Siege *Siege `yaml:"siege"`
 }
 
 const (
@@ -162,42 +212,49 @@ const (
 
 // RunOptions options for running the tasks
 type RunOptions struct {
-	ContinueOnError bool          `yaml:"continueOnError"`
-	Rounds          int           `yaml:"rounds"`
-	Interval        time.Duration `yaml:"interval"`
-	Mode            string        `yaml:"mode"`
-	ParallelCount   int           `yaml:"parallelCount"`
+	//
+	ContinueOnError bool `yaml:"continueOnError"`
+	// Amount of test rounds (repetitions) to do for a test plan
+	Rounds int `yaml:"rounds"`
+	// Time interval to sleep / wait between
+	Interval time.Duration `yaml:"interval"`
+	// Run mode can be `parallel` or `sequential` (default is `sequential`)
+	Mode string `yaml:"mode"`
+	// **NOT IMPLEMENTED YET** amount of test tasks to run when using `parallel` RunOptions.Mode
+	ParallelCount int `yaml:"parallelCount"`
 }
 
 // TestHosts list of clients and servers hosts for use in the test(s)
 type TestHosts struct {
+	// Static list of hosts to use as clients
 	Clients []Hosts `yaml:"clients"`
+	// Static list of hosts to use as server
 	Servers []Hosts `yaml:"servers"`
 }
 
 // AdditionalFlags additional flags structure for Server and Clients
 type AdditionalFlags struct {
+	//  List of additional flags for clients
 	Clients []string `yaml:"clients"`
-	Server  []string `yaml:"server"`
+	//  List of additional flags for server
+	Server []string `yaml:"server"`
 }
 
 // IPerf3 IPerf3 config structure for testers.Tester config
 type IPerf3 struct {
+	// Additional flags for client and server
 	AdditionalFlags AdditionalFlags `yaml:"additionalFlags"`
-	UDP             *bool           `yaml:"udp"`
+	// If UDP should be used for the IPerf3 test
+	UDP *bool `yaml:"udp"`
 }
 
 // Siege Siege config structure TODO not implemented yet
 type Siege struct {
+	// Additional flags for client and server
 	AdditionalFlags AdditionalFlags   `yaml:"additionalFlags"`
 	Benchmark       bool              `yaml:"benchmark"`
 	Headers         map[string]string `yaml:"headers"`
 	URLs            []string          `yaml:"urls"`
 	UserAgent       string            `yaml:"userAgent"`
 	// TODO Add more options from SIEGERC config file
-}
-
-// Smokeping Smokeping config structure TODO not implemented yet
-type Smokeping struct {
-	AdditionalFlags AdditionalFlags `yaml:"additionalFlags"`
 }

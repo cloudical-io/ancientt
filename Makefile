@@ -1,5 +1,5 @@
 PROJECTNAME ?= acntt
-DESCRIPTION ?= acntt - Automated Continous network testing tool using existing projects like iperf3, siege, etc.
+DESCRIPTION ?= acntt - A tool to automate network testing tools, like iperf3, in dynamic environments such as Kubernetes and more to come dynamic environments.
 MAINTAINER  ?= Alexander Trost <galexrt@googlemail.com>
 HOMEPAGE    ?= https://github.com/cloudical-io/acntt
 
