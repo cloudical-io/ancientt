@@ -7,6 +7,7 @@ This Document documents the types introduced by ACNTT for configuration to be us
 ## Table of Contents
 
 * [AdditionalFlags](#additionalflags)
+* [AnsibleGroups](#ansiblegroups)
 * [CSV](#csv)
 * [Config](#config)
 * [Dump](#dump)
@@ -20,6 +21,7 @@ This Document documents the types introduced by ACNTT for configuration to be us
 * [Output](#output)
 * [RunOptions](#runoptions)
 * [Runner](#runner)
+* [RunnerAnsible](#runneransible)
 * [RunnerKubernetes](#runnerkubernetes)
 * [RunnerMock](#runnermock)
 * [SQLite](#sqlite)
@@ -35,6 +37,17 @@ AdditionalFlags additional flags structure for Server and Clients
 | ----- | ----------- | ------ | -------- |
 | Clients | \n List of additional flags for clients | []string | true |
 | Server | \n List of additional flags for server | []string | true |
+
+[Back to TOC](#table-of-contents)
+
+## AnsibleGroups
+
+AnsibleGroups server and clients host group names in the used inventory file(s)
+
+| Field | Description | Scheme | Required |
+| ----- | ----------- | ------ | -------- |
+| Server | Server inventory server group name | string | true |
+| Clients | Clients inventory clients group name | string | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -80,6 +93,7 @@ Excelize Excelize Output config options. TODO implement
 | ----- | ----------- | ------ | -------- |
 | FilePath | File base path for output | string | true |
 | NamePattern | File name pattern templated from various availables during output generation | string | true |
+| SaveAfterRows | After what amount of rows the Excel file should be saved | int | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -195,7 +209,23 @@ Runner structure with all available runners config options
 | ----- | ----------- | ------ | -------- |
 | Name | Name of the runner | string | true |
 | Kubernetes | Kubernetes runner options | *[RunnerKubernetes](#runnerkubernetes) | true |
+| Ansible | Ansible runner options | *[RunnerAnsible](#runneransible) | true |
 | Mock | Mock runner options (userd for testing purposes) | *[RunnerMock](#runnermock) | true |
+
+[Back to TOC](#table-of-contents)
+
+## RunnerAnsible
+
+RunnerAnsible Ansible Runner config options
+
+| Field | Description | Scheme | Required |
+| ----- | ----------- | ------ | -------- |
+| InventoryFilePath | InventoryFilePath Path to inventory file to use | string | true |
+| Groups | Groups server and clients group names | *[AnsibleGroups](#ansiblegroups) | true |
+| AnsibleCommand | Path to the ansible command (if empty will be searched for in `PATH`) | string | true |
+| AnsibleInventoryCommand | Path to the ansible-inventory command (if empty will be searched for in `PATH`) | string | true |
+| CommandTimeout | Timeout duration for `ansible` and `ansible-inventory` calls (NOT task command timeouts) | time.Duration | true |
+| TaskCommandTimeout | Timeout duration for `ansible` Task command calls | time.Duration | true |
 
 [Back to TOC](#table-of-contents)
 

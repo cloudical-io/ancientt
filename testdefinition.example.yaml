@@ -1,6 +1,5 @@
 version: '0'
 runner:
-  #name: mock
   name: kubernetes
   kubernetes:
     kubeconfig: /home/atrost/.kube/config
@@ -45,7 +44,7 @@ tests:
   runOptions:
     continueOnError: true
     rounds: 1
-    # wait 10 seconds between each round
+    # Wait 10 seconds between each round
     interval: 10s
     mode: "sequential"
     parallelcount: 1
@@ -62,9 +61,9 @@ tests:
     #    nope: foo
     #- name: all-hosts
     #  all: true
-      #hosts:
-      #  - servers-0
-      #  - servers-4
+    #  hosts:
+    #    - servers-0
+    #    - servers-4
     servers:
     - name: one-randomly-selected-server
       random: true
@@ -73,11 +72,11 @@ tests:
     #    nope: foo
     #- name: different-hosts-1
     #  random: true
-    #  count: 2 # when more than one hosts is wanted,
+    #  count: 2 # When more than one hosts is wanted,
     #  hostSelector: # For Labels in K8s and Variables of hosts in Ansible
     #    network-tests-run-here: "true"
     #  antiAffinity:
-    #    - openstack-region # this makes sure hosts with each different "openstack-region" are picked
+    #    - openstack-region # This makes sure hosts with each different "openstack-region" are picked
     #- name: specific-hosts
     #  hosts:
     #    - serverabc123
