@@ -87,6 +87,15 @@ func (d Dump) Do(data outputs.Data) error {
 	return nil
 }
 
+// OutputFiles return a list of output files
+func (d Dump) OutputFiles() []string {
+	list := []string{}
+	for file := range d.files {
+		list = append(list, file)
+	}
+	return list
+}
+
 // Close close open files
 func (d Dump) Close() error {
 	for name, file := range d.files {

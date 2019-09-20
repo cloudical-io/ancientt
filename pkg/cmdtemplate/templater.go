@@ -22,8 +22,9 @@ import (
 
 // Variables variables used for templating
 type Variables struct {
-	ServerAddress string
-	ServerPort    int32
+	ServerAddressV4 string
+	ServerAddressV6 string
+	ServerPort      int32
 }
 
 // Template template a given cmd and args with the given host information struct

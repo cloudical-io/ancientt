@@ -27,10 +27,10 @@ import (
 	// Parsers
 	_ "github.com/cloudical-io/acntt/parsers/iperf3"
 	// Runners
+	_ "github.com/cloudical-io/acntt/runners/ansible"
 	_ "github.com/cloudical-io/acntt/runners/kubernetes"
 	_ "github.com/cloudical-io/acntt/runners/mock"
 	// Testers
 	_ "github.com/cloudical-io/acntt/testers/iperf3"
 	_ "github.com/cloudical-io/acntt/testers/siege"
-	_ "github.com/cloudical-io/acntt/testers/smokeping"
 )

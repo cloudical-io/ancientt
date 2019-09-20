@@ -20,6 +20,7 @@ import (
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/cloudical-io/acntt/pkg/util"
 	"github.com/jmoiron/sqlx"
+
 	// Include sqlite driver for sqlite output
 	_ "github.com/mattn/go-sqlite3"
 
@@ -220,6 +221,15 @@ func (s SQLite) buildInsertQuery(tableName string, count int) string {
 
 	query += insertDataEndQuery
 	return query
+}
+
+// OutputFiles return a list of output files
+func (s SQLite) OutputFiles() []string {
+	list := []string{}
+	for file := range s.dbCons {
+		list = append(list, file)
+	}
+	return list
 }
 
 // Close closes all sqlite3 connections

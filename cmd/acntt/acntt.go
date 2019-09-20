@@ -27,6 +27,8 @@ import (
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/cloudical-io/acntt/runners"
 	"github.com/cloudical-io/acntt/testers"
+	au "github.com/logrusorgru/aurora"
+	"github.com/mattn/go-isatty"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -35,25 +37,30 @@ import (
 )
 
 var (
+	outputSeparator = aurora.Red("===================")
+	aurora          = au.NewAurora(isatty.IsTerminal(os.Stdout.Fd()))
+
 	rootCmd = &cobra.Command{
 		Use:   "acntt",
 		Short: "ACNTT is a automated continuous network testing tool which utilizes iperf, siege and others.",
 		RunE:  run,
 	}
-	cfg *config.Config
+	cfg      *config.Config
+	logLevel string
 )
 
 func init() {
 	// Set flags, viper binds for flags and viper bind default values
-	rootCmd.PersistentFlags().Bool("print-plan", true, "If the plan of the tester should be printed to console.")
+	rootCmd.PersistentFlags().BoolP("only-print-plan", "p", false, "Only print plan for the testdefinitions to console and exit.")
 	rootCmd.PersistentFlags().Bool("no-cleanup", false, "If runners should run cleanup routines after the tests.")
-	rootCmd.PersistentFlags().Bool("yes", false, "Ask for user confirmation for each test before executing it.")
-	rootCmd.PersistentFlags().StringP("testdefinition", "c", "", "Path to the testdefinitions to read for the tests.")
-	viper.BindPFlag("print-plan", rootCmd.PersistentFlags().Lookup("print-plan"))
+	rootCmd.PersistentFlags().BoolP("yes", "y", false, "Ask for user confirmation for each test before executing it.")
+	rootCmd.PersistentFlags().StringP("testdefinition", "c", "testdefinition.yaml", "Path to the testdefinitions to read for the tests.")
+	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "INFO", "Log level (DEBUG, INFO, WARN, ERROR, default: INFO).")
+	viper.BindPFlag("only-print-plan", rootCmd.PersistentFlags().Lookup("only-print-plan"))
 	viper.BindPFlag("no-cleanup", rootCmd.PersistentFlags().Lookup("no-cleanup"))
 	viper.BindPFlag("yes", rootCmd.PersistentFlags().Lookup("yes"))
 	viper.BindPFlag("testdefinition", rootCmd.PersistentFlags().Lookup("testdefinition"))
-	viper.SetDefault("print-plan", true)
+	viper.SetDefault("only-print-plan", false)
 	viper.SetDefault("no-cleanup", false)
 	viper.SetDefault("yes", false)
 	viper.SetDefault("testdefinition", "testdefinition.yaml")
@@ -97,7 +104,12 @@ func run(cmd *cobra.Command, args []string) error {
 		FullTimestamp: true,
 	})
 	log.SetReportCaller(false)
-	log.SetLevel(log.DebugLevel)
+
+	level, err := log.ParseLevel(logLevel)
+	if err != nil {
+		return fmt.Errorf("failed to parse given log level. %+v", err)
+	}
+	log.SetLevel(level)
 
 	if err := loadConfig(); err != nil {
 		return err
@@ -109,13 +121,13 @@ func run(cmd *cobra.Command, args []string) error {
 	if !ok {
 		return fmt.Errorf("runner with name %s not found", runnerName)
 	}
-	runner, err := runnerNewFunc(cfg)
+	runner, err = runnerNewFunc(cfg)
 	if err != nil {
 		return err
 	}
 
 	for i, test := range cfg.Tests {
-		log.WithFields(logrus.Fields{"runner": runnerName}).Infof("starting test %d of %d", i+1, len(cfg.Tests))
+		log.WithFields(logrus.Fields{"runner": runnerName}).Infof("doing test %d of %d", i+1, len(cfg.Tests))
 
 		logger, tester, parser, outputsAssembled, err := prepare(test)
 		logger.WithFields(logrus.Fields{"runner": runnerName})
@@ -144,11 +156,13 @@ func run(cmd *cobra.Command, args []string) error {
 		// Set TestStartTime for usage in output / results later on
 		plan.TestStartTime = time.Now()
 
-		if viper.GetBool("print-plan") {
-			// Pretty print the plan of the test to the shell
-			fmt.Println("--> BEGIN PLAN")
-			plan.PrettyPrint()
-			fmt.Println("--> END PLAN")
+		fmt.Println(outputSeparator)
+		// Pretty print the plan of the test to the shell
+		fmt.Println("--> BEGIN PLAN")
+		plan.PrettyPrint()
+		fmt.Println("--> END PLAN")
+		if viper.GetBool("only-print-plan") {
+			return nil
 		}
 
 		if !viper.GetBool("yes") {
@@ -224,6 +238,15 @@ func run(cmd *cobra.Command, args []string) error {
 
 		close(doneCh)
 
+		fmt.Println(outputSeparator)
+		fmt.Println(aurora.Magenta("Following files have been created / used:"))
+		for outName, output := range outputsAssembled {
+			for _, file := range output.OutputFiles() {
+				fmt.Printf("%s (output: %s)\n", file, outName)
+			}
+		}
+		fmt.Println(outputSeparator)
+
 		// Run runners.Cleanup() func if wanted by the user
 		if !viper.GetBool("no-cleanup") {
 			if err := runnerCleanup(runner, plan); err != nil {
@@ -238,23 +261,24 @@ func run(cmd *cobra.Command, args []string) error {
 }
 
 func askUserForYes() error {
-	fmt.Println("===================")
+	fmt.Println(outputSeparator)
+
 	for {
 		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("Are you sure you want to continue with above test plan? ('Yes' or 'No'): ")
+		fmt.Print(aurora.Underline("Are you sure you want to continue with above test plan? ('Yes' or 'No'):"), " ")
 		userInput, err := reader.ReadString('\n')
 		if err != nil {
 			return err
 		}
 
 		userInput = strings.TrimSpace(strings.ToLower(userInput))
+		fmt.Println(outputSeparator)
 		if userInput == "yes" || userInput == "y" {
 			break
 		} else if userInput == "no" || userInput == "n" {
 			return fmt.Errorf("aborted by user")
 		}
 	}
-	fmt.Println("===================")
 
 	return nil
 }
@@ -327,6 +351,7 @@ func doOutputs(outputsAssembled map[string]outputs.Output, test *config.Test, do
 func checkForErrors(plan *testers.Plan) error {
 	errorOccured := false
 
+	fmt.Println(outputSeparator)
 	for _, command := range plan.Commands {
 		for _, task := range command {
 			if task.Status == nil || task.Sleep != 0 {
@@ -336,7 +361,7 @@ func checkForErrors(plan *testers.Plan) error {
 			// FailedHosts
 			if len(task.Status.FailedHosts.Servers) > 0 {
 				errorOccured = true
-				fmt.Println("-> Failed Server Hosts")
+				fmt.Println(aurora.Yellow("-> Failed Server Hosts"))
 				for host, count := range task.Status.FailedHosts.Servers {
 					fmt.Printf("%s - %d\n", host, count)
 					for _, err := range task.Status.Errors[host] {
@@ -346,7 +371,7 @@ func checkForErrors(plan *testers.Plan) error {
 			}
 			if len(task.Status.FailedHosts.Clients) > 0 {
 				errorOccured = true
-				fmt.Println("-> Failed Client Hosts")
+				fmt.Println(aurora.Yellow("-> Failed Client Hosts"))
 				for host, count := range task.Status.FailedHosts.Clients {
 					fmt.Printf("%s - %d\n", host, count)
 					for _, err := range task.Status.Errors[host] {
@@ -357,19 +382,21 @@ func checkForErrors(plan *testers.Plan) error {
 
 			// SuccessfulHosts
 			if len(task.Status.SuccessfulHosts.Servers) > 0 {
-				fmt.Println("-> Successful Server Hosts")
+				fmt.Println(aurora.Green("-> Successful Server Hosts"))
 				for host, count := range task.Status.SuccessfulHosts.Servers {
 					fmt.Printf("%s - %d\n", host, count)
 				}
 			}
 			if len(task.Status.SuccessfulHosts.Clients) > 0 {
-				fmt.Println("-> Successful Client Hosts")
+				fmt.Println(aurora.Green("-> Successful Client Hosts"))
 				for host, count := range task.Status.SuccessfulHosts.Clients {
 					fmt.Printf("%s - %d\n", host, count)
 				}
 			}
 		}
 	}
+
+	fmt.Println(outputSeparator)
 
 	if errorOccured {
 		return fmt.Errorf("errors occured during task")

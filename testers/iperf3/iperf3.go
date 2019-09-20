@@ -150,7 +150,7 @@ func (ip IPerf3) buildIPerf3ClientCommand(server *testers.Host, client *testers.
 	args := []string{
 		"--json",
 		"--port={{ .ServerPort }}",
-		"--client={{ .ServerAddress }}",
+		"--client={{ .ServerAddressV4 }}",
 	}
 
 	// Add --udp flag when UDP should be used
