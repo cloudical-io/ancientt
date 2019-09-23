@@ -1,0 +1,4 @@
+[server]
+localhost ansible_connection=local
+[clients]
+localhost ansible_connection=local

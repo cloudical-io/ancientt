@@ -110,6 +110,11 @@ func (gc GoChart) Do(data outputs.Data) error {
 	return nil
 }
 
+// OutputFiles return a list of output files
+func (gc GoChart) OutputFiles() []string {
+	return []string{}
+}
+
 // Close NOOP, as graph pictures are written once (= closed immediately)
 func (gc GoChart) Close() error {
 	return nil

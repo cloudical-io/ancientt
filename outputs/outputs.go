@@ -27,8 +27,10 @@ var Factories = make(map[string]func(cfg *config.Config, outCfg *config.Output) 
 
 // Output is the interface a output has to implement.
 type Output interface {
-	// Do
+	// Do do output related work on the given Data
 	Do(data Data) error
+	// OutputFiles return a list of output files
+	OutputFiles() []string
 	// Close run "cleanup" / close tasks, e.g., close file handles and others
 	Close() error
 }

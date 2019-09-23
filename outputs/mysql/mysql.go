@@ -19,6 +19,7 @@ import (
 	"github.com/cloudical-io/acntt/pkg/config"
 	"github.com/cloudical-io/acntt/pkg/util"
 	"github.com/jmoiron/sqlx"
+
 	// Include MySQL driver for mysql output
 	_ "github.com/go-sql-driver/mysql"
 
@@ -230,6 +231,11 @@ func (m MySQL) buildInsertQuery(tableName string, count int) string {
 
 	query += insertDataEndQuery
 	return query
+}
+
+// OutputFiles return a list of output files
+func (m MySQL) OutputFiles() []string {
+	return []string{}
 }
 
 // Close closes all MySQL connections

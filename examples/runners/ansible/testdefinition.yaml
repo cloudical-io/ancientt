@@ -1,0 +1,39 @@
+version: '0'
+runner:
+  name: ansible
+  ansible:
+    inventoryFilePath: ./inventory
+    groups:
+      server: "server"
+      clients: "clients"
+    ansibleCommand: ansible
+    ansibleInventoryCommand: ansible-inventory
+tests:
+- name: iperf3-all-to-all
+  type: iperf3
+  outputs:
+  - name: csv
+    csv:
+      filePath: .
+      namePattern: 'acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv'
+  runOptions:
+    continueOnError: true
+    rounds: 1
+    interval: 10s
+    mode: "sequential"
+    parallelcount: 1
+  # This hosts section would cause iperf3 to be run from all hosts to the hosts selected in the `destinations` section
+  # Each entry will be merged into one list
+  hosts:
+    clients:
+    - name: all-hosts
+      all: true
+    servers:
+    - name: all-hosts
+      all: true
+  iperf3:
+    udp: false
+    additionalFlags:
+      clients: []
+      server: []
+

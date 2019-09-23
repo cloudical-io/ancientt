@@ -127,6 +127,15 @@ func (c CSV) Do(data outputs.Data) error {
 	return nil
 }
 
+// OutputFiles return a list of output files
+func (c CSV) OutputFiles() []string {
+	list := []string{}
+	for file := range c.files {
+		list = append(list, file)
+	}
+	return list
+}
+
 // Close close all file descriptors here
 func (c CSV) Close() error {
 	for name, writer := range c.writers {

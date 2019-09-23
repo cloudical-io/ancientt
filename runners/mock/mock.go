@@ -26,13 +26,13 @@ import (
 )
 
 const (
-	// NameMock Mock Runner Name
-	NameMock              = "mock"
+	// Name Mock Runner Name
+	Name                  = "mock"
 	mockServerNamePattern = "servers-%d"
 )
 
 func init() {
-	runners.Factories[NameMock] = NewMockRunner
+	runners.Factories[Name] = NewRunner
 }
 
 // Mock Mock Runner struct
@@ -41,10 +41,10 @@ type Mock struct {
 	logger *log.Entry
 }
 
-// NewMockRunner returns a new Mock Runner
-func NewMockRunner(cfg *config.Config) (runners.Runner, error) {
+// NewRunner returns a new Mock Runner
+func NewRunner(cfg *config.Config) (runners.Runner, error) {
 	return Mock{
-		logger: log.WithFields(logrus.Fields{"runner": NameMock}),
+		logger: log.WithFields(logrus.Fields{"runner": Name}),
 	}, nil
 }
 

@@ -146,7 +146,16 @@ func (e Excelize) inputData(startRow int, columns []outputs.Column, fState *file
 	return nil
 }
 
-// Close TODO Implement
+// OutputFiles return a list of output files
+func (e Excelize) OutputFiles() []string {
+	list := []string{}
+	for file := range e.files {
+		list = append(list, file)
+	}
+	return list
+}
+
+// Close Nothing to do here, all files are written during "creation" and "usage" (writing data) to the files
 func (e Excelize) Close() error {
 	return nil
 }

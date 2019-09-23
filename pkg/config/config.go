@@ -103,6 +103,8 @@ type Excelize struct {
 	FilePath string `yaml:"filePath"`
 	// File name pattern templated from various availables during output generation
 	NamePattern string `yaml:"namePattern"`
+	// After what amount of rows the Excel file should be saved
+	SaveAfterRows int `yaml:"saveAfterRows"`
 }
 
 // SQLite SQLite Output config options
@@ -131,6 +133,8 @@ type Runner struct {
 	Name string `yaml:"name"`
 	// Kubernetes runner options
 	Kubernetes *RunnerKubernetes `yaml:"kubernetes"`
+	// Ansible runner options
+	Ansible *RunnerAnsible `yaml:"ansible"`
 	// Mock runner options (userd for testing purposes)
 	Mock *RunnerMock `yaml:"mock"`
 }
@@ -171,6 +175,30 @@ type KubernetesHosts struct {
 	IgnoreSchedulingDisabled bool `yaml:"ignoreSchedulingDisabled"`
 	// List of Kubernetes corev1.Toleration to tolerate when selecting Nodes
 	Tolerations []corev1.Toleration `yaml:"tolerations"`
+}
+
+// RunnerAnsible Ansible Runner config options
+type RunnerAnsible struct {
+	// InventoryFilePath Path to inventory file to use
+	InventoryFilePath string `yaml:"inventoryFilePath"`
+	// Groups server and clients group names
+	Groups *AnsibleGroups `yaml:"groups"`
+	// Path to the ansible command (if empty will be searched for in `PATH`)
+	AnsibleCommand string `yaml:"ansibleCommand"`
+	// Path to the ansible-inventory command (if empty will be searched for in `PATH`)
+	AnsibleInventoryCommand string `yaml:"ansibleInventoryCommand"`
+	// Timeout duration for `ansible` and `ansible-inventory` calls (NOT task command timeouts)
+	CommandTimeout time.Duration `yaml:"commandTimeout"`
+	// Timeout duration for `ansible` Task command calls
+	TaskCommandTimeout time.Duration `yaml:"taskCommandTimeout"`
+}
+
+// AnsibleGroups server and clients host group names in the used inventory file(s)
+type AnsibleGroups struct {
+	// Server inventory server group name
+	Server string `yaml:"server"`
+	// Clients inventory clients group name
+	Clients string `yaml:"clients"`
 }
 
 // RunnerMock Mock Runner config options (here for good measure)

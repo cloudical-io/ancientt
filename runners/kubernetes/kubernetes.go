@@ -36,11 +36,11 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// NameKubernetes Kubernetes Runner Name
-const NameKubernetes = "kubernetes"
+// Name Kubernetes Runner Name
+const Name = "kubernetes"
 
 func init() {
-	runners.Factories[NameKubernetes] = NewKubernetesRunner
+	runners.Factories[Name] = NewRunner
 }
 
 // Kubernetes Kubernetes runner struct
@@ -52,8 +52,8 @@ type Kubernetes struct {
 	runOptions config.RunOptions
 }
 
-// NewKubernetesRunner return a new Kubernetes Runner
-func NewKubernetesRunner(cfg *config.Config) (runners.Runner, error) {
+// NewRunner return a new Kubernetes Runner
+func NewRunner(cfg *config.Config) (runners.Runner, error) {
 	if cfg.Runner.Kubernetes == nil {
 		return nil, fmt.Errorf("no kubernetes runner config")
 	}
@@ -87,44 +87,39 @@ func NewKubernetesRunner(cfg *config.Config) (runners.Runner, error) {
 		return nil, fmt.Errorf("kubernetes client configuration error. %+v", err)
 	}
 
-	var k8sConfig *config.RunnerKubernetes
-	if cfg.Runner.Kubernetes != nil {
-		k8sConfig = cfg.Runner.Kubernetes
-	} else {
-		k8sConfig = &config.RunnerKubernetes{}
+	var runnerCfg *config.RunnerKubernetes
+
+	if runnerCfg.Annotations == nil {
+		runnerCfg.Annotations = map[string]string{}
 	}
 
-	if k8sConfig.Annotations == nil {
-		k8sConfig.Annotations = map[string]string{}
-	}
-
-	if k8sConfig.Hosts == nil {
-		k8sConfig.Hosts = &config.KubernetesHosts{
+	if runnerCfg.Hosts == nil {
+		runnerCfg.Hosts = &config.KubernetesHosts{
 			IgnoreSchedulingDisabled: true,
 			Tolerations:              []corev1.Toleration{},
 		}
 	}
 
-	if k8sConfig.Namespace == "" {
-		k8sConfig.Namespace = "acntt"
+	if runnerCfg.Namespace == "" {
+		runnerCfg.Namespace = "acntt"
 	}
-	if k8sConfig.Timeouts == nil {
-		k8sConfig.Timeouts = &config.KubernetesTimeouts{
+	if runnerCfg.Timeouts == nil {
+		runnerCfg.Timeouts = &config.KubernetesTimeouts{
 			DeleteTimeout:  20,
 			RunningTimeout: 35,
 			SucceedTimeout: 60,
 		}
 	}
 
-	return Kubernetes{
-		logger:    log.WithFields(logrus.Fields{"runner": NameKubernetes, "namespace": cfg.Runner.Kubernetes.Namespace}),
-		config:    k8sConfig,
+	return &Kubernetes{
+		logger:    log.WithFields(logrus.Fields{"runner": Name, "namespace": cfg.Runner.Kubernetes.Namespace}),
+		config:    runnerCfg,
 		k8sclient: clientset,
 	}, nil
 }
 
 // GetHostsForTest return a mocked list of hots for the given test config
-func (k Kubernetes) GetHostsForTest(test *config.Test) (*testers.Hosts, error) {
+func (k *Kubernetes) GetHostsForTest(test *config.Test) (*testers.Hosts, error) {
 	hosts := &testers.Hosts{
 		Clients: map[string]*testers.Host{},
 		Servers: map[string]*testers.Host{},
@@ -166,7 +161,7 @@ func (k Kubernetes) GetHostsForTest(test *config.Test) (*testers.Hosts, error) {
 	return hosts, nil
 }
 
-func (k Kubernetes) k8sNodesToHosts() ([]*testers.Host, error) {
+func (k *Kubernetes) k8sNodesToHosts() ([]*testers.Host, error) {
 	hosts := []*testers.Host{}
 	nodes, err := k.k8sclient.CoreV1().Nodes().List(metav1.ListOptions{})
 	if err != nil {
@@ -196,7 +191,7 @@ func (k Kubernetes) k8sNodesToHosts() ([]*testers.Host, error) {
 }
 
 // Prepare prepare Kubernetes for usage with acntt, e.g., create Namespace.
-func (k Kubernetes) Prepare(runOpts config.RunOptions, plan *testers.Plan) error {
+func (k *Kubernetes) Prepare(runOpts config.RunOptions, plan *testers.Plan) error {
 	k.runOptions = runOpts
 
 	if err := k.prepareKubernetes(); err != nil {
@@ -207,19 +202,19 @@ func (k Kubernetes) Prepare(runOpts config.RunOptions, plan *testers.Plan) error
 }
 
 // Execute run the given commands and return the logs of it and / or error
-func (k Kubernetes) Execute(plan *testers.Plan, parser chan<- parsers.Input) error {
+func (k *Kubernetes) Execute(plan *testers.Plan, parser chan<- parsers.Input) error {
 	// TODO Add option to go through Service IPs instead of Pod IPs
 
 	// Iterate over given plan.Commands to then run each task
 	for round, tasks := range plan.Commands {
-		log.Infof("running commands round %d of %d", round+1, len(plan.Commands))
+		k.logger.Infof("running commands round %d of %d", round+1, len(plan.Commands))
 		for i, task := range tasks {
 			if task.Sleep != 0 {
 				k.logger.Infof("waiting %s to pass before continuing next round", task.Sleep.String())
 				time.Sleep(task.Sleep)
 				continue
 			}
-			log.Infof("running task round %d of %d", i+1, len(tasks))
+			k.logger.Infof("running task round %d of %d", i+1, len(tasks))
 
 			// Create the Pods for the server task and client tasks
 			if err := k.createPodsForTasks(round, task, plan.TestStartTime, plan.Tester, util.GetTaskName(plan), parser); err != nil {
@@ -235,7 +230,7 @@ func (k Kubernetes) Execute(plan *testers.Plan, parser chan<- parsers.Input) err
 }
 
 // prepareKubernetes prepares Kubernetes by creating the namespace if it does not exist
-func (k Kubernetes) prepareKubernetes() error {
+func (k *Kubernetes) prepareKubernetes() error {
 	// Check if namespaces exists, if not try create it
 	if _, err := k.k8sclient.CoreV1().Namespaces().Get(k.config.Namespace, metav1.GetOptions{}); err != nil {
 		// If namespace not found, create it
@@ -261,7 +256,7 @@ func (k Kubernetes) prepareKubernetes() error {
 }
 
 // createPodsForTasks create the Pods that are needed for the task(s)
-func (k Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, plannedTime time.Time, tester string, taskName string, parser chan<- parsers.Input) error {
+func (k *Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, plannedTime time.Time, tester string, taskName string, parser chan<- parsers.Input) error {
 	logger := k.logger.WithFields(logrus.Fields{"round": round})
 
 	var wg sync.WaitGroup
@@ -320,10 +315,10 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, planne
 		return nil
 	}
 
-	templateVars.ServerAddress = pod.Status.PodIP
+	templateVars.ServerAddressV4 = pod.Status.PodIP
 
 	for i, task := range mainTask.SubTasks {
-		log.Infof("running sub task %d of %d", i+1, len(mainTask.SubTasks))
+		k.logger.Infof("running sub task %d of %d", i+1, len(mainTask.SubTasks))
 
 		wg.Add(1)
 		go func(task *testers.Task) {
@@ -411,7 +406,7 @@ func (k Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, planne
 	return nil
 }
 
-func (k Kubernetes) pushLogsToParser(parserInput chan<- parsers.Input, plannedTime time.Time, testTime time.Time, round int, tester string, serverHost string, clientHost string, podName string) error {
+func (k *Kubernetes) pushLogsToParser(parserInput chan<- parsers.Input, plannedTime time.Time, testTime time.Time, round int, tester string, serverHost string, clientHost string, podName string) error {
 	// Wait for the Pod to succeed because that is the "sign" that the test for that Pod is done.
 	succeeded, err := k8sutil.WaitForPodToSucceed(k.k8sclient, k.config.Namespace, podName, k.config.Timeouts.SucceedTimeout)
 	if err != nil {
@@ -447,7 +442,7 @@ func (k Kubernetes) pushLogsToParser(parserInput chan<- parsers.Input, plannedTi
 }
 
 // Cleanup remove all (left behind) Kubernetes resources created for the given Plan.
-func (k Kubernetes) Cleanup(plan *testers.Plan) error {
+func (k *Kubernetes) Cleanup(plan *testers.Plan) error {
 	var wg sync.WaitGroup
 
 	// Delete all Pods with label XYZ
