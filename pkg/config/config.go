@@ -43,7 +43,7 @@ type Hosts struct {
 	All bool `yaml:"all"`
 	// Select `Count` Random hosts from the available hosts list.
 	Random bool `yaml:"random"`
-	// Used with Random to randomly select the Count of hosts.
+	// Must be used with `Random`, will cause `Count` times Nodes to be randomly selected from all applicable hosts.
 	Count int `yaml:"count"`
 	// Static list of hosts (this list is not checked for accuracy)
 	Hosts []string `yaml:"hosts"`

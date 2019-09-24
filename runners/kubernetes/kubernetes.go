@@ -59,7 +59,7 @@ func NewRunner(cfg *config.Config) (runners.Runner, error) {
 	}
 
 	var kubeconfig string
-	if cfg.Runner.Kubernetes.Kubeconfig == "" {
+	if cfg.Runner.Kubernetes.Kubeconfig != "" {
 		kubeconfig = cfg.Runner.Kubernetes.Kubeconfig
 	} else {
 		kubeconfig = os.Getenv("KUBECONFIG")
@@ -87,24 +87,26 @@ func NewRunner(cfg *config.Config) (runners.Runner, error) {
 		return nil, fmt.Errorf("kubernetes client configuration error. %+v", err)
 	}
 
-	var runnerCfg *config.RunnerKubernetes
-
-	if runnerCfg.Annotations == nil {
-		runnerCfg.Annotations = map[string]string{}
+	if cfg.Runner.Kubernetes.Annotations == nil {
+		cfg.Runner.Kubernetes.Annotations = map[string]string{}
 	}
 
-	if runnerCfg.Hosts == nil {
-		runnerCfg.Hosts = &config.KubernetesHosts{
+	if cfg.Runner.Kubernetes.Image == "" {
+		cfg.Runner.Kubernetes.Image = "quay.io/galexrt/container-toolbox:latest"
+	}
+
+	if cfg.Runner.Kubernetes.Hosts == nil {
+		cfg.Runner.Kubernetes.Hosts = &config.KubernetesHosts{
 			IgnoreSchedulingDisabled: true,
 			Tolerations:              []corev1.Toleration{},
 		}
 	}
 
-	if runnerCfg.Namespace == "" {
-		runnerCfg.Namespace = "ancientt"
+	if cfg.Runner.Kubernetes.Namespace == "" {
+		cfg.Runner.Kubernetes.Namespace = "ancientt"
 	}
-	if runnerCfg.Timeouts == nil {
-		runnerCfg.Timeouts = &config.KubernetesTimeouts{
+	if cfg.Runner.Kubernetes.Timeouts == nil {
+		cfg.Runner.Kubernetes.Timeouts = &config.KubernetesTimeouts{
 			DeleteTimeout:  20,
 			RunningTimeout: 35,
 			SucceedTimeout: 60,
@@ -113,7 +115,7 @@ func NewRunner(cfg *config.Config) (runners.Runner, error) {
 
 	return &Kubernetes{
 		logger:    log.WithFields(logrus.Fields{"runner": Name, "namespace": cfg.Runner.Kubernetes.Namespace}),
-		config:    runnerCfg,
+		config:    cfg.Runner.Kubernetes,
 		k8sclient: clientset,
 	}, nil
 }

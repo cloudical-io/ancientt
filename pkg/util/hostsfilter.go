@@ -38,11 +38,7 @@ func FilterHostsList(inHosts []*testers.Host, filter config.Hosts) ([]*testers.H
 
 	filteredHosts = checkAntiAffinity(filteredHosts, filter.AntiAffinity)
 
-	if len(filteredHosts) == 0 {
-		return filteredHosts, nil
-	}
-
-	if filter.All {
+	if filter.All || len(filteredHosts) == 0 {
 		return filteredHosts, nil
 	}
 
