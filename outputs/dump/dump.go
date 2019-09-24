@@ -18,8 +18,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/cloudical-io/acntt/outputs"
-	"github.com/cloudical-io/acntt/pkg/config"
+	"github.com/cloudical-io/ancientt/outputs"
+	"github.com/cloudical-io/ancientt/pkg/config"
 	"github.com/k0kubun/pp"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
@@ -51,7 +51,7 @@ func NewDumpOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output, e
 		dump.config.FilePath = "."
 	}
 	if dump.config.NamePattern == "" {
-		dump.config.NamePattern = "acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.txt"
+		dump.config.NamePattern = "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.txt"
 	}
 	return dump, nil
 }

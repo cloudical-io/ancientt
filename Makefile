@@ -1,8 +1,10 @@
-PROJECTNAME ?= acntt
-DESCRIPTION ?= acntt - A tool to automate network testing tools, like iperf3, in dynamic environments such as Kubernetes and more to come dynamic environments.
-MAINTAINER  ?= Alexander Trost <galexrt@googlemail.com>
-HOMEPAGE    ?= https://github.com/cloudical-io/acntt
+PROJECTNAME ?= ancientt
+DESCRIPTION ?= ancientt - A tool to automate network testing tools, like iperf3, in dynamic environments such as Kubernetes and more to come dynamic environments.
+HOMEPAGE    ?= https://github.com/cloudical-io/ancientt
 
+GO_SUPPORTED_VERSIONS ?= 1.12|1.13
+
+DOCKER  := docker
 GO      := go
 GOFMT   := gofmt
 PREFIX  ?= $(shell pwd)
@@ -10,34 +12,46 @@ VERSION ?= $(shell cat VERSION)
 
 pkgs = $(shell go list ./... | grep -v /vendor/ | grep -v /test/)
 
-DOCKER_IMAGE_NAME ?= acntt
+DOCKER_IMAGE_NAME ?= ancientt
 DOCKER_IMAGE_TAG  ?= $(subst /,-,$(shell git rev-parse --abbrev-ref HEAD))
+
+go.check:
+ifneq ($(shell $(GO) version | grep -q -E '\bgo($(GO_SUPPORTED_VERSIONS))\b' && echo 0 || echo 1), 0)
+	$(error unsupported go version. Please make install one of the following supported version: '$(GO_SUPPORTED_VERSIONS)')
+endif
 
 all: format style vet test build
 
+ancientt: go.check
+	$(GO) build -o ancientt $(PREFIX)/cmd/ancientt/
+
+build: ancientt
+
 docker:
 	@echo ">> building docker image"
-	@docker build -t "$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" .
+	$(DOCKER) build -t "$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" .
 
-format:
-	go fmt $(pkgs)
+format: go.check
+	$(GO) fmt $(pkgs)
 
-style:
+style: go.check
 	@echo ">> checking code style"
-	@! $(GOFMT) -d $(shell find . -path ./vendor -prune -o -name '*.go' -print) | grep '^'
+	$(GOFMT) -d $(shell find . -path ./vendor -prune -o -name '*.go' -print) | grep '^'
 
-test:
-	@$(GO) test $(pkgs)
+test: go.check
+	@echo ">> running tests"
+	$(GO) test $(pkgs)
 
-test-short:
+test-short: go.check
 	@echo ">> running short tests"
-	@$(GO) test -short $(pkgs)
+	$(GO) test -short $(pkgs)
 
-vet:
+vet: go.check
 	@echo ">> vetting code"
-	@$(GO) vet $(pkgs)
+	$(GO) vet $(pkgs)
 
 docs: pkg/config/config.go
+	@echo ">> generating docs"
 	$(GO) run ./cmd/docgen/ api pkg/config/*.go > docs/config-structure.md
 
-.PHONY: all build crossbuild docker format promu style tarball test vet
+.PHONY: all build docker docs format go.check style test test-short vet

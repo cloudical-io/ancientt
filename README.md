@@ -1,4 +1,4 @@
-# acntt
+# ancientt
 
 A tool to automate network testing tools, like iperf3, in dynamic environments such as Kubernetes and more to come dynamic environments.
 
@@ -12,13 +12,17 @@ A tool to automate network testing tools, like iperf3, in dynamic environments s
 
 ## Usage
 
-Compile or download the ACNTT binary.
+Compile or download the Ancientt binary.
 
 ```shell
 # You can also use the short flag `-c
-acntt --testdefinition your-testdefinitions.yaml
+ancientt --testdefinition your-testdefinitions.yaml
 ```
 
 ## Building
 
 **Golang version**: `v1.12` or higher (tested with `v1.12.7` on `linux/amd64`)
+
+## Licensing
+
+Ancientt is under the Apache 2.0 License.

@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/cloudical-io/acntt/pkg/config"
-	exectest "github.com/cloudical-io/acntt/pkg/executor/test"
+	"github.com/cloudical-io/ancientt/pkg/config"
+	exectest "github.com/cloudical-io/ancientt/pkg/executor/test"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -81,7 +81,7 @@ func TestGetHostsForTest(t *testing.T) {
 	a := Ansible{
 		logger: log.WithFields(logrus.Fields{"runner": Name}),
 		config: &config.RunnerAnsible{
-			InventoryFilePath: "/tmp/test-acntt-ansible-inventory",
+			InventoryFilePath: "/tmp/test-ancientt-ansible-inventory",
 			Groups: &config.AnsibleGroups{
 				Server:  "server",
 				Clients: "clients",

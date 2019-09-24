@@ -14,7 +14,7 @@ limitations under the License.
 package tests
 
 import (
-	"github.com/cloudical-io/acntt/outputs"
+	"github.com/cloudical-io/ancientt/outputs"
 	"time"
 )
 

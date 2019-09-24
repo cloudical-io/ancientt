@@ -17,8 +17,8 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/cloudical-io/acntt/pkg/config"
-	"github.com/cloudical-io/acntt/testers"
+	"github.com/cloudical-io/ancientt/pkg/config"
+	"github.com/cloudical-io/ancientt/testers"
 )
 
 // FilterHostsList filter a given host list

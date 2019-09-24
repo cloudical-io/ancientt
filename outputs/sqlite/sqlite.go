@@ -17,14 +17,14 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/cloudical-io/acntt/pkg/config"
-	"github.com/cloudical-io/acntt/pkg/util"
+	"github.com/cloudical-io/ancientt/pkg/config"
+	"github.com/cloudical-io/ancientt/pkg/util"
 	"github.com/jmoiron/sqlx"
 
 	// Include sqlite driver for sqlite output
 	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/cloudical-io/acntt/outputs"
+	"github.com/cloudical-io/ancientt/outputs"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
@@ -37,8 +37,8 @@ const (
 	SQLiteFloatType = "FLOAT"
 	SQLiteBoolType  = "BOOLEAN"
 
-	defaultNamePattern      = "acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.sqlite3"
-	defaultTableNamePattern = "acntt{{ .TestStartTime }}{{ .Data.Tester }}{{ .Data.ServerHost }}{{ .Data.ClientHost }}"
+	defaultNamePattern      = "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.sqlite3"
+	defaultTableNamePattern = "ancientt{{ .TestStartTime }}{{ .Data.Tester }}{{ .Data.ServerHost }}{{ .Data.ClientHost }}"
 
 	createTableBeginQuery = "CREATE TABLE IF NOT EXISTS `%s` (\n"
 	createTableEndQuery   = `);`

@@ -16,8 +16,8 @@ package iperf3
 import (
 	"testing"
 
-	"github.com/cloudical-io/acntt/pkg/config"
-	"github.com/cloudical-io/acntt/testers"
+	"github.com/cloudical-io/ancientt/pkg/config"
+	"github.com/cloudical-io/ancientt/testers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

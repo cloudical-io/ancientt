@@ -22,11 +22,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cloudical-io/acntt/outputs"
-	"github.com/cloudical-io/acntt/parsers"
-	"github.com/cloudical-io/acntt/pkg/config"
-	"github.com/cloudical-io/acntt/runners"
-	"github.com/cloudical-io/acntt/testers"
+	"github.com/cloudical-io/ancientt/outputs"
+	"github.com/cloudical-io/ancientt/parsers"
+	"github.com/cloudical-io/ancientt/pkg/config"
+	"github.com/cloudical-io/ancientt/runners"
+	"github.com/cloudical-io/ancientt/testers"
 	au "github.com/logrusorgru/aurora"
 	"github.com/mattn/go-isatty"
 	"github.com/sirupsen/logrus"
@@ -41,8 +41,8 @@ var (
 	aurora          = au.NewAurora(isatty.IsTerminal(os.Stdout.Fd()))
 
 	rootCmd = &cobra.Command{
-		Use:   "acntt",
-		Short: "ACNTT is a automated continuous network testing tool which utilizes iperf, siege and others.",
+		Use:   "ancientt",
+		Short: "Ancientt is a tool to automate network testing tools, like iperf3, in dynamic environments such as Kubernetes and more to come dynamic environments.",
 		RunE:  run,
 	}
 	cfg      *config.Config

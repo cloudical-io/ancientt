@@ -8,12 +8,12 @@ RUN go get -v ./... && \
 
 # TODO Use fixed tag
 FROM galexrt/container-toolbox:latest
-LABEL maintainer="Alexander Trost <galexrt@googlemail.com>"
+LABEL maintainer="Alexander Trost <galexrt@googlemail.com> & Michal Janus <michal.janus@cloudical.io>"
 
-COPY --from=go-build /go/bin/app /bin/acntt
+COPY --from=go-build /go/bin/app /bin/ancientt
 
-RUN chmod 755 /bin/acntt
+RUN chmod 755 /bin/ancientt
 
-ENTRYPOINT ["/bin/acntt"]
+ENTRYPOINT ["/bin/ancientt"]
 
 CMD ["--help"]

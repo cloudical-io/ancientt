@@ -17,7 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// INFO This code has been taken from the Rook project due to Golang dependency and modified to suite acntt's needs.
+// INFO This code has been taken from the Rook project due to Golang dependency and modified to suite ancientt's needs.
 // Original file https://github.com/rook/rook/blob/master/pkg/operator/k8sutil/node.go
 
 // NodeIsTolerable returns true if the node's taints are all tolerated by the given tolerations.

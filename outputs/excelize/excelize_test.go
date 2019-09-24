@@ -19,8 +19,8 @@ import (
 	"path"
 	"testing"
 
-	"github.com/cloudical-io/acntt/outputs/tests"
-	"github.com/cloudical-io/acntt/pkg/config"
+	"github.com/cloudical-io/ancientt/outputs/tests"
+	"github.com/cloudical-io/ancientt/pkg/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -29,7 +29,7 @@ func TestDo(t *testing.T) {
 	table := tests.GenerateMockTableData(2)
 
 	tempDir := os.TempDir()
-	outName := fmt.Sprintf("acntt-test-%s.xlsx", t.Name())
+	outName := fmt.Sprintf("ancientt-test-%s.xlsx", t.Name())
 	tmpOutFile := path.Join(tempDir, outName)
 	//defer os.Remove(tmpOutFile)
 

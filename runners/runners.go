@@ -14,9 +14,9 @@ limitations under the License.
 package runners
 
 import (
-	"github.com/cloudical-io/acntt/parsers"
-	"github.com/cloudical-io/acntt/pkg/config"
-	"github.com/cloudical-io/acntt/testers"
+	"github.com/cloudical-io/ancientt/parsers"
+	"github.com/cloudical-io/ancientt/pkg/config"
+	"github.com/cloudical-io/ancientt/testers"
 )
 
 // Factories contains the list of all available runners.

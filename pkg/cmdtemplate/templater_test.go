@@ -16,7 +16,7 @@ package cmdtemplate
 import (
 	"testing"
 
-	"github.com/cloudical-io/acntt/testers"
+	"github.com/cloudical-io/ancientt/testers"
 	"github.com/stretchr/testify/assert"
 )
 

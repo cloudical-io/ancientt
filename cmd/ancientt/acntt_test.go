@@ -21,14 +21,14 @@ import (
 
 // TODO Add a simple but useful test to verify config loading and basic functionality
 
-func TestACNTTRunCommand(t *testing.T) {
+func TestAncienttRunCommand(t *testing.T) {
 	err := run(nil, []string{})
 	// Not nill because there is no config file named `testdefinition.yaml` where the current working directory is
 	assert.NotNil(t, err)
 
 	// TODO Generate temp dir and create basic `testdefinition.yaml` in it, switch cwd to tmp dir, no error should be returned then
 	/*
-	   	tmpFile, err := ioutil.TempFile(os.TempDir(), "acnttgotests")
+	   	tmpFile, err := ioutil.TempFile(os.TempDir(), "ancienttgotests")
 	   	require.Nil(t, err)
 	       // defer delete tmpfile
 

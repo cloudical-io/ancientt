@@ -14,6 +14,6 @@ limitations under the License.
 package util
 
 const (
-	// TimeDateFormat used for acntt outputs
+	// TimeDateFormat used for ancientt outputs
 	TimeDateFormat = "2006-01-02T15:04:05-0700"
 )

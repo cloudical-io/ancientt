@@ -11,7 +11,7 @@ runner:
     # Assuming you are in your home directory
     kubeconfig: .kube/config
     image: quay.io/galexrt/container-toolbox
-    namespace: acntt
+    namespace: ancientt
     timeouts:
       deleteTimeout: 20
       runningTimeout: 35
@@ -26,7 +26,7 @@ tests:
   - name: csv
     csv:
       filePath: .
-      namePattern: 'acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv'
+      namePattern: 'ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv'
   runOptions:
     continueOnError: true
     # If you wanna do the test(s) more than once in one go, set to higher than 1

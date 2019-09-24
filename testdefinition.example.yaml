@@ -2,9 +2,9 @@ version: '0'
 runner:
   name: kubernetes
   kubernetes:
-    kubeconfig: /home/atrost/.kube/config
+    #kubeconfig: .kube/config
     image: quay.io/galexrt/container-toolbox
-    namespace: acntt
+    namespace: ancientt
     timeouts:
       deleteTimeout: 20
       runningTimeout: 35
@@ -19,27 +19,27 @@ tests:
   - name: csv
     csv:
       filePath: /tmp
-      namePattern: 'acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv'
+      namePattern: 'ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv'
 #  - name: gochart
 #    goChart:
 #      types:
 #        - single_axis
 #      filePath: /tmp
-#      namePattern: 'acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Type }}.csv'
+#      namePattern: 'ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Type }}.csv'
 #  - name: sqlite
 #    sqlite:
 #      filePath: /tmp
-#      namePattern: 'acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.sqlite3'
-#      tableNamePattern: 'acntt{{ .TestStartTime }}{{ .Data.Tester }}{{ .Data.ServerHost }}{{ .Data.ClientHost }}'
+#      namePattern: 'ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.sqlite3'
+#      tableNamePattern: 'ancientt{{ .TestStartTime }}{{ .Data.Tester }}{{ .Data.ServerHost }}{{ .Data.ClientHost }}'
 #  - name: mysql
 #    mysql:
 #      dsn: "username:password@127.0.0.1/mydb"
-#      tableNamePattern: 'acntt{{ .TestStartTime }}{{ .Data.Tester }}{{ .Data.ServerHost }}{{ .Data.ClientHost }}'
+#      tableNamePattern: 'ancientt{{ .TestStartTime }}{{ .Data.Tester }}{{ .Data.ServerHost }}{{ .Data.ClientHost }}'
 #      autoCreateTables: true
 #  - name: excelize
 #    excelize:
 #      filePath: /tmp
-#      namePattern: "acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.xlsx"
+#      namePattern: "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.xlsx"
 #      saveAfterRows: 200 outputs mysql: added AutoCreateTables option
   runOptions:
     continueOnError: true

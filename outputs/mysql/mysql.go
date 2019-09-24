@@ -16,14 +16,14 @@ package mysql
 import (
 	"fmt"
 
-	"github.com/cloudical-io/acntt/pkg/config"
-	"github.com/cloudical-io/acntt/pkg/util"
+	"github.com/cloudical-io/ancientt/pkg/config"
+	"github.com/cloudical-io/ancientt/pkg/util"
 	"github.com/jmoiron/sqlx"
 
 	// Include MySQL driver for mysql output
 	_ "github.com/go-sql-driver/mysql"
 
-	"github.com/cloudical-io/acntt/outputs"
+	"github.com/cloudical-io/ancientt/outputs"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
@@ -49,7 +49,7 @@ type MySQL struct {
 }
 
 const (
-	defaultTableNamePattern = "acntt{{ .TestStartTime }}{{ .Data.Tester }}{{ .Data.ServerHost }}{{ .Data.ClientHost }}"
+	defaultTableNamePattern = "ancientt{{ .TestStartTime }}{{ .Data.Tester }}{{ .Data.ServerHost }}{{ .Data.ClientHost }}"
 
 	checkIfTableExistsQuery = "SELECT 1 FROM `%s` LIMIT 1;"
 	createTableBeginQuery   = "CREATE TABLE IF NOT EXISTS `%s` (\n"

@@ -20,9 +20,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/cloudical-io/acntt/outputs"
-	"github.com/cloudical-io/acntt/outputs/tests"
-	"github.com/cloudical-io/acntt/pkg/config"
+	"github.com/cloudical-io/ancientt/outputs"
+	"github.com/cloudical-io/ancientt/outputs/tests"
+	"github.com/cloudical-io/ancientt/pkg/config"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,7 +34,7 @@ func TestSQLite(t *testing.T) {
 	require.Nil(t, err)
 
 	tempDir := os.TempDir()
-	outName := fmt.Sprintf("acntt-test-%s.sqlite3", t.Name())
+	outName := fmt.Sprintf("ancientt-test-%s.sqlite3", t.Name())
 	outCfg := &config.Output{
 		SQLite: &config.SQLite{
 			FilePath:    tempDir,

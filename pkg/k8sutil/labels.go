@@ -15,12 +15,12 @@ package k8sutil
 
 const (
 	// TaskIDLabel label for the task-id
-	TaskIDLabel = "acntt/task-id"
+	TaskIDLabel = "ancientt/task-id"
 )
 
-// GetLabels return a default set of labels for "any" object acntt is going to create.
+// GetLabels return a default set of labels for "any" object ancientt is going to create.
 func GetLabels() map[string]string {
-	name := "acntt"
+	name := "ancientt"
 	return map[string]string{
 		"app.kubernetes.io/part-of":    name,
 		"app.kubernetes.io/managed-by": name,
