@@ -24,13 +24,15 @@ import (
 	_ "github.com/cloudical-io/ancientt/outputs/gochart"
 	_ "github.com/cloudical-io/ancientt/outputs/mysql"
 	_ "github.com/cloudical-io/ancientt/outputs/sqlite"
+
 	// Parsers
 	_ "github.com/cloudical-io/ancientt/parsers/iperf3"
+
 	// Runners
 	_ "github.com/cloudical-io/ancientt/runners/ansible"
 	_ "github.com/cloudical-io/ancientt/runners/kubernetes"
 	_ "github.com/cloudical-io/ancientt/runners/mock"
+
 	// Testers
 	_ "github.com/cloudical-io/ancientt/testers/iperf3"
-	_ "github.com/cloudical-io/ancientt/testers/siege"
 )

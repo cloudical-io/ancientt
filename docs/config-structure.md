@@ -25,7 +25,6 @@ This Document documents the types introduced by Ancientt for configuration to be
 * [RunnerKubernetes](#runnerkubernetes)
 * [RunnerMock](#runnermock)
 * [SQLite](#sqlite)
-* [Siege](#siege)
 * [Test](#test)
 * [TestHosts](#testhosts)
 
@@ -267,20 +266,6 @@ SQLite SQLite Output config options
 
 [Back to TOC](#table-of-contents)
 
-## Siege
-
-Siege Siege config structure TODO not implemented yet
-
-| Field | Description | Scheme | Required |
-| ----- | ----------- | ------ | -------- |
-| AdditionalFlags | Additional flags for client and server | [AdditionalFlags](#additionalflags) | true |
-| Benchmark |  | bool | true |
-| Headers |  | map[string]string | true |
-| URLs |  | []string | true |
-| UserAgent |  | string | true |
-
-[Back to TOC](#table-of-contents)
-
 ## Test
 
 Test Config options for each Test
@@ -293,7 +278,6 @@ Test Config options for each Test
 | Outputs | List of Outputs to use for processing data from the testers. | [][Output](#output) | true |
 | Hosts | Hosts selection for client and server | [TestHosts](#testhosts) | true |
 | IPerf3 | IPerf3 test options | *[IPerf3](#iperf3) | true |
-| Siege | **NOT IMPLEMENTED** Siege test options | *[Siege](#siege) | true |
 
 [Back to TOC](#table-of-contents)
 
