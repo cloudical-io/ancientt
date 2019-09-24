@@ -219,8 +219,6 @@ type Test struct {
 	Hosts TestHosts `yaml:"hosts"`
 	// IPerf3 test options
 	IPerf3 *IPerf3 `yaml:"iperf3"`
-	// **NOT IMPLEMENTED** Siege test options
-	Siege *Siege `yaml:"siege"`
 }
 
 const (
@@ -266,15 +264,4 @@ type IPerf3 struct {
 	AdditionalFlags AdditionalFlags `yaml:"additionalFlags"`
 	// If UDP should be used for the IPerf3 test
 	UDP *bool `yaml:"udp"`
-}
-
-// Siege Siege config structure TODO not implemented yet
-type Siege struct {
-	// Additional flags for client and server
-	AdditionalFlags AdditionalFlags   `yaml:"additionalFlags"`
-	Benchmark       bool              `yaml:"benchmark"`
-	Headers         map[string]string `yaml:"headers"`
-	URLs            []string          `yaml:"urls"`
-	UserAgent       string            `yaml:"userAgent"`
-	// TODO Add more options from SIEGERC config file
 }

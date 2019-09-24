@@ -86,8 +86,3 @@ tests:
     additionalFlags:
       clients: []
       server: []
-#- type: siege
-#  runOptions:
-#    rounds: 5
-#    interval: 15m
-#  siege: {}
