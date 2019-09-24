@@ -117,7 +117,7 @@ Hosts options for hosts selection for a Test
 | Name | Name of this hosts selection. | string | true |
 | All | If all hosts available should be used. | bool | true |
 | Random | Select `Count` Random hosts from the available hosts list. | bool | true |
-| Count | Used with Random to randomly select the Count of hosts. | int | true |
+| Count | Must be used with `Random`, will cause `Count` times Nodes to be randomly selected from all applicable hosts. | int | true |
 | Hosts | Static list of hosts (this list is not checked for accuracy) | []string | true |
 | HostSelector | \"Label\" selector for the dynamically generated hosts list, e.g., Kubernetes label selector | map[string]string | true |
 | AntiAffinity | AntiAffinity not implemented yet | []string | true |
