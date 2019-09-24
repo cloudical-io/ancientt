@@ -20,9 +20,9 @@ import (
 	//include excelize library for .xlsx output
 	"github.com/360EntSecGroup-Skylar/excelize/v2"
 
-	"github.com/cloudical-io/acntt/outputs"
-	"github.com/cloudical-io/acntt/pkg/config"
-	"github.com/cloudical-io/acntt/pkg/util"
+	"github.com/cloudical-io/ancientt/outputs"
+	"github.com/cloudical-io/ancientt/pkg/config"
+	"github.com/cloudical-io/ancientt/pkg/util"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
@@ -58,7 +58,7 @@ func NewExcelizeOutput(cfg *config.Config, outCfg *config.Output) (outputs.Outpu
 		excelize.config.FilePath = "."
 	}
 	if excelize.config.NamePattern == "" {
-		excelize.config.NamePattern = "acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.xlsx"
+		excelize.config.NamePattern = "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.xlsx"
 	}
 	if excelize.config.SaveAfterRows == 0 {
 		excelize.config.SaveAfterRows = 200

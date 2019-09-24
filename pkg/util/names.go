@@ -17,7 +17,7 @@ import (
 	"crypto/sha1"
 	"fmt"
 
-	"github.com/cloudical-io/acntt/testers"
+	"github.com/cloudical-io/ancientt/testers"
 )
 
 // PNameRole task role names type
@@ -34,10 +34,10 @@ const (
 // This is done by calculating the checksums of the used names.
 func GetPNameFromTask(round int, task *testers.Task, role PNameRole) string {
 	data := fmt.Sprintf("%d-%s-%s", round, task.Host.Name, task.Args)
-	return fmt.Sprintf("acntt-%s-%s-%x", role, task.Command, sha1.Sum([]byte(data)))
+	return fmt.Sprintf("ancientt-%s-%s-%x", role, task.Command, sha1.Sum([]byte(data)))
 }
 
 // GetTaskName get a task name
 func GetTaskName(plan *testers.Plan) string {
-	return fmt.Sprintf("acntt-%s-%d", plan.Tester, plan.TestStartTime.Unix())
+	return fmt.Sprintf("ancientt-%s-%d", plan.Tester, plan.TestStartTime.Unix())
 }

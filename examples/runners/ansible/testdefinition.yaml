@@ -15,7 +15,7 @@ tests:
   - name: csv
     csv:
       filePath: .
-      namePattern: 'acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv'
+      namePattern: 'ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv'
   runOptions:
     continueOnError: true
     rounds: 1

@@ -18,19 +18,19 @@ package main
 
 import (
 	// Outputs
-	_ "github.com/cloudical-io/acntt/outputs/csv"
-	_ "github.com/cloudical-io/acntt/outputs/dump"
-	_ "github.com/cloudical-io/acntt/outputs/excelize"
-	_ "github.com/cloudical-io/acntt/outputs/gochart"
-	_ "github.com/cloudical-io/acntt/outputs/mysql"
-	_ "github.com/cloudical-io/acntt/outputs/sqlite"
+	_ "github.com/cloudical-io/ancientt/outputs/csv"
+	_ "github.com/cloudical-io/ancientt/outputs/dump"
+	_ "github.com/cloudical-io/ancientt/outputs/excelize"
+	_ "github.com/cloudical-io/ancientt/outputs/gochart"
+	_ "github.com/cloudical-io/ancientt/outputs/mysql"
+	_ "github.com/cloudical-io/ancientt/outputs/sqlite"
 	// Parsers
-	_ "github.com/cloudical-io/acntt/parsers/iperf3"
+	_ "github.com/cloudical-io/ancientt/parsers/iperf3"
 	// Runners
-	_ "github.com/cloudical-io/acntt/runners/ansible"
-	_ "github.com/cloudical-io/acntt/runners/kubernetes"
-	_ "github.com/cloudical-io/acntt/runners/mock"
+	_ "github.com/cloudical-io/ancientt/runners/ansible"
+	_ "github.com/cloudical-io/ancientt/runners/kubernetes"
+	_ "github.com/cloudical-io/ancientt/runners/mock"
 	// Testers
-	_ "github.com/cloudical-io/acntt/testers/iperf3"
-	_ "github.com/cloudical-io/acntt/testers/siege"
+	_ "github.com/cloudical-io/ancientt/testers/iperf3"
+	_ "github.com/cloudical-io/ancientt/testers/siege"
 )

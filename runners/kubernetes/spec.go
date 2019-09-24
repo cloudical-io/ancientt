@@ -14,8 +14,8 @@ limitations under the License.
 package kubernetes
 
 import (
-	"github.com/cloudical-io/acntt/pkg/k8sutil"
-	"github.com/cloudical-io/acntt/testers"
+	"github.com/cloudical-io/ancientt/pkg/k8sutil"
+	"github.com/cloudical-io/ancientt/testers"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -31,7 +31,7 @@ func (k Kubernetes) getPodSpec(pName string, taskName string, task *testers.Task
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
 				{
-					Name:    "acntt",
+					Name:    "ancientt",
 					Image:   k.config.Image,
 					Command: []string{task.Command},
 					Args:    task.Args,

@@ -17,7 +17,7 @@ import (
 	"bytes"
 	"text/template"
 
-	"github.com/cloudical-io/acntt/testers"
+	"github.com/cloudical-io/ancientt/testers"
 )
 
 // Variables variables used for templating

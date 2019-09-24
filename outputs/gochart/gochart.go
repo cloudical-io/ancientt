@@ -17,9 +17,9 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/cloudical-io/acntt/outputs"
-	"github.com/cloudical-io/acntt/pkg/config"
-	"github.com/cloudical-io/acntt/pkg/util"
+	"github.com/cloudical-io/ancientt/outputs"
+	"github.com/cloudical-io/ancientt/pkg/config"
+	"github.com/cloudical-io/ancientt/pkg/util"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	chart "github.com/wcharczuk/go-chart"
@@ -49,7 +49,7 @@ func NewGoChartOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output
 		goChart.config.FilePath = "."
 	}
 	if goChart.config.NamePattern == "" {
-		goChart.config.NamePattern = "acntt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Header }}-{{ .Extra.Type }}.png"
+		goChart.config.NamePattern = "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Header }}-{{ .Extra.Type }}.png"
 	}
 	return goChart, nil
 }

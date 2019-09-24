@@ -19,13 +19,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cloudical-io/acntt/parsers"
-	"github.com/cloudical-io/acntt/pkg/cmdtemplate"
-	"github.com/cloudical-io/acntt/pkg/config"
-	"github.com/cloudical-io/acntt/pkg/k8sutil"
-	"github.com/cloudical-io/acntt/pkg/util"
-	"github.com/cloudical-io/acntt/runners"
-	"github.com/cloudical-io/acntt/testers"
+	"github.com/cloudical-io/ancientt/parsers"
+	"github.com/cloudical-io/ancientt/pkg/cmdtemplate"
+	"github.com/cloudical-io/ancientt/pkg/config"
+	"github.com/cloudical-io/ancientt/pkg/k8sutil"
+	"github.com/cloudical-io/ancientt/pkg/util"
+	"github.com/cloudical-io/ancientt/runners"
+	"github.com/cloudical-io/ancientt/testers"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
@@ -101,7 +101,7 @@ func NewRunner(cfg *config.Config) (runners.Runner, error) {
 	}
 
 	if runnerCfg.Namespace == "" {
-		runnerCfg.Namespace = "acntt"
+		runnerCfg.Namespace = "ancientt"
 	}
 	if runnerCfg.Timeouts == nil {
 		runnerCfg.Timeouts = &config.KubernetesTimeouts{
@@ -190,7 +190,7 @@ func (k *Kubernetes) k8sNodesToHosts() ([]*testers.Host, error) {
 	return hosts, nil
 }
 
-// Prepare prepare Kubernetes for usage with acntt, e.g., create Namespace.
+// Prepare prepare Kubernetes for usage with ancientt, e.g., create Namespace.
 func (k *Kubernetes) Prepare(runOpts config.RunOptions, plan *testers.Plan) error {
 	k.runOptions = runOpts
 
@@ -238,7 +238,7 @@ func (k *Kubernetes) prepareKubernetes() error {
 			ns := &corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"created-by": "acntt",
+						"created-by": "ancientt",
 					},
 					Name: k.config.Namespace,
 				},

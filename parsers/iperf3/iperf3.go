@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/cloudical-io/acntt/outputs"
-	"github.com/cloudical-io/acntt/parsers"
-	"github.com/cloudical-io/acntt/pkg/config"
-	iperf3models "github.com/cloudical-io/acntt/pkg/models/iperf3"
-	"github.com/cloudical-io/acntt/pkg/util"
+	"github.com/cloudical-io/ancientt/outputs"
+	"github.com/cloudical-io/ancientt/parsers"
+	"github.com/cloudical-io/ancientt/pkg/config"
+	iperf3models "github.com/cloudical-io/ancientt/pkg/models/iperf3"
+	"github.com/cloudical-io/ancientt/pkg/util"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
