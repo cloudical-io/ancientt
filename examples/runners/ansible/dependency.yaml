@@ -1,0 +1,11 @@
+---
+- hosts: localhost
+  remote_user: root
+  tasks: 
+    - name: install dependencies for ACNTT
+      package: 
+        name: "{{ item }}"
+        state: present 
+      with_items:
+        - iperf3
+        - procps
