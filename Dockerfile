@@ -8,7 +8,7 @@ RUN go get -v ./... && \
 
 # TODO Use fixed tag
 FROM galexrt/container-toolbox:latest
-LABEL maintainer="Alexander Trost <galexrt@googlemail.com> & Michal Janus <michal.janus@cloudical.io>"
+LABEL maintainer="Alexander Trost <galexrt@googlemail.com> and Michal Janus <michal.janus@cloudical.io>"
 
 COPY --from=go-build /go/bin/app /bin/ancientt
 
