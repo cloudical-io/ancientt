@@ -1,5 +1,9 @@
 # Config Examples
 
+This page contains some example configurations.
+
+Be sure to also checkout the [Demos](demos.md) page for examples with example `ancientt` output, config and a snippet or whole file of the output results.
+
 ## Kubernetes + IPerf3 = CSV Output: IPerf3 test between all to all Nodes
 
 ```yaml

@@ -33,6 +33,10 @@ Below command will try loading `your-testdefinitions.yaml` as the test definitio
 ancientt --testdefinition your-testdefinitions.yaml
 ```
 
+## Demos
+
+See [Demos](docs/demos.md).
+
 ## Goals of this Project
 
 * A bit like Prometheus blackbox exporter which contains "definitions" for probes. The "tests" would be pluggable through a Golang interface.

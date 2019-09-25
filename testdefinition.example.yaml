@@ -3,7 +3,7 @@ runner:
   name: kubernetes
   kubernetes:
     #kubeconfig: .kube/config
-    image: quay.io/galexrt/container-toolbox
+    image: 'quay.io/galexrt/container-toolbox:latest'
     namespace: ancientt
     timeouts:
       deleteTimeout: 20
@@ -20,12 +20,6 @@ tests:
     csv:
       filePath: /tmp
       namePattern: 'ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv'
-#  - name: gochart
-#    goChart:
-#      types:
-#        - single_axis
-#      filePath: /tmp
-#      namePattern: 'ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Type }}.csv'
 #  - name: sqlite
 #    sqlite:
 #      filePath: /tmp
