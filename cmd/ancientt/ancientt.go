@@ -16,7 +16,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"sync"
@@ -33,7 +32,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -80,23 +78,10 @@ func loadConfig() error {
 		return fmt.Errorf("empty testdefinition flag given")
 	}
 
-	file, err := os.Open(cfgFile)
-	if err != nil {
-		return err
-	}
+	var err error
+	cfg, err = config.Load(cfgFile)
 
-	cfgContent, err := ioutil.ReadAll(file)
-	if err != nil {
-		return err
-	}
-
-	cfg = config.New()
-
-	if err := yaml.Unmarshal(cfgContent, cfg); err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 func run(cmd *cobra.Command, args []string) error {
