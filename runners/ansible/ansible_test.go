@@ -82,8 +82,7 @@ func TestGetHostsForTest(t *testing.T) {
 	conf := &config.RunnerAnsible{
 		InventoryFilePath: "/tmp/test-ancientt-ansible-inventory",
 	}
-	conf.Defaults()
-	assert.Nil(t, conf.Validate())
+	conf.SetDefaults()
 	a := Ansible{
 		logger:   log.WithFields(logrus.Fields{"runner": Name}),
 		config:   conf,

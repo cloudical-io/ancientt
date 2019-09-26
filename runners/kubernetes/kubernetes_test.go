@@ -20,6 +20,7 @@ import (
 	"github.com/cloudical-io/ancientt/tests/k8s"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,14 +32,31 @@ func TestGetHostsForTest(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, clientset)
 
+	conf := &config.RunnerKubernetes{}
+	conf.SetDefaults()
+
 	runner := &Kubernetes{
 		logger:    log.WithFields(logrus.Fields{"runner": Name, "namespace": ""}),
-		config:    &config.RunnerKubernetes{},
+		config:    conf,
 		k8sclient: clientset,
 	}
 
 	test := &config.Test{}
 	hosts, err := runner.GetHostsForTest(test)
 	require.Nil(t, err)
-	require.NotNil(t, hosts)
+	assert.Equal(t, 0, len(hosts.Servers))
+	assert.Equal(t, 0, len(hosts.Clients))
+
+	test.Hosts.Servers = append(test.Hosts.Servers, config.Hosts{All: true})
+	test.Hosts.Clients = append(test.Hosts.Clients, config.Hosts{All: true})
+	hosts, err = runner.GetHostsForTest(test)
+	require.Nil(t, err)
+	assert.Equal(t, 3, len(hosts.Servers))
+	assert.Equal(t, 3, len(hosts.Clients))
+
+	test.Hosts.Servers[0] = config.Hosts{Count: 1, Random: true}
+	hosts, err = runner.GetHostsForTest(test)
+	require.Nil(t, err)
+	assert.Equal(t, 1, len(hosts.Servers))
+	assert.Equal(t, 3, len(hosts.Clients))
 }

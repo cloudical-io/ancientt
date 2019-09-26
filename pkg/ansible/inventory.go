@@ -65,10 +65,10 @@ func Parse(in []byte) (*InventoryList, error) {
 }
 
 // GetHostsForGroup return resolved list of hosts for a given group name
-func (inv InventoryList) GetHostsForGroup(group string) []string {
+func (inv *InventoryList) GetHostsForGroup(group string) []string {
 	hosts := []string{}
 
-	for k, hg := range inv {
+	for k, hg := range *inv {
 		if k == group {
 			if len(hg.Children) > 0 {
 				for _, child := range hg.Children {
