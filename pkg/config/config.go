@@ -71,48 +71,41 @@ type Output struct {
 	MySQL *MySQL `yaml:"mysql"`
 }
 
+// FilePath file path and name pattern for outputs file generation
+type FilePath struct {
+	// File base path for output
+	FilePath string `yaml:"filePath" validate:"required,min=1"`
+	// File name pattern templated from various availables during output generation
+	NamePattern string `yaml:"namePattern" validate:"required,min=1"`
+}
+
 // CSV CSV Output config options
 type CSV struct {
-	// File base path for output
-	FilePath string `yaml:"filePath"`
-	// File name pattern templated from various availables during output generation
-	NamePattern string `yaml:"namePattern"`
+	FilePath
 }
 
 // GoChart GoChart Output config options
 type GoChart struct {
-	// File base path for output
-	FilePath string `yaml:"filePath"`
-	// File name pattern templated from various availables during output generation
-	NamePattern string `yaml:"namePattern"`
+	FilePath
 	// Types of charts to produce from the testers output data
-	Types []string `yaml:"types"`
+	Types []string `yaml:"types" validate:"required,min=1"`
 }
 
 // Dump Dump Output config options
 type Dump struct {
-	// File base path for output
-	FilePath string `yaml:"filePath"`
-	// File name pattern templated from various availables during output generation
-	NamePattern string `yaml:"namePattern"`
+	FilePath
 }
 
 // Excelize Excelize Output config options. TODO implement
 type Excelize struct {
-	// File base path for output
-	FilePath string `yaml:"filePath"`
-	// File name pattern templated from various availables during output generation
-	NamePattern string `yaml:"namePattern"`
+	FilePath
 	// After what amount of rows the Excel file should be saved
 	SaveAfterRows int `yaml:"saveAfterRows"`
 }
 
 // SQLite SQLite Output config options
 type SQLite struct {
-	// File base path for output
-	FilePath string `yaml:"filePath"`
-	// File name pattern templated from various availables during output generation
-	NamePattern string `yaml:"namePattern"`
+	FilePath
 	// Pattern used for templating the name of the table used in the SQLite database, the tables are created automatically
 	TableNamePattern string `yaml:"tableNamePattern"`
 }
@@ -145,10 +138,10 @@ type RunnerKubernetes struct {
 	InClusterConfig bool `yaml:"inClusterConfig"`
 	// Path to your kubeconfig file, if not set the `KUBECONFIG` env var will be used and then the default
 	Kubeconfig string `yaml:"kubeconfig"`
-	// The image used for the spawned Pods for the tests (default: `quay.io/galexrt/container-toolbox`)
+	// The image used for the spawned Pods for the tests (default `quay.io/galexrt/container-toolbox`)
 	Image string `yaml:"image"`
 	// Namespace to execute the tests in
-	Namespace string `yaml:"namespace"`
+	Namespace string `yaml:"namespace" validate:"max=63"`
 	// If `hostNetwork` mode should be used for the test Pods
 	HostNetwork bool `yaml:"hostNetwork"`
 	// Timeout settings for operations against the Kubernetes API
@@ -187,10 +180,8 @@ type RunnerAnsible struct {
 	AnsibleCommand string `yaml:"ansibleCommand"`
 	// Path to the ansible-inventory command (if empty will be searched for in `PATH`)
 	AnsibleInventoryCommand string `yaml:"ansibleInventoryCommand"`
-	// Timeout duration for `ansible` and `ansible-inventory` calls (NOT task command timeouts)
-	CommandTimeout time.Duration `yaml:"commandTimeout"`
-	// Timeout duration for `ansible` Task command calls
-	TaskCommandTimeout time.Duration `yaml:"taskCommandTimeout"`
+	// Timeout settings for ansible command runs
+	Timeouts *AnsibleTimeouts `yaml:"timeouts"`
 }
 
 // AnsibleGroups server and clients host group names in the used inventory file(s)
@@ -199,6 +190,14 @@ type AnsibleGroups struct {
 	Server string `yaml:"server"`
 	// Clients inventory clients group name
 	Clients string `yaml:"clients"`
+}
+
+// AnsibleTimeouts timeouts for Ansible command runs
+type AnsibleTimeouts struct {
+	// Timeout duration for `ansible` and `ansible-inventory` calls (NOT task command timeouts)
+	CommandTimeout time.Duration `yaml:"commandTimeout"`
+	// Timeout duration for `ansible` Task command calls
+	TaskCommandTimeout time.Duration `yaml:"taskCommandTimeout"`
 }
 
 // RunnerMock Mock Runner config options (here for good measure)
