@@ -15,30 +15,8 @@ package kubernetes
 
 import (
 	"testing"
-
-	"github.com/cloudical-io/ancientt/pkg/config"
-	"github.com/cloudical-io/ancientt/tests/k8s"
-	"github.com/sirupsen/logrus"
-	log "github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/require"
 )
 
-// TODO add tests
-
-func TestGetHostsForTest(t *testing.T) {
+func TestGetPodSpec(t *testing.T) {
 	// TODO
-	clientset, err := k8s.NewClient(3)
-	require.Nil(t, err)
-	require.NotNil(t, clientset)
-
-	runner := &Kubernetes{
-		logger:    log.WithFields(logrus.Fields{"runner": Name, "namespace": ""}),
-		config:    &config.RunnerKubernetes{},
-		k8sclient: clientset,
-	}
-
-	test := &config.Test{}
-	hosts, err := runner.GetHostsForTest(test)
-	require.Nil(t, err)
-	require.NotNil(t, hosts)
 }

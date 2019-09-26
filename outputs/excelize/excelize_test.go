@@ -35,8 +35,10 @@ func TestDo(t *testing.T) {
 
 	outCfg := &config.Output{
 		Excelize: &config.Excelize{
-			FilePath:    tempDir,
-			NamePattern: outName,
+			FilePath: config.FilePath{
+				FilePath:    tempDir,
+				NamePattern: outName,
+			},
 		},
 	}
 

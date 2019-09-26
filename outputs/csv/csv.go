@@ -50,11 +50,8 @@ func NewCSVOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output, er
 		files:   map[string]*os.File{},
 		writers: map[string]*csv.Writer{},
 	}
-	if c.config.FilePath == "" {
-		c.config.FilePath = "."
-	}
-	if c.config.NamePattern == "" {
-		c.config.NamePattern = "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv"
+	if c.config.FilePath.NamePattern == "" {
+		c.config.FilePath.NamePattern = "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv"
 	}
 	return c, nil
 }
@@ -66,14 +63,14 @@ func (c CSV) Do(data outputs.Data) error {
 		return fmt.Errorf("data not in table for csv output")
 	}
 
-	filename, err := outputs.GetFilenameFromPattern(c.config.NamePattern, "", data, nil)
+	filename, err := outputs.GetFilenameFromPattern(c.config.FilePath.NamePattern, "", data, nil)
 	if err != nil {
 		return err
 	}
 
 	var writeHeaders bool
 
-	outPath := filepath.Join(c.config.FilePath, filename)
+	outPath := filepath.Join(c.config.FilePath.FilePath, filename)
 	writer, ok := c.writers[outPath]
 	if !ok {
 		file, ok := c.files[outPath]

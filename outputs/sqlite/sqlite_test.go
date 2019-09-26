@@ -37,8 +37,10 @@ func TestSQLite(t *testing.T) {
 	outName := fmt.Sprintf("ancientt-test-%s.sqlite3", t.Name())
 	outCfg := &config.Output{
 		SQLite: &config.SQLite{
-			FilePath:    tempDir,
-			NamePattern: outName,
+			FilePath: config.FilePath{
+				FilePath:    tempDir,
+				NamePattern: outName,
+			},
 		},
 	}
 
@@ -65,7 +67,7 @@ func TestSQLite(t *testing.T) {
 	ms, ok := m.(SQLite)
 	require.True(t, ok)
 
-	outPath := filepath.Join(outCfg.SQLite.FilePath, filename)
+	outPath := filepath.Join(outCfg.SQLite.FilePath.FilePath, filename)
 	ms.dbCons[outPath] = dbx
 
 	// Do() and Close() to run the database flow

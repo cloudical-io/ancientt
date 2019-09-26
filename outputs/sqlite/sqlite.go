@@ -70,9 +70,6 @@ func NewSQLiteOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output,
 		config: outCfg.SQLite,
 		dbCons: map[string]*sqlx.DB{},
 	}
-	if s.config.FilePath == "" {
-		s.config.FilePath = "."
-	}
 	if s.config.NamePattern == "" {
 		s.config.NamePattern = defaultNamePattern
 	}
@@ -90,7 +87,7 @@ func (s SQLite) Do(data outputs.Data) error {
 		return fmt.Errorf("data not in table for sqlite output")
 	}
 
-	filename, err := outputs.GetFilenameFromPattern(s.config.NamePattern, "", data, nil)
+	filename, err := outputs.GetFilenameFromPattern(s.config.FilePath.NamePattern, "", data, nil)
 	if err != nil {
 		return err
 	}
@@ -102,7 +99,7 @@ func (s SQLite) Do(data outputs.Data) error {
 
 	var createTable bool
 
-	outPath := filepath.Join(s.config.FilePath, filename)
+	outPath := filepath.Join(s.config.FilePath.FilePath, filename)
 	db, ok := s.dbCons[outPath]
 	if !ok {
 		db, err = sqlx.Connect("sqlite3", outPath)

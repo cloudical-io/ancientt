@@ -48,22 +48,13 @@ type Kubernetes struct {
 	runners.Runner
 	logger     *log.Entry
 	config     *config.RunnerKubernetes
-	k8sclient  *kubernetes.Clientset
+	k8sclient  kubernetes.Interface
 	runOptions config.RunOptions
 }
 
 // NewRunner return a new Kubernetes Runner
 func NewRunner(cfg *config.Config) (runners.Runner, error) {
-	if cfg.Runner.Kubernetes == nil {
-		return nil, fmt.Errorf("no kubernetes runner config")
-	}
-
-	var kubeconfig string
-	if cfg.Runner.Kubernetes.Kubeconfig != "" {
-		kubeconfig = cfg.Runner.Kubernetes.Kubeconfig
-	} else {
-		kubeconfig = os.Getenv("KUBECONFIG")
-	}
+	conf := cfg.Runner.Kubernetes
 
 	var k8sconfig *rest.Config
 	if cfg.Runner.Kubernetes.InClusterConfig {
@@ -73,6 +64,12 @@ func NewRunner(cfg *config.Config) (runners.Runner, error) {
 			return nil, fmt.Errorf("kubeconfig in-cluster configuration error. %+v", err)
 		}
 	} else {
+		var kubeconfig string
+		if conf.Kubeconfig != "" {
+			kubeconfig = cfg.Runner.Kubernetes.Kubeconfig
+		} else {
+			kubeconfig = os.Getenv("KUBECONFIG")
+		}
 		var err error
 		// This will simply use the current context in kubeconfig
 		k8sconfig, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
@@ -87,35 +84,9 @@ func NewRunner(cfg *config.Config) (runners.Runner, error) {
 		return nil, fmt.Errorf("kubernetes client configuration error. %+v", err)
 	}
 
-	if cfg.Runner.Kubernetes.Annotations == nil {
-		cfg.Runner.Kubernetes.Annotations = map[string]string{}
-	}
-
-	if cfg.Runner.Kubernetes.Image == "" {
-		cfg.Runner.Kubernetes.Image = "quay.io/galexrt/container-toolbox:latest"
-	}
-
-	if cfg.Runner.Kubernetes.Hosts == nil {
-		cfg.Runner.Kubernetes.Hosts = &config.KubernetesHosts{
-			IgnoreSchedulingDisabled: true,
-			Tolerations:              []corev1.Toleration{},
-		}
-	}
-
-	if cfg.Runner.Kubernetes.Namespace == "" {
-		cfg.Runner.Kubernetes.Namespace = "ancientt"
-	}
-	if cfg.Runner.Kubernetes.Timeouts == nil {
-		cfg.Runner.Kubernetes.Timeouts = &config.KubernetesTimeouts{
-			DeleteTimeout:  20,
-			RunningTimeout: 35,
-			SucceedTimeout: 60,
-		}
-	}
-
 	return &Kubernetes{
 		logger:    log.WithFields(logrus.Fields{"runner": Name, "namespace": cfg.Runner.Kubernetes.Namespace}),
-		config:    cfg.Runner.Kubernetes,
+		config:    conf,
 		k8sclient: clientset,
 	}, nil
 }
