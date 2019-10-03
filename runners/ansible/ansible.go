@@ -42,10 +42,6 @@ import (
 const (
 	// Name Ansible Runner Name
 	Name = "ansible"
-	// AnsibleCommand `ansible` command
-	AnsibleCommand = "ansible"
-	// AnsibleInventoryCommand `ansible-inventory` command
-	AnsibleInventoryCommand = "ansible-inventory"
 )
 
 var (
@@ -69,62 +65,18 @@ type Ansible struct {
 
 // NewRunner return a new Ansible Runner
 func NewRunner(cfg *config.Config) (runners.Runner, error) {
-	if cfg.Runner.Ansible == nil {
-		return nil, fmt.Errorf("no ansible runner config")
-	}
-
-	if cfg.Runner.Ansible.AnsibleCommand == "" {
-		var err error
-		cfg.Runner.Ansible.AnsibleCommand, err = exec.LookPath("ansible")
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if cfg.Runner.Ansible.AnsibleInventoryCommand == "" {
-		var err error
-		cfg.Runner.Ansible.AnsibleInventoryCommand, err = exec.LookPath("ansible-inventory")
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if cfg.Runner.Ansible.CommandTimeout == 0 {
-		cfg.Runner.Ansible.CommandTimeout = 20 * time.Second
-	}
-
-	if cfg.Runner.Ansible.TaskCommandTimeout == 0 {
-		cfg.Runner.Ansible.TaskCommandTimeout = 45 * time.Second
-	}
-
-	if cfg.Runner.Ansible.InventoryFilePath == "" {
-		return nil, fmt.Errorf("no inventory file path given")
-	}
-	if cfg.Runner.Ansible.Groups == nil {
-		cfg.Runner.Ansible.Groups = &config.AnsibleGroups{}
-	}
-
-	if cfg.Runner.Ansible.Groups.Clients == "" {
-		cfg.Runner.Ansible.Groups.Clients = "clients"
-	} else if cfg.Runner.Ansible.Groups.Clients == "_meta" {
-		return nil, fmt.Errorf("ansible clients group can't be named `_meta`")
-	}
-	if cfg.Runner.Ansible.Groups.Server == "" {
-		cfg.Runner.Ansible.Groups.Server = "server"
-	} else if cfg.Runner.Ansible.Groups.Server == "_meta" {
-		return nil, fmt.Errorf("ansible server group can't be named `_meta`")
-	}
+	conf := cfg.Runner.Ansible
 
 	return &Ansible{
 		logger:   log.WithFields(logrus.Fields{"runner": Name, "inventoryfile": cfg.Runner.Ansible.InventoryFilePath}),
-		config:   cfg.Runner.Ansible,
+		config:   conf,
 		executor: executor.NewCommandExecutor("runner:ansible"),
 	}, nil
 }
 
 // GetHostsForTest return a mocked list of hots for the given test config
 func (a *Ansible) GetHostsForTest(test *config.Test) (*testers.Hosts, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), a.config.CommandTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), a.config.Timeouts.CommandTimeout)
 	defer cancel()
 
 	out, err := a.executor.ExecuteCommandWithOutputByte(ctx, "runner:ansible: list hosts from inventory", a.config.AnsibleInventoryCommand, []string{
@@ -208,7 +160,7 @@ type networkInterfaceAddress struct {
 }
 
 func (a *Ansible) getHostNetworkAddress(host string) (*testers.IPAddresses, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), a.config.CommandTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), a.config.Timeouts.CommandTimeout)
 	defer cancel()
 
 	out, err := a.executor.ExecuteCommandWithOutputByte(ctx, "runner:ansible: list hosts from inventory", a.config.AnsibleCommand, []string{
@@ -252,7 +204,7 @@ func (a *Ansible) getHostNetworkAddress(host string) (*testers.IPAddresses, erro
 func (a *Ansible) Prepare(runOpts config.RunOptions, plan *testers.Plan) error {
 	a.runOptions = runOpts
 
-	ctx, cancel := context.WithTimeout(context.Background(), a.config.CommandTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), a.config.Timeouts.CommandTimeout)
 	defer cancel()
 
 	out, err := a.executor.ExecuteCommandWithOutput(ctx, "runner:ansible: get ansible version", a.config.AnsibleCommand, "--version")
@@ -356,7 +308,7 @@ func (a *Ansible) runTasks(round int, mainTask *testers.Task, plannedTime time.T
 	time.Sleep(250 * time.Millisecond)
 
 	ready := false
-	checkCtx, checkCancel := context.WithTimeout(context.Background(), a.config.TaskCommandTimeout)
+	checkCtx, checkCancel := context.WithTimeout(context.Background(), a.config.Timeouts.TaskCommandTimeout)
 	defer checkCancel()
 
 	tries := 5
@@ -383,7 +335,7 @@ func (a *Ansible) runTasks(round int, mainTask *testers.Task, plannedTime time.T
 
 			wg.Add(1)
 			go func(task *testers.Task) {
-				ctx, cancel := context.WithTimeout(context.Background(), a.config.TaskCommandTimeout)
+				ctx, cancel := context.WithTimeout(context.Background(), a.config.Timeouts.TaskCommandTimeout)
 				defer cancel()
 
 				defer wg.Done()

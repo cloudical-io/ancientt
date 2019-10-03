@@ -16,6 +16,7 @@ package gochart
 import (
 	"bytes"
 	"fmt"
+	"path/filepath"
 
 	"github.com/cloudical-io/ancientt/outputs"
 	"github.com/cloudical-io/ancientt/pkg/config"
@@ -45,9 +46,6 @@ func NewGoChartOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output
 		logger: log.WithFields(logrus.Fields{"output": NameGoChart}),
 		config: outCfg.GoChart,
 	}
-	if goChart.config.FilePath == "" {
-		goChart.config.FilePath = "."
-	}
 	if goChart.config.NamePattern == "" {
 		goChart.config.NamePattern = "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Header }}-{{ .Extra.Type }}.png"
 	}
@@ -66,13 +64,16 @@ func (gc GoChart) Do(data outputs.Data) error {
 	for _, graphType := range gc.config.Types {
 		for _, column := range dataTable.Headers {
 			for _, row := range column.Rows {
-				filename, err := outputs.GetFilenameFromPattern(gc.config.NamePattern, "", data, map[string]interface{}{
+				filename, err := outputs.GetFilenameFromPattern(gc.config.FilePath.NamePattern, "", data, map[string]interface{}{
 					"Type":   graphType,
 					"Header": row.Value,
 				})
 				if err != nil {
 					return err
 				}
+
+				outPath := filepath.Join(gc.config.FilePath.FilePath, filename)
+				_ = outPath
 
 				graph := chart.Chart{Series: []chart.Series{chart.ContinuousSeries{}}}
 

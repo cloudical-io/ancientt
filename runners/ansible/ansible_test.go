@@ -78,15 +78,14 @@ func TestGetHostsForTest(t *testing.T) {
 	}
 
 	log.SetLevel(log.TraceLevel)
+
+	conf := &config.RunnerAnsible{
+		InventoryFilePath: "/tmp/test-ancientt-ansible-inventory",
+	}
+	conf.SetDefaults()
 	a := Ansible{
-		logger: log.WithFields(logrus.Fields{"runner": Name}),
-		config: &config.RunnerAnsible{
-			InventoryFilePath: "/tmp/test-ancientt-ansible-inventory",
-			Groups: &config.AnsibleGroups{
-				Server:  "server",
-				Clients: "clients",
-			},
-		},
+		logger:   log.WithFields(logrus.Fields{"runner": Name}),
+		config:   conf,
 		executor: mockexec,
 	}
 	require.NotNil(t, a)

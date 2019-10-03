@@ -16,6 +16,7 @@ package executor
 
 import (
 	"context"
+	"os"
 	"os/exec"
 	"syscall"
 
@@ -48,6 +49,7 @@ func NewCommandExecutor(pkg string) Executor {
 // ExecuteCommand execute a given command with its arguments but don't return any output
 func (ce CommandExecutor) ExecuteCommand(ctx context.Context, actionName string, command string, arg ...string) error {
 	cmd := exec.CommandContext(ctx, command, arg...)
+	cmd.Env = os.Environ()
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Pdeathsig: syscall.SIGTERM,
 		Setpgid:   true,
@@ -74,6 +76,7 @@ func (ce CommandExecutor) ExecuteCommandWithOutput(ctx context.Context, actionNa
 // ExecuteCommandWithOutputByte execute a given command with its arguments and return the output as a byte array ([]byte)
 func (ce CommandExecutor) ExecuteCommandWithOutputByte(ctx context.Context, actionName string, command string, arg ...string) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, command, arg...)
+	cmd.Env = os.Environ()
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Pdeathsig: syscall.SIGTERM,
 		Setpgid:   true,

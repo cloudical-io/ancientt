@@ -54,11 +54,8 @@ func NewExcelizeOutput(cfg *config.Config, outCfg *config.Output) (outputs.Outpu
 		config: outCfg.Excelize,
 		files:  map[string]*fileState{},
 	}
-	if excelize.config.FilePath == "" {
-		excelize.config.FilePath = "."
-	}
-	if excelize.config.NamePattern == "" {
-		excelize.config.NamePattern = "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.xlsx"
+	if excelize.config.FilePath.NamePattern == "" {
+		excelize.config.FilePath.NamePattern = "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.xlsx"
 	}
 	if excelize.config.SaveAfterRows == 0 {
 		excelize.config.SaveAfterRows = 200
@@ -74,11 +71,11 @@ func (e Excelize) Do(data outputs.Data) error {
 		return fmt.Errorf("data not in Table data type for excel output")
 	}
 
-	outputFilename, err := outputs.GetFilenameFromPattern(e.config.NamePattern, "", data, nil)
+	outputFilename, err := outputs.GetFilenameFromPattern(e.config.FilePath.NamePattern, "", data, nil)
 	if err != nil {
 		return err
 	}
-	filePath := path.Join(e.config.FilePath, outputFilename)
+	filePath := path.Join(e.config.FilePath.FilePath, outputFilename)
 
 	// Check if the file had already been opened, reuse it if so
 	var fState *fileState

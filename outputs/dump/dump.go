@@ -47,11 +47,8 @@ func NewDumpOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output, e
 		config: outCfg.Dump,
 		files:  map[string]*os.File{},
 	}
-	if dump.config.FilePath == "" {
-		dump.config.FilePath = "."
-	}
-	if dump.config.NamePattern == "" {
-		dump.config.NamePattern = "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.txt"
+	if dump.config.FilePath.NamePattern == "" {
+		dump.config.FilePath.NamePattern = "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.txt"
 	}
 	return dump, nil
 }
@@ -63,12 +60,12 @@ func (d Dump) Do(data outputs.Data) error {
 		return fmt.Errorf("data not in table for dump output")
 	}
 
-	filename, err := outputs.GetFilenameFromPattern(d.config.NamePattern, "", data, nil)
+	filename, err := outputs.GetFilenameFromPattern(d.config.FilePath.NamePattern, "", data, nil)
 	if err != nil {
 		return err
 	}
 
-	outPath := filepath.Join(d.config.FilePath, filename)
+	outPath := filepath.Join(d.config.FilePath.FilePath, filename)
 	file, ok := d.files[outPath]
 	if !ok {
 		file, err = os.Create(outPath)
