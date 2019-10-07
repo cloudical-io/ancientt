@@ -136,7 +136,7 @@ type Runner struct {
 type RunnerKubernetes struct {
 	// If the Kubernetes client should use the in-cluster config for the cluster communication
 	InClusterConfig bool `yaml:"inClusterConfig"`
-	// Path to your kubeconfig file, if not set the `KUBECONFIG` env var will be used and then the default
+	// Path to your kubeconfig file, if not set the following order will be tried out, `KUBECONFIG` and `$HOME/.kube/config`
 	Kubeconfig string `yaml:"kubeconfig"`
 	// The image used for the spawned Pods for the tests (default `quay.io/galexrt/container-toolbox`)
 	Image string `yaml:"image"`

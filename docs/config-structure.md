@@ -8,10 +8,12 @@ This Document documents the types introduced by Ancientt for configuration to be
 
 * [AdditionalFlags](#additionalflags)
 * [AnsibleGroups](#ansiblegroups)
+* [AnsibleTimeouts](#ansibletimeouts)
 * [CSV](#csv)
 * [Config](#config)
 * [Dump](#dump)
 * [Excelize](#excelize)
+* [FilePath](#filepath)
 * [GoChart](#gochart)
 * [Hosts](#hosts)
 * [IPerf3](#iperf3)
@@ -50,14 +52,24 @@ AnsibleGroups server and clients host group names in the used inventory file(s)
 
 [Back to TOC](#table-of-contents)
 
+## AnsibleTimeouts
+
+AnsibleTimeouts timeouts for Ansible command runs
+
+| Field | Description | Scheme | Required |
+| ----- | ----------- | ------ | -------- |
+| CommandTimeout | Timeout duration for `ansible` and `ansible-inventory` calls (NOT task command timeouts) | time.Duration | true |
+| TaskCommandTimeout | Timeout duration for `ansible` Task command calls | time.Duration | true |
+
+[Back to TOC](#table-of-contents)
+
 ## CSV
 
 CSV CSV Output config options
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| FilePath | File base path for output | string | true |
-| NamePattern | File name pattern templated from various availables during output generation | string | true |
+| FilePath |  | [FilePath](#filepath) | false |
 
 [Back to TOC](#table-of-contents)
 
@@ -79,8 +91,7 @@ Dump Dump Output config options
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| FilePath | File base path for output | string | true |
-| NamePattern | File name pattern templated from various availables during output generation | string | true |
+| FilePath |  | [FilePath](#filepath) | false |
 
 [Back to TOC](#table-of-contents)
 
@@ -90,9 +101,19 @@ Excelize Excelize Output config options. TODO implement
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
+| FilePath |  | [FilePath](#filepath) | false |
+| SaveAfterRows | After what amount of rows the Excel file should be saved | int | true |
+
+[Back to TOC](#table-of-contents)
+
+## FilePath
+
+FilePath file path and name pattern for outputs file generation
+
+| Field | Description | Scheme | Required |
+| ----- | ----------- | ------ | -------- |
 | FilePath | File base path for output | string | true |
 | NamePattern | File name pattern templated from various availables during output generation | string | true |
-| SaveAfterRows | After what amount of rows the Excel file should be saved | int | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -102,8 +123,7 @@ GoChart GoChart Output config options
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| FilePath | File base path for output | string | true |
-| NamePattern | File name pattern templated from various availables during output generation | string | true |
+| FilePath |  | [FilePath](#filepath) | false |
 | Types | Types of charts to produce from the testers output data | []string | true |
 
 [Back to TOC](#table-of-contents)
@@ -223,8 +243,7 @@ RunnerAnsible Ansible Runner config options
 | Groups | Groups server and clients group names | *[AnsibleGroups](#ansiblegroups) | true |
 | AnsibleCommand | Path to the ansible command (if empty will be searched for in `PATH`) | string | true |
 | AnsibleInventoryCommand | Path to the ansible-inventory command (if empty will be searched for in `PATH`) | string | true |
-| CommandTimeout | Timeout duration for `ansible` and `ansible-inventory` calls (NOT task command timeouts) | time.Duration | true |
-| TaskCommandTimeout | Timeout duration for `ansible` Task command calls | time.Duration | true |
+| Timeouts | Timeout settings for ansible command runs | *[AnsibleTimeouts](#ansibletimeouts) | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -235,8 +254,8 @@ RunnerKubernetes Kubernetes Runner config options
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
 | InClusterConfig | If the Kubernetes client should use the in-cluster config for the cluster communication | bool | true |
-| Kubeconfig | Path to your kubeconfig file, if not set the `KUBECONFIG` env var will be used and then the default | string | true |
-| Image | The image used for the spawned Pods for the tests (default: `quay.io/galexrt/container-toolbox`) | string | true |
+| Kubeconfig | Path to your kubeconfig file, if not set the following order will be tried out, `KUBECONFIG` and `$HOME/.kube/config` | string | true |
+| Image | The image used for the spawned Pods for the tests (default `quay.io/galexrt/container-toolbox`) | string | true |
 | Namespace | Namespace to execute the tests in | string | true |
 | HostNetwork | If `hostNetwork` mode should be used for the test Pods | bool | true |
 | Timeouts | Timeout settings for operations against the Kubernetes API | *[KubernetesTimeouts](#kubernetestimeouts) | true |
@@ -260,8 +279,7 @@ SQLite SQLite Output config options
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| FilePath | File base path for output | string | true |
-| NamePattern | File name pattern templated from various availables during output generation | string | true |
+| FilePath |  | [FilePath](#filepath) | false |
 | TableNamePattern | Pattern used for templating the name of the table used in the SQLite database, the tables are created automatically | string | true |
 
 [Back to TOC](#table-of-contents)
