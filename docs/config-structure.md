@@ -18,6 +18,7 @@ This Document documents the types introduced by Ancientt for configuration to be
 * [Hosts](#hosts)
 * [IPerf3](#iperf3)
 * [KubernetesHosts](#kuberneteshosts)
+* [KubernetesServiceAccounts](#kubernetesserviceaccounts)
 * [KubernetesTimeouts](#kubernetestimeouts)
 * [MySQL](#mysql)
 * [Output](#output)
@@ -36,8 +37,8 @@ AdditionalFlags additional flags structure for Server and Clients
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| Clients | \n List of additional flags for clients | []string | true |
-| Server | \n List of additional flags for server | []string | true |
+| clients | \n List of additional flags for clients | []string | true |
+| server | \n List of additional flags for server | []string | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -47,8 +48,8 @@ AnsibleGroups server and clients host group names in the used inventory file(s)
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| Server | Server inventory server group name | string | true |
-| Clients | Clients inventory clients group name | string | true |
+| server | Server inventory server group name | string | true |
+| clients | Clients inventory clients group name | string | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -58,8 +59,8 @@ AnsibleTimeouts timeouts for Ansible command runs
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| CommandTimeout | Timeout duration for `ansible` and `ansible-inventory` calls (NOT task command timeouts) | time.Duration | true |
-| TaskCommandTimeout | Timeout duration for `ansible` Task command calls | time.Duration | true |
+| commandTimeout | Timeout duration for `ansible` and `ansible-inventory` calls (NOT task command timeouts) | time.Duration | true |
+| taskCommandTimeout | Timeout duration for `ansible` Task command calls | time.Duration | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -79,9 +80,9 @@ Config Config object for the config file
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| Version |  | string | true |
-| Runner |  | [Runner](#runner) | true |
-| Tests |  | []*[Test](#test) | true |
+| version |  | string | true |
+| runner |  | [Runner](#runner) | true |
+| tests |  | []*[Test](#test) | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -102,7 +103,7 @@ Excelize Excelize Output config options. TODO implement
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
 | FilePath |  | [FilePath](#filepath) | false |
-| SaveAfterRows | After what amount of rows the Excel file should be saved | int | true |
+| saveAfterRows | After what amount of rows the Excel file should be saved | int | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -112,8 +113,8 @@ FilePath file path and name pattern for outputs file generation
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| FilePath | File base path for output | string | true |
-| NamePattern | File name pattern templated from various availables during output generation | string | true |
+| filePath | File base path for output | string | true |
+| namePattern | File name pattern templated from various availables during output generation | string | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -124,7 +125,7 @@ GoChart GoChart Output config options
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
 | FilePath |  | [FilePath](#filepath) | false |
-| Types | Types of charts to produce from the testers output data | []string | true |
+| types | Types of charts to produce from the testers output data | []string | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -134,13 +135,13 @@ Hosts options for hosts selection for a Test
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| Name | Name of this hosts selection. | string | true |
-| All | If all hosts available should be used. | bool | true |
-| Random | Select `Count` Random hosts from the available hosts list. | bool | true |
-| Count | Must be used with `Random`, will cause `Count` times Nodes to be randomly selected from all applicable hosts. | int | true |
-| Hosts | Static list of hosts (this list is not checked for accuracy) | []string | true |
-| HostSelector | \"Label\" selector for the dynamically generated hosts list, e.g., Kubernetes label selector | map[string]string | true |
-| AntiAffinity | AntiAffinity not implemented yet | []string | true |
+| name | Name of this hosts selection. | string | true |
+| all | If all hosts available should be used. | bool | true |
+| random | Select `Count` Random hosts from the available hosts list. | bool | true |
+| count | Must be used with `Random`, will cause `Count` times Nodes to be randomly selected from all applicable hosts. | int | true |
+| hosts | Static list of hosts (this list is not checked for accuracy) | []string | true |
+| hostSelector | \"Label\" selector for the dynamically generated hosts list, e.g., Kubernetes label selector | map[string]string | true |
+| antiAffinity | AntiAffinity not implemented yet | []string | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -150,8 +151,8 @@ IPerf3 IPerf3 config structure for testers.Tester config
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| AdditionalFlags | Additional flags for client and server | [AdditionalFlags](#additionalflags) | true |
-| UDP | If UDP should be used for the IPerf3 test | *bool | true |
+| additionalFlags | Additional flags for client and server | [AdditionalFlags](#additionalflags) | true |
+| udp | If UDP should be used for the IPerf3 test | *bool | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -161,8 +162,19 @@ KubernetesHosts hosts selection options for Kubernetes
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| IgnoreSchedulingDisabled | If Nodes that are `SchedulingDisabled` should be ignored | bool | true |
-| Tolerations | List of Kubernetes corev1.Toleration to tolerate when selecting Nodes | [][corev1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#toleration-v1-core) | true |
+| ignoreSchedulingDisabled | If Nodes that are `SchedulingDisabled` should be ignored | *bool | true |
+| tolerations | List of Kubernetes corev1.Toleration to tolerate when selecting Nodes | [][corev1.Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#toleration-v1-core) | true |
+
+[Back to TOC](#table-of-contents)
+
+## KubernetesServiceAccounts
+
+KubernetesServiceAccounts server and client ServiceAccount name to use for the created Pods
+
+| Field | Description | Scheme | Required |
+| ----- | ----------- | ------ | -------- |
+| server | Server ServiceAccount name to use for server Pods | string | false |
+| clients | Clients ServiceAccount name to use for client Pods | string | false |
 
 [Back to TOC](#table-of-contents)
 
@@ -172,9 +184,9 @@ KubernetesTimeouts timeouts for operations with Kubernetess
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| DeleteTimeout | Timeout for object deletion | int | true |
-| RunningTimeout | Timeout for \"Pod running\" check | int | true |
-| SucceedTimeout | Timeout for \"Pod succeded\" check (e.g., client Pod exits after Pod) | int | true |
+| deleteTimeout | Timeout for object deletion | int | true |
+| runningTimeout | Timeout for \"Pod running\" check | int | true |
+| succeedTimeout | Timeout for \"Pod succeded\" check (e.g., client Pod exits after Pod) | int | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -184,9 +196,9 @@ MySQL MySQL Output config options
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| DSN | MySQL DSN, format `[username[:password]@][protocol[(address)]]/dbname[?param1=value1&...&paramN=valueN]`, for more information see https://github.com/go-sql-driver/mysql#dsn-data-source-name | string | true |
-| TableNamePattern | Pattern used for templating the name of the table used in the MySQL database, the tables are created automatically when MySQL.AutoCreateTables is set to `true` | string | true |
-| AutoCreateTables | Automatically create tables in the MySQL database (default `true`) | *bool | true |
+| dsn | MySQL DSN, format `[username[:password]@][protocol[(address)]]/dbname[?param1=value1&...&paramN=valueN]`, for more information see https://github.com/go-sql-driver/mysql#dsn-data-source-name | string | true |
+| tableNamePattern | Pattern used for templating the name of the table used in the MySQL database, the tables are created automatically when MySQL.AutoCreateTables is set to `true` | string | true |
+| autoCreateTables | Automatically create tables in the MySQL database (default `true`) | *bool | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -196,13 +208,13 @@ Output Output config structure pointing to the other config options for each out
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| Name | Name of this output | string | true |
-| CSV | CSV output options | *[CSV](#csv) | true |
-| GoChart | GoChart output options | *[GoChart](#gochart) | true |
-| Dump | Dump output options | *[Dump](#dump) | true |
-| Excelize | Excelize output options | *[Excelize](#excelize) | true |
-| SQLite | SQLite output options | *[SQLite](#sqlite) | true |
-| MySQL | MySQL output options | *[MySQL](#mysql) | true |
+| name | Name of this output | string | true |
+| csv | CSV output options | *[CSV](#csv) | true |
+| goChart | GoChart output options | *[GoChart](#gochart) | true |
+| dump | Dump output options | *[Dump](#dump) | true |
+| excelize | Excelize output options | *[Excelize](#excelize) | true |
+| sqlite | SQLite output options | *[SQLite](#sqlite) | true |
+| mysql | MySQL output options | *[MySQL](#mysql) | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -212,11 +224,11 @@ RunOptions options for running the tasks
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| ContinueOnError |  | bool | true |
-| Rounds | Amount of test rounds (repetitions) to do for a test plan | int | true |
-| Interval | Time interval to sleep / wait between | time.Duration | true |
-| Mode | Run mode can be `parallel` or `sequential` (default is `sequential`) | string | true |
-| ParallelCount | **NOT IMPLEMENTED YET** amount of test tasks to run when using `parallel` RunOptions.Mode | int | true |
+| continueOnError |  | bool | true |
+| rounds | Amount of test rounds (repetitions) to do for a test plan | int | true |
+| interval | Time interval to sleep / wait between | time.Duration | true |
+| mode | Run mode can be `parallel` or `sequential` (default is `sequential`) | string | true |
+| parallelCount | **NOT IMPLEMENTED YET** amount of test tasks to run when using `parallel` RunOptions.Mode | int | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -226,10 +238,10 @@ Runner structure with all available runners config options
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| Name | Name of the runner | string | true |
-| Kubernetes | Kubernetes runner options | *[RunnerKubernetes](#runnerkubernetes) | true |
-| Ansible | Ansible runner options | *[RunnerAnsible](#runneransible) | true |
-| Mock | Mock runner options (userd for testing purposes) | *[RunnerMock](#runnermock) | true |
+| name | Name of the runner | string | true |
+| kubernetes | Kubernetes runner options | *[RunnerKubernetes](#runnerkubernetes) | true |
+| ansible | Ansible runner options | *[RunnerAnsible](#runneransible) | true |
+| mock | Mock runner options (userd for testing purposes) | *[RunnerMock](#runnermock) | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -239,11 +251,11 @@ RunnerAnsible Ansible Runner config options
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| InventoryFilePath | InventoryFilePath Path to inventory file to use | string | true |
-| Groups | Groups server and clients group names | *[AnsibleGroups](#ansiblegroups) | true |
-| AnsibleCommand | Path to the ansible command (if empty will be searched for in `PATH`) | string | true |
-| AnsibleInventoryCommand | Path to the ansible-inventory command (if empty will be searched for in `PATH`) | string | true |
-| Timeouts | Timeout settings for ansible command runs | *[AnsibleTimeouts](#ansibletimeouts) | true |
+| inventoryFilePath | InventoryFilePath Path to inventory file to use | string | true |
+| groups | Groups server and clients group names | *[AnsibleGroups](#ansiblegroups) | true |
+| ansibleCommand | Path to the ansible command (if empty will be searched for in `PATH`) | string | true |
+| ansibleInventoryCommand | Path to the ansible-inventory command (if empty will be searched for in `PATH`) | string | true |
+| timeouts | Timeout settings for ansible command runs | *[AnsibleTimeouts](#ansibletimeouts) | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -253,14 +265,15 @@ RunnerKubernetes Kubernetes Runner config options
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| InClusterConfig | If the Kubernetes client should use the in-cluster config for the cluster communication | bool | true |
-| Kubeconfig | Path to your kubeconfig file, if not set the following order will be tried out, `KUBECONFIG` and `$HOME/.kube/config` | string | true |
-| Image | The image used for the spawned Pods for the tests (default `quay.io/galexrt/container-toolbox`) | string | true |
-| Namespace | Namespace to execute the tests in | string | true |
-| HostNetwork | If `hostNetwork` mode should be used for the test Pods | bool | true |
-| Timeouts | Timeout settings for operations against the Kubernetes API | *[KubernetesTimeouts](#kubernetestimeouts) | true |
-| Annotations | Annotations to put on the test Pods | map[string]string | true |
-| Hosts | Host selection specific options | *[KubernetesHosts](#kuberneteshosts) | true |
+| inClusterConfig | If the Kubernetes client should use the in-cluster config for the cluster communication | bool | true |
+| kubeconfig | Path to your kubeconfig file, if not set the following order will be tried out, `KUBECONFIG` and `$HOME/.kube/config` | string | false |
+| image | The image used for the spawned Pods for the tests (default `quay.io/galexrt/container-toolbox`) | string | true |
+| namespace | Namespace to execute the tests in | string | true |
+| hostNetwork | If `hostNetwork` mode should be used for the test Pods | *bool | false |
+| timeouts | Timeout settings for operations against the Kubernetes API | *[KubernetesTimeouts](#kubernetestimeouts) | false |
+| annotations | Annotations to put on the test Pods | map[string]string | false |
+| hosts | Host selection specific options | *[KubernetesHosts](#kuberneteshosts) | true |
+| serviceaccounts | ServiceAccounst to use server and client Pods | *[KubernetesServiceAccounts](#kubernetesserviceaccounts) | false |
 
 [Back to TOC](#table-of-contents)
 
@@ -280,7 +293,7 @@ SQLite SQLite Output config options
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
 | FilePath |  | [FilePath](#filepath) | false |
-| TableNamePattern | Pattern used for templating the name of the table used in the SQLite database, the tables are created automatically | string | true |
+| tableNamePattern | Pattern used for templating the name of the table used in the SQLite database, the tables are created automatically | string | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -290,12 +303,12 @@ Test Config options for each Test
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| Name | Test name | string | true |
-| Type | The tester to use, e.g., for `iperf3` set to `iperf3` and so on | string | true |
-| RunOptions | Options for the execution of the test | [RunOptions](#runoptions) | true |
-| Outputs | List of Outputs to use for processing data from the testers. | [][Output](#output) | true |
-| Hosts | Hosts selection for client and server | [TestHosts](#testhosts) | true |
-| IPerf3 | IPerf3 test options | *[IPerf3](#iperf3) | true |
+| name | Test name | string | true |
+| type | The tester to use, e.g., for `iperf3` set to `iperf3` and so on | string | true |
+| runOptions | Options for the execution of the test | [RunOptions](#runoptions) | true |
+| outputs | List of Outputs to use for processing data from the testers. | [][Output](#output) | true |
+| hosts | Hosts selection for client and server | [TestHosts](#testhosts) | true |
+| iperf3 | IPerf3 test options | *[IPerf3](#iperf3) | true |
 
 [Back to TOC](#table-of-contents)
 
@@ -305,7 +318,7 @@ TestHosts list of clients and servers hosts for use in the test(s)
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| Clients | Static list of hosts to use as clients | [][Hosts](#hosts) | true |
-| Servers | Static list of hosts to use as server | [][Hosts](#hosts) | true |
+| clients | Static list of hosts to use as clients | [][Hosts](#hosts) | true |
+| servers | Static list of hosts to use as server | [][Hosts](#hosts) | true |
 
 [Back to TOC](#table-of-contents)

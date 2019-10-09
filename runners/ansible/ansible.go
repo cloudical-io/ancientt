@@ -236,7 +236,7 @@ func (a *Ansible) Execute(plan *testers.Plan, parser chan<- parsers.Input) error
 			}
 			a.logger.Infof("running task round %d of %d", i+1, len(tasks))
 
-			if err := a.runTasks(round, task, plan.TestStartTime, plan.Tester, util.GetTaskName(plan), parser); err != nil {
+			if err := a.runTasks(round, task, plan.TestStartTime, plan.Tester, util.GetTaskName(plan.Tester, plan.TestStartTime), parser); err != nil {
 				if !plan.RunOptions.ContinueOnError {
 					return err
 				}

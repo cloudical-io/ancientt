@@ -16,8 +16,7 @@ package util
 import (
 	"crypto/sha1"
 	"fmt"
-
-	"github.com/cloudical-io/ancientt/testers"
+	"time"
 )
 
 // PNameRole task role names type
@@ -32,12 +31,12 @@ const (
 
 // GetPNameFromTask get a "persistent" name for a task
 // This is done by calculating the checksums of the used names.
-func GetPNameFromTask(round int, task *testers.Task, role PNameRole) string {
-	data := fmt.Sprintf("%d-%s-%s", round, task.Host.Name, task.Args)
-	return fmt.Sprintf("ancientt-%s-%s-%x", role, task.Command, sha1.Sum([]byte(data)))
+func GetPNameFromTask(round int, hostname string, command string, args []string, role PNameRole) string {
+	data := fmt.Sprintf("%d-%s-%s", round, hostname, args)
+	return fmt.Sprintf("ancientt-%s-%s-%x", role, command, sha1.Sum([]byte(data)))
 }
 
 // GetTaskName get a task name
-func GetTaskName(plan *testers.Plan) string {
-	return fmt.Sprintf("ancientt-%s-%d", plan.Tester, plan.TestStartTime.Unix())
+func GetTaskName(tester string, testStartTime time.Time) string {
+	return fmt.Sprintf("ancientt-%s-%d", tester, testStartTime.Unix())
 }

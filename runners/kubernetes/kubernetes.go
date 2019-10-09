@@ -21,6 +21,7 @@ import (
 	"github.com/cloudical-io/ancientt/parsers"
 	"github.com/cloudical-io/ancientt/pkg/cmdtemplate"
 	"github.com/cloudical-io/ancientt/pkg/config"
+	"github.com/cloudical-io/ancientt/pkg/hostsfilter"
 	"github.com/cloudical-io/ancientt/pkg/k8sutil"
 	"github.com/cloudical-io/ancientt/pkg/util"
 	"github.com/cloudical-io/ancientt/runners"
@@ -79,7 +80,7 @@ func (k *Kubernetes) GetHostsForTest(test *config.Test) (*testers.Hosts, error) 
 
 	// Go through Hosts Servers list to get the servers hosts
 	for _, servers := range test.Hosts.Servers {
-		filtered, err := util.FilterHostsList(k8sNodes, servers)
+		filtered, err := hostsfilter.FilterHostsList(k8sNodes, servers)
 		if err != nil {
 			return nil, err
 		}
@@ -92,7 +93,7 @@ func (k *Kubernetes) GetHostsForTest(test *config.Test) (*testers.Hosts, error) 
 
 	// Go through Hosts Clients list to get the clients hosts
 	for _, clients := range test.Hosts.Clients {
-		filtered, err := util.FilterHostsList(k8sNodes, clients)
+		filtered, err := hostsfilter.FilterHostsList(k8sNodes, clients)
 		if err != nil {
 			return nil, err
 		}
@@ -118,7 +119,7 @@ func (k *Kubernetes) k8sNodesToHosts() ([]*testers.Host, error) {
 	// Quick conversion from a Kubernetes CoreV1 Nodes object to testers.Host
 	for _, node := range nodes.Items {
 		// Check if node is unschedulable
-		if k.config.Hosts.IgnoreSchedulingDisabled && node.Spec.Unschedulable {
+		if (k.config.Hosts != nil && *k.config.Hosts.IgnoreSchedulingDisabled) && node.Spec.Unschedulable {
 			k.logger.WithFields(logrus.Fields{"node": node.ObjectMeta.Name}).Debug("skipping unschedulable node")
 			continue
 		}
@@ -164,7 +165,7 @@ func (k *Kubernetes) Execute(plan *testers.Plan, parser chan<- parsers.Input) er
 			k.logger.Infof("running task round %d of %d", i+1, len(tasks))
 
 			// Create the Pods for the server task and client tasks
-			if err := k.createPodsForTasks(round, task, plan.TestStartTime, plan.Tester, util.GetTaskName(plan), parser); err != nil {
+			if err := k.createPodsForTasks(round, task, plan.TestStartTime, plan.Tester, util.GetTaskName(plan.Tester, plan.TestStartTime), parser); err != nil {
 				if !plan.RunOptions.ContinueOnError {
 					return err
 				}
@@ -209,7 +210,7 @@ func (k *Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, plann
 	var wg sync.WaitGroup
 
 	// Create server Pod first
-	serverPodName := util.GetPNameFromTask(round, mainTask, util.PNameRoleServer)
+	serverPodName := util.GetPNameFromTask(round, mainTask.Host.Name, mainTask.Command, mainTask.Args, util.PNameRoleServer)
 
 	// Create initial cmdtemplate.Variables
 	templateVars := cmdtemplate.Variables{
@@ -224,6 +225,7 @@ func (k *Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, plann
 	}
 
 	pod := k.getPodSpec(serverPodName, taskName, mainTask)
+	k.applyServiceAccountToPod(pod, serverRole)
 
 	logger.WithFields(logrus.Fields{"pod": serverPodName}).Debug("(re)creating server pod")
 	if err := k8sutil.PodRecreate(k.k8sclient, pod, k.config.Timeouts.DeleteTimeout); err != nil {
@@ -273,7 +275,7 @@ func (k *Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, plann
 
 			testTime := time.Now()
 
-			pName := util.GetPNameFromTask(round, task, util.PNameRoleClient)
+			pName := util.GetPNameFromTask(round, task.Host.Name, task.Command, task.Args, util.PNameRoleClient)
 
 			// Template command and args for each task
 			if err := cmdtemplate.Template(task, templateVars); err != nil {
@@ -284,6 +286,7 @@ func (k *Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, plann
 			}
 
 			pod = k.getPodSpec(pName, taskName, task)
+			k.applyServiceAccountToPod(pod, clientsRole)
 
 			logger.WithFields(logrus.Fields{"pod": pName}).Debug("(re)creating client pod")
 			if err := k8sutil.PodRecreate(k.k8sclient, pod, k.config.Timeouts.DeleteTimeout); err != nil {
@@ -394,7 +397,7 @@ func (k *Kubernetes) Cleanup(plan *testers.Plan) error {
 
 	// Delete all Pods with label XYZ
 	if err := k8sutil.PodDeleteByLabels(k.k8sclient, k.config.Namespace, map[string]string{
-		k8sutil.TaskIDLabel: util.GetTaskName(plan),
+		k8sutil.TaskIDLabel: util.GetTaskName(plan.Tester, plan.TestStartTime),
 	}); err != nil {
 		k.logger.Errorf("error during pod delete by labels in cleanup. %+v", err)
 		return err
