@@ -1,8 +1,12 @@
 language: go
 
+env:
+  # Remove when dropping Go 1.12 CI support
+  - GO111MODULE=on
+
 go:
   - '1.12'
   - '1.13'
 
 script:
-- make test
+  - make test # Run tests
