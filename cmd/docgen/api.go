@@ -200,30 +200,36 @@ func wrapInLink(text, link string) string {
 // fieldName returns the name of the field as it should appear in JSON format
 // "-" indicates that this field is not part of the JSON representation
 func fieldName(field *ast.Field) string {
-	jsonTag := ""
+	tag := ""
 	if field.Tag != nil {
-		jsonTag = reflect.StructTag(field.Tag.Value[1 : len(field.Tag.Value)-1]).Get("json") // Delete first and last quotation
-		if strings.Contains(jsonTag, "inline") {
+		tag = reflect.StructTag(field.Tag.Value[1 : len(field.Tag.Value)-1]).Get("json") // Delete first and last quotation
+		if tag == "" {
+			tag = reflect.StructTag(field.Tag.Value[1 : len(field.Tag.Value)-1]).Get("yaml")
+		}
+		if strings.Contains(tag, "inline") {
 			return "-"
 		}
 	}
 
-	jsonTag = strings.Split(jsonTag, ",")[0] // This can return "-"
-	if jsonTag == "" {
+	tag = strings.Split(tag, ",")[0] // This can return "-"
+	if tag == "" {
 		if field.Names != nil {
 			return field.Names[0].Name
 		}
 		return field.Type.(*ast.Ident).Name
 	}
-	return jsonTag
+	return tag
 }
 
 // fieldRequired returns whether a field is a required field.
 func fieldRequired(field *ast.Field) bool {
-	jsonTag := ""
+	tag := ""
 	if field.Tag != nil {
-		jsonTag = reflect.StructTag(field.Tag.Value[1 : len(field.Tag.Value)-1]).Get("json") // Delete first and last quotation
-		return !strings.Contains(jsonTag, "omitempty")
+		tag = reflect.StructTag(field.Tag.Value[1 : len(field.Tag.Value)-1]).Get("json") // Delete first and last quotation
+		if tag == "" {
+			tag = reflect.StructTag(field.Tag.Value[1 : len(field.Tag.Value)-1]).Get("yaml")
+		}
+		return !strings.Contains(tag, "omitempty")
 	}
 
 	return false
