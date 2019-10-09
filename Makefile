@@ -10,6 +10,8 @@ GOFMT   := gofmt
 PREFIX  ?= $(shell pwd)
 VERSION ?= $(shell cat VERSION)
 
+GO_TEST_FLAGS ?= -race
+
 pkgs = $(shell go list ./... | grep -v /vendor/ | grep -v /test/)
 
 DOCKER_IMAGE_NAME ?= ancientt
@@ -40,7 +42,7 @@ style: go.check
 
 test: go.check
 	@echo ">> running tests"
-	$(GO) test $(pkgs)
+	$(GO) test $(GO_TEST_FLAGS) $(pkgs)
 
 test-short: go.check
 	@echo ">> running short tests"
