@@ -230,23 +230,26 @@ type Test struct {
 	IPerf3 *IPerf3 `yaml:"iperf3"`
 }
 
+// RunMode custom run mode const type for
+type RunMode string
+
 const (
 	// RunModeSequential run tasks in sequential / serial order
-	RunModeSequential = "sequential"
+	RunModeSequential RunMode = "sequential"
 	// RunModeParallel run tasks in parallel (WARNING! Be sure what you cause with this, e.g., 100 iperfs might not be good for a production environment)
-	RunModeParallel = "parallel"
+	RunModeParallel RunMode = "parallel"
 )
 
 // RunOptions options for running the tasks
 type RunOptions struct {
-	//
-	ContinueOnError bool `yaml:"continueOnError"`
+	// Continue on error during test runs (recommended to set to `true`) (default is `true`)
+	ContinueOnError *bool `yaml:"continueOnError,omitempty"`
 	// Amount of test rounds (repetitions) to do for a test plan
 	Rounds int `yaml:"rounds"`
-	// Time interval to sleep / wait between
-	Interval time.Duration `yaml:"interval"`
-	// Run mode can be `parallel` or `sequential` (default is `sequential`)
-	Mode string `yaml:"mode"`
+	// Time interval to sleep / wait between (default `10s`)
+	Interval time.Duration `yaml:"interval,omitempty"`
+	// Run mode can be `parallel` or `sequential` (see `RunMode`, default is `sequential`)
+	Mode RunMode `yaml:"mode"`
 	// **NOT IMPLEMENTED YET** amount of test tasks to run when using `parallel` RunOptions.Mode
 	ParallelCount int `yaml:"parallelCount"`
 }

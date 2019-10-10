@@ -166,7 +166,7 @@ func (k *Kubernetes) Execute(plan *testers.Plan, parser chan<- parsers.Input) er
 
 			// Create the Pods for the server task and client tasks
 			if err := k.createPodsForTasks(round, task, plan.TestStartTime, plan.Tester, util.GetTaskName(plan.Tester, plan.TestStartTime), parser); err != nil {
-				if !plan.RunOptions.ContinueOnError {
+				if !*plan.RunOptions.ContinueOnError {
 					return err
 				}
 				k.logger.Warnf("continuing after err. %+v", err)

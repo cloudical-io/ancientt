@@ -117,7 +117,7 @@ func run(cmd *cobra.Command, args []string) error {
 		logger, tester, parser, outputsAssembled, err := prepare(test)
 		logger.WithFields(logrus.Fields{"runner": runnerName})
 		if err != nil {
-			if !test.RunOptions.ContinueOnError {
+			if !*test.RunOptions.ContinueOnError {
 				return err
 			}
 			logger.Warnf("skippinmg test %d of %d due to error in initial prepare step", i+1, len(cfg.Tests))
@@ -213,7 +213,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 		if err := checkForErrors(plan); err != nil {
 			logger.Error(err)
-			if !test.RunOptions.ContinueOnError {
+			if !*test.RunOptions.ContinueOnError {
 				return err
 			}
 			logger.Warnf("continue on error run option given for test, continuing")

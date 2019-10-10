@@ -224,10 +224,10 @@ RunOptions options for running the tasks
 
 | Field | Description | Scheme | Required |
 | ----- | ----------- | ------ | -------- |
-| continueOnError |  | bool | true |
+| continueOnError | Continue on error during test runs (recommended to set to `true`) (default is `true`) | *bool | false |
 | rounds | Amount of test rounds (repetitions) to do for a test plan | int | true |
-| interval | Time interval to sleep / wait between | time.Duration | true |
-| mode | Run mode can be `parallel` or `sequential` (default is `sequential`) | string | true |
+| interval | Time interval to sleep / wait between (default `10s`) | time.Duration | false |
+| mode | Run mode can be `parallel` or `sequential` (see `RunMode`, default is `sequential`) | RunMode | true |
 | parallelCount | **NOT IMPLEMENTED YET** amount of test tasks to run when using `parallel` RunOptions.Mode | int | true |
 
 [Back to TOC](#table-of-contents)
