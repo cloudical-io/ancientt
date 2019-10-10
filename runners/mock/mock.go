@@ -18,7 +18,7 @@ import (
 
 	"github.com/cloudical-io/ancientt/parsers"
 	"github.com/cloudical-io/ancientt/pkg/config"
-	"github.com/cloudical-io/ancientt/pkg/util"
+	"github.com/cloudical-io/ancientt/pkg/hostsfilter"
 	"github.com/cloudical-io/ancientt/runners"
 	"github.com/cloudical-io/ancientt/testers"
 	"github.com/sirupsen/logrus"
@@ -60,7 +60,7 @@ func (m Mock) GetHostsForTest(test *config.Test) (*testers.Hosts, error) {
 
 	// Go through Hosts Servers list to get the servers hosts
 	for _, servers := range test.Hosts.Servers {
-		filtered, err := util.FilterHostsList(mockHosts, servers)
+		filtered, err := hostsfilter.FilterHostsList(mockHosts, servers)
 		if err != nil {
 			return nil, err
 		}
@@ -73,7 +73,7 @@ func (m Mock) GetHostsForTest(test *config.Test) (*testers.Hosts, error) {
 
 	// Go through Hosts Clients list to get the clients hosts
 	for _, clients := range test.Hosts.Clients {
-		filtered, err := util.FilterHostsList(mockHosts, clients)
+		filtered, err := hostsfilter.FilterHostsList(mockHosts, clients)
 		if err != nil {
 			return nil, err
 		}

@@ -16,8 +16,9 @@ package config
 import (
 	"time"
 
+	"github.com/cloudical-io/ancientt/pkg/util"
+
 	"github.com/cloudical-io/ancientt/pkg/ansible"
-	corev1 "k8s.io/api/core/v1"
 )
 
 // Defaults interface to implement for config parts which allow a "verification" / Setting Defaults
@@ -35,33 +36,32 @@ func (c *RunnerKubernetes) SetDefaults() {
 		c.Image = "quay.io/galexrt/container-toolbox:latest"
 	}
 
-	if c.Hosts == nil {
-		c.Hosts = &KubernetesHosts{
-			IgnoreSchedulingDisabled: true,
-			Tolerations:              []corev1.Toleration{},
-		}
-	}
-
 	if c.Namespace == "" {
 		c.Namespace = "ancientt"
 	}
+}
 
-	if c.Timeouts == nil {
-		c.Timeouts = &KubernetesTimeouts{}
-	}
-	if c.Timeouts.DeleteTimeout == 0 {
-		c.Timeouts.DeleteTimeout = 20
-	}
-	c.Timeouts.RunningTimeout = 35
-	if c.Timeouts.SucceedTimeout == 0 {
-		c.Timeouts.RunningTimeout = 35
-	}
-	if c.Timeouts.SucceedTimeout == 0 {
-		c.Timeouts.SucceedTimeout = 60
+// SetDefaults set defaults on config part
+func (c *KubernetesHosts) SetDefaults() {
+	if c.IgnoreSchedulingDisabled == nil {
+		c.IgnoreSchedulingDisabled = util.BoolPointer(true)
 	}
 }
 
-// SetDefaults set default on config part
+// SetDefaults set defaults on config part
+func (c *KubernetesTimeouts) SetDefaults() {
+	if c.DeleteTimeout == 0 {
+		c.DeleteTimeout = 20
+	}
+	if c.RunningTimeout == 0 {
+		c.RunningTimeout = 35
+	}
+	if c.SucceedTimeout == 0 {
+		c.SucceedTimeout = 60
+	}
+}
+
+// SetDefaults set defaults on config part
 func (c *RunnerAnsible) SetDefaults() {
 	if c.AnsibleCommand == "" {
 		c.AnsibleCommand = ansible.AnsibleCommand

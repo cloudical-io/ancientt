@@ -137,19 +137,21 @@ type RunnerKubernetes struct {
 	// If the Kubernetes client should use the in-cluster config for the cluster communication
 	InClusterConfig bool `yaml:"inClusterConfig"`
 	// Path to your kubeconfig file, if not set the following order will be tried out, `KUBECONFIG` and `$HOME/.kube/config`
-	Kubeconfig string `yaml:"kubeconfig"`
+	Kubeconfig string `yaml:"kubeconfig,omitempty"`
 	// The image used for the spawned Pods for the tests (default `quay.io/galexrt/container-toolbox`)
 	Image string `yaml:"image"`
 	// Namespace to execute the tests in
 	Namespace string `yaml:"namespace" validate:"max=63"`
 	// If `hostNetwork` mode should be used for the test Pods
-	HostNetwork bool `yaml:"hostNetwork"`
+	HostNetwork *bool `yaml:"hostNetwork,omitempty"`
 	// Timeout settings for operations against the Kubernetes API
-	Timeouts *KubernetesTimeouts `yaml:"timeouts"`
+	Timeouts *KubernetesTimeouts `yaml:"timeouts,omitempty"`
 	// Annotations to put on the test Pods
-	Annotations map[string]string `yaml:"annotations"`
+	Annotations map[string]string `yaml:"annotations,omitempty"`
 	// Host selection specific options
 	Hosts *KubernetesHosts `yaml:"hosts"`
+	// ServiceAccounst to use server and client Pods
+	ServiceAccounts *KubernetesServiceAccounts `yaml:"serviceaccounts,omitempty"`
 }
 
 // KubernetesTimeouts timeouts for operations with Kubernetess
@@ -165,9 +167,17 @@ type KubernetesTimeouts struct {
 // KubernetesHosts hosts selection options for Kubernetes
 type KubernetesHosts struct {
 	// If Nodes that are `SchedulingDisabled` should be ignored
-	IgnoreSchedulingDisabled bool `yaml:"ignoreSchedulingDisabled"`
+	IgnoreSchedulingDisabled *bool `yaml:"ignoreSchedulingDisabled"`
 	// List of Kubernetes corev1.Toleration to tolerate when selecting Nodes
 	Tolerations []corev1.Toleration `yaml:"tolerations"`
+}
+
+// KubernetesServiceAccounts server and client ServiceAccount name to use for the created Pods
+type KubernetesServiceAccounts struct {
+	// Server ServiceAccount name to use for server Pods
+	Server string `yaml:"server,omitempty"`
+	// Clients ServiceAccount name to use for client Pods
+	Clients string `yaml:"clients,omitempty"`
 }
 
 // RunnerAnsible Ansible Runner config options

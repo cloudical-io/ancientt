@@ -18,6 +18,7 @@ import (
 
 	"github.com/cloudical-io/ancientt/pkg/config"
 	"github.com/cloudical-io/ancientt/tests/k8s"
+	"github.com/creasty/defaults"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +34,8 @@ func TestGetHostsForTest(t *testing.T) {
 	require.NotNil(t, clientset)
 
 	conf := &config.RunnerKubernetes{}
-	conf.SetDefaults()
+	// Set defaults in the config struct
+	require.Nil(t, defaults.Set(conf))
 
 	runner := &Kubernetes{
 		logger:    log.WithFields(logrus.Fields{"runner": Name, "namespace": ""}),
