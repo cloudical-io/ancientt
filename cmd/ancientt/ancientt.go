@@ -28,6 +28,7 @@ import (
 	"github.com/cloudical-io/ancientt/testers"
 	au "github.com/logrusorgru/aurora"
 	"github.com/mattn/go-isatty"
+	"github.com/prometheus/common/version"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -49,15 +50,18 @@ var (
 
 func init() {
 	// Set flags, viper binds for flags and viper bind default values
+	rootCmd.PersistentFlags().Bool("version", false, "Print version info and exit.")
 	rootCmd.PersistentFlags().BoolP("only-print-plan", "p", false, "Only print plan for the testdefinitions to console and exit.")
 	rootCmd.PersistentFlags().Bool("no-cleanup", false, "If runners should run cleanup routines after the tests.")
 	rootCmd.PersistentFlags().BoolP("yes", "y", false, "Ask for user confirmation for each test before executing it.")
 	rootCmd.PersistentFlags().StringP("testdefinition", "c", "testdefinition.yaml", "Path to the testdefinitions to read for the tests.")
 	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "INFO", "Log level (DEBUG, INFO, WARN, ERROR, default: INFO).")
+	viper.BindPFlag("version", rootCmd.PersistentFlags().Lookup("version"))
 	viper.BindPFlag("only-print-plan", rootCmd.PersistentFlags().Lookup("only-print-plan"))
 	viper.BindPFlag("no-cleanup", rootCmd.PersistentFlags().Lookup("no-cleanup"))
 	viper.BindPFlag("yes", rootCmd.PersistentFlags().Lookup("yes"))
 	viper.BindPFlag("testdefinition", rootCmd.PersistentFlags().Lookup("testdefinition"))
+	viper.SetDefault("version", false)
 	viper.SetDefault("only-print-plan", false)
 	viper.SetDefault("no-cleanup", false)
 	viper.SetDefault("yes", false)
@@ -85,10 +89,25 @@ func loadConfig() error {
 }
 
 func run(cmd *cobra.Command, args []string) error {
+	if viper.GetBool("version") {
+		fmt.Print(version.Print(os.Args[0]))
+		return nil
+	}
+
 	log.SetFormatter(&log.TextFormatter{
 		FullTimestamp: true,
 	})
 	log.SetReportCaller(false)
+
+	log.WithFields(logrus.Fields{
+		"program":   os.Args[0],
+		"version":   version.Version,
+		"branch":    version.Branch,
+		"revision":  version.Revision,
+		"go":        version.GoVersion,
+		"buildUser": version.BuildUser,
+		"buildDate": version.BuildDate,
+	}).Info("starting ancientt")
 
 	level, err := log.ParseLevel(logLevel)
 	if err != nil {
