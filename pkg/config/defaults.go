@@ -90,3 +90,22 @@ func (c *RunnerAnsible) SetDefaults() {
 		c.Groups.Clients = "clients"
 	}
 }
+
+// SetDefaults set defaults on config part
+func (c *RunOptions) SetDefaults() {
+	if c.ContinueOnError == nil {
+		c.ContinueOnError = util.BoolPointer(true)
+	}
+
+	if c.Rounds == 0 {
+		c.Rounds = 1
+	}
+
+	if c.Interval == 0 {
+		c.Interval = 10 * time.Second
+	}
+
+	if c.Mode == "" {
+		c.Mode = RunModeSequential
+	}
+}

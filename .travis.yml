@@ -1,12 +1,27 @@
 language: go
 
 env:
-  # Remove when dropping Go 1.12 CI support
+  matrix:
   - GO111MODULE=on
+  global:
+    secure: Z4nPd4t1sHufjiL78rgzTnJCpRaHyo+fBABliyZdh/9kT5i2BOtiy3TjNdE1tqhg9BvTBajY6+4cP4Ac/E2kZrrH4ZOf6/MO2vvAbEGreSQF0KFMG1zoGHn/OcrjhGaN0g2JSv5mbf/YNsjxQbu8KTgeQCVDX2/hbZIa5OJBFM9VuxIhJw6beQ3K0vKBbOWK0m68fVMc6prysp6qM+lIerlPTcx7w5GSi+xTmtnwG3pNIfJCJlO7KRRCdt05Papxhm5yQdH6JTQN7EpjSe8Kao6mQaZ75g8OzMzDd6fiWMHmcstAM5ew1vbJ3Dd/9vnnd3BH2HDJkNScK8rk5TE+vp5vOWnacqABDl25yf+c7Inufosjuldt/jVKmdcYraIg7MfO7iloLgdHPwcDEL+feOYB2Bts0NXAW528duxhEwAwDCxFn35Occ6rcpDOViKMWWOhDuFxvIcJLW5xeqc0ZhhQtXV5qEUBtcIfAuHSQUyJDvGxHfIK8UjuM0cFFoX/EfO72YBLVWKm7o1jRkx4fcsJCiY1xWZtxSx0stTfhsnhAv29Q5cIwXitk3d8s+S8nMC4kbOGZdsZWFjmOB4/HuMG7aJ5c2KCwjrwBfoKf5QAYCs70nfKv+WlsZXvaUn/cxcmXjVdKbDAvhfhuUy31h+rGOfkq6xfR9IhReiZaaA=
 
 go:
   - '1.12'
   - '1.13'
 
+
 script:
-  - make test # Run tests
+  - make test
+  - make build
+
+before_deploy:
+  - make build
+
+deploy:
+  provider: releases
+  file:
+    - "./ancientt"
+  skip_cleanup: true
+  on:
+    tags: true
