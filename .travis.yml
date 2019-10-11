@@ -3,11 +3,8 @@ language: go
 env:
   matrix:
   - GO111MODULE=on
-  global:
-    secure: Z4nPd4t1sHufjiL78rgzTnJCpRaHyo+fBABliyZdh/9kT5i2BOtiy3TjNdE1tqhg9BvTBajY6+4cP4Ac/E2kZrrH4ZOf6/MO2vvAbEGreSQF0KFMG1zoGHn/OcrjhGaN0g2JSv5mbf/YNsjxQbu8KTgeQCVDX2/hbZIa5OJBFM9VuxIhJw6beQ3K0vKBbOWK0m68fVMc6prysp6qM+lIerlPTcx7w5GSi+xTmtnwG3pNIfJCJlO7KRRCdt05Papxhm5yQdH6JTQN7EpjSe8Kao6mQaZ75g8OzMzDd6fiWMHmcstAM5ew1vbJ3Dd/9vnnd3BH2HDJkNScK8rk5TE+vp5vOWnacqABDl25yf+c7Inufosjuldt/jVKmdcYraIg7MfO7iloLgdHPwcDEL+feOYB2Bts0NXAW528duxhEwAwDCxFn35Occ6rcpDOViKMWWOhDuFxvIcJLW5xeqc0ZhhQtXV5qEUBtcIfAuHSQUyJDvGxHfIK8UjuM0cFFoX/EfO72YBLVWKm7o1jRkx4fcsJCiY1xWZtxSx0stTfhsnhAv29Q5cIwXitk3d8s+S8nMC4kbOGZdsZWFjmOB4/HuMG7aJ5c2KCwjrwBfoKf5QAYCs70nfKv+WlsZXvaUn/cxcmXjVdKbDAvhfhuUy31h+rGOfkq6xfR9IhReiZaaA=
 
 go:
-  - '1.12'
   - '1.13'
 
 
@@ -20,8 +17,11 @@ before_deploy:
 
 deploy:
   provider: releases
+  api_key:
+    secure: "A9MErQ2j34Cnl1XyabRkZKXn738OkLb1XT8HMQ0kxSxgin2UaDBKvHAhp/bpFozzTAuc7dftLs2cRBnH6UER9GxRkFWdfh7n2T41WIeLi0LJ2CH20FwDGIkfHAiLmaa4DbRW99BfaIJhZ9+kbQcuB4a4AfvtFPKV8VUn20PFvNKOMSz9vJdf5bq+Stm0gcbDbic/dukHngpbpJHjC+se6Q3v/z88J6/0i4+lrg88VkubJxa4xHm/l5j6exQCDRVZeeXGXYT8lVyRFWpqIsur0gKMwODaBTqkmE6c7G/c8ToJdsCWdf/tarmi6n3VSvkOYFvOd6vDMn3jvZpcZCCKSqRQVPJ0ujRgrRKhjVMpcFUCn9yGIB0LLFGuEQItw47D2bnDRIygWM0o3nq2EuPgUkzRECFUCt0Dwm1jLE0p/O72wofFO2oBsRY+PlX4oQ7NhVG3JPCrIfumFdUMUNBHpG/JMpya+wxGLwjW3KZnqL2ezvpsFRsm3YJvrEHXygFgKiUKeUm457oOklBL+kIYhPMvtWKl7XgtupX57rEfpLYbRedO3dBKQ0Osst5m94DYiNBbRvnKKcWjYcq0vv02J1hypx2p8xY1/ps6DgbqrWoA67LPY+vp7Reh6iJjAJqoPWuU+FiS48UwP6hjU0A3OD4BBX1tYt9ohAmNWahc0Ac="
   file:
     - "./ancientt"
   skip_cleanup: true
   on:
     tags: true
+
