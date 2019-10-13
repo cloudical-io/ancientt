@@ -131,11 +131,11 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	for i, test := range cfg.Tests {
-		log.WithFields(logrus.Fields{"runner": runnerName}).Infof("doing test %d of %d", i+1, len(cfg.Tests))
+		log.WithFields(logrus.Fields{"runner": runnerName}).Infof("doing test '%s', %d of %d", test.Name, i+1, len(cfg.Tests))
 
-		logger, tester, parser, outputsAssembled, err := prepare(test)
-		logger.WithFields(logrus.Fields{"runner": runnerName})
+		logger, tester, parser, outputsAssembled, err := prepare(test, runnerName)
 		if err != nil {
+			logger.Errorf("error preparing test run. %+v", err)
 			if !*test.RunOptions.ContinueOnError {
 				return err
 			}
@@ -287,29 +287,31 @@ func askUserForYes() error {
 	return nil
 }
 
-func prepare(test *config.Test) (*log.Entry, testers.Tester, parsers.Parser, map[string]outputs.Output, error) {
+func prepare(test *config.Test, runnerName string) (*log.Entry, testers.Tester, parsers.Parser, map[string]outputs.Output, error) {
 	var tester testers.Tester
 	var parser parsers.Parser
 	outputsAssembled := map[string]outputs.Output{}
 
 	// Get tester for the test
 	testerName := strings.ToLower(test.Type)
+	logger := log.WithFields(logrus.Fields{"tester": testerName, "parser": testerName, "runner": runnerName})
+
 	testerNewFunc, ok := testers.Factories[testerName]
 	if !ok {
-		return nil, nil, nil, nil, fmt.Errorf("tester with name %s not found", testerName)
+		return logger, nil, nil, nil, fmt.Errorf("tester with name %s not found", testerName)
 	}
 	var err error
 	if tester, err = testerNewFunc(cfg, test); err != nil {
-		return nil, nil, nil, nil, err
+		return logger, nil, nil, nil, err
 	}
 
 	// Get parser for the tester output
 	parserNewFunc, ok := parsers.Factories[testerName]
 	if !ok {
-		return nil, nil, nil, nil, fmt.Errorf("parser with name %s not found", testerName)
+		return logger, nil, nil, nil, fmt.Errorf("parser with name %s not found", testerName)
 	}
 	if parser, err = parserNewFunc(cfg, test); err != nil {
-		return nil, nil, nil, nil, err
+		return logger, nil, nil, nil, err
 	}
 
 	for _, outputItem := range test.Outputs {
@@ -317,16 +319,14 @@ func prepare(test *config.Test) (*log.Entry, testers.Tester, parsers.Parser, map
 
 		outputNewFunc, ok := outputs.Factories[outputName]
 		if !ok {
-			return nil, nil, nil, nil, fmt.Errorf("output with name %s not found", outputName)
+			return logger, nil, nil, nil, fmt.Errorf("output with name %s not found", outputName)
 		}
 		var err error
 		outputsAssembled[outputName], err = outputNewFunc(cfg, &outputItem)
 		if err != nil {
-			return nil, nil, nil, nil, err
+			return logger, nil, nil, nil, err
 		}
 	}
-
-	logger := log.WithFields(logrus.Fields{"tester": testerName, "parser": testerName})
 
 	return logger, tester, parser, outputsAssembled, err
 }
