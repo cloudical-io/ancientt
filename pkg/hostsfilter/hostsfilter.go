@@ -38,7 +38,7 @@ func FilterHostsList(inHosts []*testers.Host, filter config.Hosts) ([]*testers.H
 
 	filteredHosts = checkAntiAffinity(filteredHosts, filter.AntiAffinity)
 
-	if filter.All || len(filteredHosts) == 0 {
+	if len(filteredHosts) == 0 || (filter.All != nil && *filter.All) {
 		return filteredHosts, nil
 	}
 
@@ -48,7 +48,7 @@ func FilterHostsList(inHosts []*testers.Host, filter config.Hosts) ([]*testers.H
 	r.Seed(time.Now().UnixNano())
 
 	// Get random server(s)
-	if filter.Random {
+	if filter.Random != nil && *filter.Random {
 		for i := 0; i < filter.Count; i++ {
 			inHost := filteredHosts[r.Intn(len(filteredHosts))]
 			hosts = append(hosts, inHost)

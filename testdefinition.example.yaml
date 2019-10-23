@@ -7,7 +7,7 @@ runner:
     namespace: ancientt
     timeouts:
       deleteTimeout: 20
-      runningTimeout: 35
+      runningTimeout: 60
       succeedTimeout: 60
     hosts:
       ignoreSchedulingDisabled: true

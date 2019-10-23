@@ -23,6 +23,7 @@ import (
 	"github.com/cloudical-io/ancientt/outputs"
 	"github.com/cloudical-io/ancientt/outputs/tests"
 	"github.com/cloudical-io/ancientt/pkg/config"
+	"github.com/creasty/defaults"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -43,6 +44,7 @@ func TestSQLite(t *testing.T) {
 			},
 		},
 	}
+	require.Nil(t, defaults.Set(outCfg))
 
 	// Generate mock Data with Table data
 	data := tests.GenerateMockTableData(5)

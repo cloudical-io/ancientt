@@ -21,6 +21,7 @@ import (
 	"github.com/cloudical-io/ancientt/outputs"
 	"github.com/cloudical-io/ancientt/outputs/tests"
 	"github.com/cloudical-io/ancientt/pkg/config"
+	"github.com/creasty/defaults"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,11 +33,13 @@ func TestMySQL(t *testing.T) {
 	require.Nil(t, err)
 
 	outCfg := &config.Output{
+		Name: "TEST",
 		MySQL: &config.MySQL{
 			// Set a non-empty DSN, otherwise we get an error
 			DSN: "username:password@127.0.0.1/mydb",
 		},
 	}
+	require.Nil(t, defaults.Set(outCfg))
 
 	// Generate mock Data with Table data
 	data := tests.GenerateMockTableData(5)

@@ -62,13 +62,8 @@ const (
 func NewMySQLOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output, error) {
 	if outCfg == nil {
 		outCfg = &config.Output{
-			MySQL: &config.MySQL{
-				AutoCreateTables: util.BoolPointer(true),
-			},
+			MySQL: &config.MySQL{},
 		}
-	}
-	if outCfg.MySQL.AutoCreateTables == nil {
-		outCfg.MySQL.AutoCreateTables = util.BoolPointer(true)
 	}
 	m := MySQL{
 		logger: log.WithFields(logrus.Fields{"output": NameMySQL}),
@@ -162,7 +157,7 @@ func (m MySQL) createTable(db *sqlx.DB, dataTable outputs.Table, tableName strin
 	// The error should not return an error when the table exists, try to create the database
 	if _, err := db.Exec(fmt.Sprintf(checkIfTableExistsQuery, tableName)); err != nil {
 		// Only auto create tables when enabled
-		if *m.config.AutoCreateTables {
+		if m.config.AutoCreateTables != nil && *m.config.AutoCreateTables {
 			// Start transaction, exec the CREATE TABLE query and commit the result
 			tx, err := db.Begin()
 			if err != nil {

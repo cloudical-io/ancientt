@@ -30,7 +30,7 @@ const (
 
 This Document documents the types introduced by Ancientt for configuration to be used by users.
 
-> Note this document is generated from code comments. When contributing a change to this document please do so by changing the code comments.`
+> **NOTE**: This document is generated from code comments. When contributing a change to this document please do so by changing the code comments.`
 )
 
 var (
@@ -73,11 +73,11 @@ func printAPIDocs(path string) {
 		strukt := t[0]
 		fmt.Printf("\n## %s\n\n%s\n\n", strukt.Name, strukt.Doc)
 
-		fmt.Println("| Field | Description | Scheme | Required |")
-		fmt.Println("| ----- | ----------- | ------ | -------- |")
+		fmt.Println("| Field | Description | Scheme | Required | Validation |")
+		fmt.Println("| ----- | ----------- | ------ | -------- | ---------- |")
 		fields := t[1:(len(t))]
 		for _, f := range fields {
-			fmt.Println("|", f.Name, "|", f.Doc, "|", f.Type, "|", f.Mandatory, "|")
+			fmt.Println("|", f.Name, "|", f.Doc, "|", f.Type, "|", f.Mandatory, "|", f.Validation, "|")
 		}
 		fmt.Println("")
 		fmt.Println("[Back to TOC](#table-of-contents)")
@@ -86,8 +86,8 @@ func printAPIDocs(path string) {
 
 // Pair of strings. We keed the name of fields and the doc
 type Pair struct {
-	Name, Doc, Type string
-	Mandatory       bool
+	Name, Doc, Type, Validation string
+	Mandatory                   bool
 }
 
 // KubeTypes is an array to represent all available types in a parsed file. [0] is for the type itself
@@ -103,16 +103,20 @@ func ParseDocumentationFrom(src string) []KubeTypes {
 	pkg := astFrom(src)
 
 	for _, kubType := range pkg.Types {
+		if strings.HasSuffix(strings.TrimSpace(kubType.Doc), "-") {
+			continue
+		}
 		if structType, ok := kubType.Decl.Specs[0].(*ast.TypeSpec).Type.(*ast.StructType); ok {
 			var ks KubeTypes
-			ks = append(ks, Pair{kubType.Name, fmtRawDoc(kubType.Doc), "", false})
+			ks = append(ks, Pair{kubType.Name, fmtRawDoc(kubType.Doc), "", "", false})
 
 			for _, field := range structType.Fields.List {
 				typeString := fieldType(field.Type)
+				validation := fieldValidation(field)
 				fieldMandatory := fieldRequired(field)
 				if n := fieldName(field); n != "-" {
 					fieldDoc := fmtRawDoc(field.Doc.Text())
-					ks = append(ks, Pair{n, fieldDoc, typeString, fieldMandatory})
+					ks = append(ks, Pair{n, fieldDoc, typeString, validation, fieldMandatory})
 				}
 			}
 			docForTypes = append(docForTypes, ks)
@@ -219,6 +223,13 @@ func fieldName(field *ast.Field) string {
 		return field.Type.(*ast.Ident).Name
 	}
 	return tag
+}
+
+func fieldValidation(field *ast.Field) string {
+	if field.Tag != nil {
+		return reflect.StructTag(field.Tag.Value[1 : len(field.Tag.Value)-1]).Get("validate") // Delete first and last quotation
+	}
+	return ""
 }
 
 // fieldRequired returns whether a field is a required field.

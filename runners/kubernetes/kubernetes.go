@@ -125,7 +125,7 @@ func (k *Kubernetes) k8sNodesToHosts() ([]*testers.Host, error) {
 		}
 
 		// Check if the taints on the node match the given tolerations
-		if !k8sutil.NodeIsTolerable(node, k.config.Hosts.Tolerations) {
+		if (k.config.Hosts != nil && len(k.config.Hosts.Tolerations) > 0) && !k8sutil.NodeIsTolerable(node, k.config.Hosts.Tolerations) {
 			continue
 		}
 

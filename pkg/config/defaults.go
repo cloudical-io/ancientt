@@ -14,11 +14,13 @@ limitations under the License.
 package config
 
 import (
+	"fmt"
 	"time"
 
-	"github.com/cloudical-io/ancientt/pkg/util"
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/cloudical-io/ancientt/pkg/ansible"
+	"github.com/cloudical-io/ancientt/pkg/util"
 )
 
 // Defaults interface to implement for config parts which allow a "verification" / Setting Defaults
@@ -44,7 +46,10 @@ func (c *RunnerKubernetes) SetDefaults() {
 // SetDefaults set defaults on config part
 func (c *KubernetesHosts) SetDefaults() {
 	if c.IgnoreSchedulingDisabled == nil {
-		c.IgnoreSchedulingDisabled = util.BoolPointer(true)
+		c.IgnoreSchedulingDisabled = util.BoolTruePointer()
+	}
+	if c.Tolerations == nil {
+		c.Tolerations = []corev1.Toleration{}
 	}
 }
 
@@ -54,7 +59,7 @@ func (c *KubernetesTimeouts) SetDefaults() {
 		c.DeleteTimeout = 20
 	}
 	if c.RunningTimeout == 0 {
-		c.RunningTimeout = 35
+		c.RunningTimeout = 60
 	}
 	if c.SucceedTimeout == 0 {
 		c.SucceedTimeout = 60
@@ -94,7 +99,7 @@ func (c *RunnerAnsible) SetDefaults() {
 // SetDefaults set defaults on config part
 func (c *RunOptions) SetDefaults() {
 	if c.ContinueOnError == nil {
-		c.ContinueOnError = util.BoolPointer(true)
+		c.ContinueOnError = util.BoolTruePointer()
 	}
 
 	if c.Rounds == 0 {
@@ -108,4 +113,37 @@ func (c *RunOptions) SetDefaults() {
 	if c.Mode == "" {
 		c.Mode = RunModeSequential
 	}
+}
+
+// SetDefaults set defaults config part
+func (c *IPerf3) SetDefaults() {
+	if c.UDP == nil {
+		c.UDP = util.BoolFalsePointer()
+	}
+}
+
+// SetDefaults set defaults on config part
+func (c *AdditionalFlags) SetDefaults() {
+	if c.Server == nil {
+		c.Server = []string{}
+	}
+	if c.Clients == nil {
+		c.Clients = []string{}
+	}
+}
+
+// SetDefaults set defaults on config part
+func (c *Excelize) SetDefaults() {
+	if c.SaveAfterRows == 0 {
+		c.SaveAfterRows = 1
+	}
+}
+
+// SetDefaults set defaults on config part
+func (c *MySQL) SetDefaults() {
+	fmt.Printf("SETDEFAULTS BEFORE: %+v\n", c.AutoCreateTables)
+	if c.AutoCreateTables == nil {
+		c.AutoCreateTables = util.BoolTruePointer()
+	}
+	fmt.Printf("SETDEFAULTS AFTER: %+v\n", *c.AutoCreateTables)
 }
