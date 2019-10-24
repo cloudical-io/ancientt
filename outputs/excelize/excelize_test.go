@@ -21,6 +21,7 @@ import (
 
 	"github.com/cloudical-io/ancientt/outputs/tests"
 	"github.com/cloudical-io/ancientt/pkg/config"
+	"github.com/creasty/defaults"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -41,6 +42,7 @@ func TestDo(t *testing.T) {
 			},
 		},
 	}
+	require.Nil(t, defaults.Set(outCfg))
 
 	e, err := NewExcelizeOutput(nil, outCfg)
 	assert.Nil(t, err)

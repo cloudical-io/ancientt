@@ -13,7 +13,14 @@ limitations under the License.
 
 package util
 
-// BoolPointer return the given bool as a pointer
-func BoolPointer(in bool) *bool {
-	return &in
+// BoolTruePointer return bool true as a pointer
+func BoolTruePointer() *bool {
+	out := true
+	return &out
+}
+
+// BoolFalsePointer return bool true as a pointer
+func BoolFalsePointer() *bool {
+	out := false
+	return &out
 }

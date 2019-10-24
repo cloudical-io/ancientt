@@ -45,4 +45,4 @@ require (
 	k8s.io/utils v0.0.0-20190308190857-21c4ce38f2a7 // indirect
 )
 
-replace github.com/creasty/defaults => github.com/galexrt/defaults v1.3.1-0.20190926200902-77b06031b3ae
+replace github.com/creasty/defaults => github.com/galexrt/defaults v1.4.1

@@ -21,17 +21,20 @@ import (
 
 // Config Config object for the config file
 type Config struct {
-	Version string  `yaml:"version"`
-	Runner  Runner  `yaml:"runner"`
-	Tests   []*Test `yaml:"tests"`
+	// Version right now is just `0`, so we can keep track of config structure versioning.
+	Version string `yaml:"version"`
+	// Runner Runner configuration to use.
+	Runner Runner `yaml:"runner"`
+	// Tests List of `Test`s to run.
+	Tests []*Test `yaml:"tests" validate:"required,min=1"`
 }
 
 // New return a new Config object with the `Version` set by default
 func New() *Config {
 	return &Config{
+		Version: "0",
 		Runner:  Runner{},
 		Tests:   []*Test{},
-		Version: "0",
 	}
 }
 
@@ -39,18 +42,18 @@ func New() *Config {
 type Hosts struct {
 	// Name of this hosts selection.
 	Name string `yaml:"name"`
-	// If all hosts available should be used.
-	All bool `yaml:"all"`
-	// Select `Count` Random hosts from the available hosts list.
-	Random bool `yaml:"random"`
+	// If all hosts available should be used (default: `false`).
+	All *bool `yaml:"all,omitempty"`
+	// Select `Count` Random hosts from the available hosts list (default: `false`).
+	Random *bool `yaml:"random,omitempty"`
 	// Must be used with `Random`, will cause `Count` times Nodes to be randomly selected from all applicable hosts.
 	Count int `yaml:"count"`
 	// Static list of hosts (this list is not checked for accuracy)
 	Hosts []string `yaml:"hosts"`
 	// "Label" selector for the dynamically generated hosts list, e.g., Kubernetes label selector
 	HostSelector map[string]string `yaml:"hostSelector"`
-	// AntiAffinity not implemented yet
-	AntiAffinity []string `yaml:"antiAffinity"`
+	// AntiAffinity **not implemented yet**
+	AntiAffinity []string `yaml:"antiAffinity,omitempty"`
 }
 
 // Output Output config structure pointing to the other config options for each output
@@ -81,11 +84,15 @@ type FilePath struct {
 
 // CSV CSV Output config options
 type CSV struct {
+	// FilePath struct fields which are inherited by this struct.
+	// The fields of the FilePath struct must be written directly to this struct.
 	FilePath
 }
 
 // GoChart GoChart Output config options
 type GoChart struct {
+	// FilePath struct fields which are inherited by this struct.
+	// The fields of the FilePath struct must be written directly to this struct.
 	FilePath
 	// Types of charts to produce from the testers output data
 	Types []string `yaml:"types" validate:"required,min=1"`
@@ -93,18 +100,24 @@ type GoChart struct {
 
 // Dump Dump Output config options
 type Dump struct {
+	// FilePath struct fields which are inherited by this struct.
+	// The fields of the FilePath struct must be written directly to this struct.
 	FilePath
 }
 
 // Excelize Excelize Output config options. TODO implement
 type Excelize struct {
+	// FilePath struct fields which are inherited by this struct.
+	// The fields of the FilePath struct must be written directly to this struct.
 	FilePath
-	// After what amount of rows the Excel file should be saved
-	SaveAfterRows int `yaml:"saveAfterRows"`
+	// After what amount of rows the Excel file should be saved (default: `1`)
+	SaveAfterRows int `yaml:"saveAfterRows,omitempty" validate:"required,min=1"`
 }
 
 // SQLite SQLite Output config options
 type SQLite struct {
+	// FilePath struct fields which are inherited by this struct.
+	// The fields of the FilePath struct must be written directly to this struct.
 	FilePath
 	// Pattern used for templating the name of the table used in the SQLite database, the tables are created automatically
 	TableNamePattern string `yaml:"tableNamePattern"`
@@ -112,12 +125,12 @@ type SQLite struct {
 
 // MySQL MySQL Output config options
 type MySQL struct {
-	// MySQL DSN, format `[username[:password]@][protocol[(address)]]/dbname[?param1=value1&...&paramN=valueN]`, for more information see https://github.com/go-sql-driver/mysql#dsn-data-source-name
+	// MySQL DSN, format `[username[:password]@][protocol[(address)]]/dbname[?param1=value1&...&paramN=valueN]`, for more information see [GitHub go-sql-driver/mysql - DSN (Data Source Name)](https://github.com/go-sql-driver/mysql#dsn-data-source-name)
 	DSN string `yaml:"dsn"`
 	// Pattern used for templating the name of the table used in the MySQL database, the tables are created automatically when MySQL.AutoCreateTables is set to `true`
 	TableNamePattern string `yaml:"tableNamePattern"`
-	// Automatically create tables in the MySQL database (default `true`)
-	AutoCreateTables *bool `yaml:"autoCreateTables"`
+	// Automatically create tables in the MySQL database (default: `true`)
+	AutoCreateTables *bool `yaml:"autoCreateTables,omitempty"`
 }
 
 // Runner structure with all available runners config options
@@ -138,8 +151,8 @@ type RunnerKubernetes struct {
 	InClusterConfig bool `yaml:"inClusterConfig"`
 	// Path to your kubeconfig file, if not set the following order will be tried out, `KUBECONFIG` and `$HOME/.kube/config`
 	Kubeconfig string `yaml:"kubeconfig,omitempty"`
-	// The image used for the spawned Pods for the tests (default `quay.io/galexrt/container-toolbox`)
-	Image string `yaml:"image"`
+	// The image used for the spawned Pods for the tests (default: `quay.io/galexrt/container-toolbox`)
+	Image string `yaml:"image,omitempty"`
 	// Namespace to execute the tests in
 	Namespace string `yaml:"namespace" validate:"max=63"`
 	// If `hostNetwork` mode should be used for the test Pods
@@ -149,27 +162,27 @@ type RunnerKubernetes struct {
 	// Annotations to put on the test Pods
 	Annotations map[string]string `yaml:"annotations,omitempty"`
 	// Host selection specific options
-	Hosts *KubernetesHosts `yaml:"hosts"`
+	Hosts *KubernetesHosts `yaml:"hosts,omitempty"`
 	// ServiceAccounst to use server and client Pods
 	ServiceAccounts *KubernetesServiceAccounts `yaml:"serviceaccounts,omitempty"`
 }
 
-// KubernetesTimeouts timeouts for operations with Kubernetess
+// KubernetesTimeouts timeouts for operations with the Kubernetess API (in secconds)
 type KubernetesTimeouts struct {
-	// Timeout for object deletion
-	DeleteTimeout int `yaml:"deleteTimeout"`
-	// Timeout for "Pod running" check
-	RunningTimeout int `yaml:"runningTimeout"`
-	// Timeout for "Pod succeded" check (e.g., client Pod exits after Pod)
-	SucceedTimeout int `yaml:"succeedTimeout"`
+	// Timeout for object deletion in seconds (default: `20`)
+	DeleteTimeout int `yaml:"deleteTimeout,omitempty"`
+	// Timeout for "Pod running" check in seconds (default: `60`)
+	RunningTimeout int `yaml:"runningTimeout,omitempty"`
+	// Timeout for "Pod succeded" check in seconds (e.g., client Pod exits after Pod; default: `60`)
+	SucceedTimeout int `yaml:"succeedTimeout,omitempty"`
 }
 
 // KubernetesHosts hosts selection options for Kubernetes
 type KubernetesHosts struct {
-	// If Nodes that are `SchedulingDisabled` should be ignored
-	IgnoreSchedulingDisabled *bool `yaml:"ignoreSchedulingDisabled"`
+	// If Nodes that are `SchedulingDisabled` should be ignored (default: `true`)
+	IgnoreSchedulingDisabled *bool `yaml:"ignoreSchedulingDisabled,omitempty"`
 	// List of Kubernetes corev1.Toleration to tolerate when selecting Nodes
-	Tolerations []corev1.Toleration `yaml:"tolerations"`
+	Tolerations []corev1.Toleration `yaml:"tolerations,omitempty"`
 }
 
 // KubernetesServiceAccounts server and client ServiceAccount name to use for the created Pods
@@ -186,12 +199,12 @@ type RunnerAnsible struct {
 	InventoryFilePath string `yaml:"inventoryFilePath"`
 	// Groups server and clients group names
 	Groups *AnsibleGroups `yaml:"groups"`
-	// Path to the ansible command (if empty will be searched for in `PATH`)
-	AnsibleCommand string `yaml:"ansibleCommand"`
-	// Path to the ansible-inventory command (if empty will be searched for in `PATH`)
-	AnsibleInventoryCommand string `yaml:"ansibleInventoryCommand"`
+	// Path to the ansible command (if empty will be searched for in `PATH`; default: `ansble`)
+	AnsibleCommand string `yaml:"ansibleCommand,omitempty"`
+	// Path to the ansible-inventory command (if empty will be searched for in `PATH`; default: `ansble-inventory`)
+	AnsibleInventoryCommand string `yaml:"ansibleInventoryCommand,omitempty"`
 	// Timeout settings for ansible command runs
-	Timeouts *AnsibleTimeouts `yaml:"timeouts"`
+	Timeouts *AnsibleTimeouts `yaml:"timeouts,omitempty"`
 }
 
 // AnsibleGroups server and clients host group names in the used inventory file(s)
@@ -204,10 +217,10 @@ type AnsibleGroups struct {
 
 // AnsibleTimeouts timeouts for Ansible command runs
 type AnsibleTimeouts struct {
-	// Timeout duration for `ansible` and `ansible-inventory` calls (NOT task command timeouts)
-	CommandTimeout time.Duration `yaml:"commandTimeout"`
-	// Timeout duration for `ansible` Task command calls
-	TaskCommandTimeout time.Duration `yaml:"taskCommandTimeout"`
+	// Timeout duration for `ansible` and `ansible-inventory` calls (NOT task command timeouts; default: `20s`)
+	CommandTimeout time.Duration `yaml:"commandTimeout,omitempty"`
+	// Timeout duration for `ansible` Task command calls (default: `45s`)
+	TaskCommandTimeout time.Duration `yaml:"taskCommandTimeout,omitempty"`
 }
 
 // RunnerMock Mock Runner config options (here for good measure)
@@ -221,9 +234,9 @@ type Test struct {
 	// The tester to use, e.g., for `iperf3` set to `iperf3` and so on
 	Type string `yaml:"type"`
 	// Options for the execution of the test
-	RunOptions RunOptions `yaml:"runOptions"`
+	RunOptions RunOptions `yaml:"runOptions,omitempty"`
 	// List of Outputs to use for processing data from the testers.
-	Outputs []Output `yaml:"outputs"`
+	Outputs []Output `yaml:"outputs" validate:"required,min=1"`
 	// Hosts selection for client and server
 	Hosts TestHosts `yaml:"hosts"`
 	// IPerf3 test options
@@ -242,38 +255,38 @@ const (
 
 // RunOptions options for running the tasks
 type RunOptions struct {
-	// Continue on error during test runs (recommended to set to `true`) (default is `true`)
+	// Continue on error during test runs (recommended to set to `true`) (default: is `true`)
 	ContinueOnError *bool `yaml:"continueOnError,omitempty"`
-	// Amount of test rounds (repetitions) to do for a test plan
-	Rounds int `yaml:"rounds"`
-	// Time interval to sleep / wait between (default `10s`)
+	// Amount of test rounds (repetitions) to do for a test plan (default: `1`)
+	Rounds int `yaml:"rounds,omitempty"`
+	// Time interval to sleep / wait between (default: `10s`)
 	Interval time.Duration `yaml:"interval,omitempty"`
-	// Run mode can be `parallel` or `sequential` (see `RunMode`, default is `sequential`)
-	Mode RunMode `yaml:"mode"`
-	// **NOT IMPLEMENTED YET** amount of test tasks to run when using `parallel` RunOptions.Mode
-	ParallelCount int `yaml:"parallelCount"`
+	// Run mode can be `parallel` or `sequential` (see `RunMode`, default: is `sequential`)
+	Mode RunMode `yaml:"mode,omitempty"`
+	// **NOT IMPLEMENTED YET** amount of test tasks to run when using `RunModeParallel` (value: `parallel`).
+	ParallelCount int `yaml:"parallelCount,omitempty"`
 }
 
 // TestHosts list of clients and servers hosts for use in the test(s)
 type TestHosts struct {
 	// Static list of hosts to use as clients
-	Clients []Hosts `yaml:"clients"`
+	Clients []Hosts `yaml:"clients" validate:"required,min=1"`
 	// Static list of hosts to use as server
-	Servers []Hosts `yaml:"servers"`
+	Servers []Hosts `yaml:"servers" validate:"required,min=1"`
 }
 
 // AdditionalFlags additional flags structure for Server and Clients
 type AdditionalFlags struct {
-	//  List of additional flags for clients
-	Clients []string `yaml:"clients"`
-	//  List of additional flags for server
-	Server []string `yaml:"server"`
+	// List of additional flags for clients
+	Clients []string `yaml:"clients,omitempty"`
+	// List of additional flags for server
+	Server []string `yaml:"server,omitempty"`
 }
 
 // IPerf3 IPerf3 config structure for testers.Tester config
 type IPerf3 struct {
 	// Additional flags for client and server
-	AdditionalFlags AdditionalFlags `yaml:"additionalFlags"`
+	AdditionalFlags AdditionalFlags `yaml:"additionalFlags,omitempty"`
 	// If UDP should be used for the IPerf3 test
-	UDP *bool `yaml:"udp"`
+	UDP *bool `yaml:"udp,omitempty"`
 }

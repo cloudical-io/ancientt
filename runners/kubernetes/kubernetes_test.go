@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/cloudical-io/ancientt/pkg/config"
+	"github.com/cloudical-io/ancientt/pkg/util"
 	"github.com/cloudical-io/ancientt/tests/k8s"
 	"github.com/creasty/defaults"
 	"github.com/sirupsen/logrus"
@@ -49,14 +50,14 @@ func TestGetHostsForTest(t *testing.T) {
 	assert.Equal(t, 0, len(hosts.Servers))
 	assert.Equal(t, 0, len(hosts.Clients))
 
-	test.Hosts.Servers = append(test.Hosts.Servers, config.Hosts{All: true})
-	test.Hosts.Clients = append(test.Hosts.Clients, config.Hosts{All: true})
+	test.Hosts.Servers = append(test.Hosts.Servers, config.Hosts{All: util.BoolTruePointer()})
+	test.Hosts.Clients = append(test.Hosts.Clients, config.Hosts{All: util.BoolTruePointer()})
 	hosts, err = runner.GetHostsForTest(test)
 	require.Nil(t, err)
 	assert.Equal(t, 3, len(hosts.Servers))
 	assert.Equal(t, 3, len(hosts.Clients))
 
-	test.Hosts.Servers[0] = config.Hosts{Count: 1, Random: true}
+	test.Hosts.Servers[0] = config.Hosts{Count: 1, Random: util.BoolTruePointer()}
 	hosts, err = runner.GetHostsForTest(test)
 	require.Nil(t, err)
 	assert.Equal(t, 1, len(hosts.Servers))
