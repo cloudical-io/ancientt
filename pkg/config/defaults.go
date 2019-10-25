@@ -14,7 +14,6 @@ limitations under the License.
 package config
 
 import (
-	"fmt"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -141,9 +140,7 @@ func (c *Excelize) SetDefaults() {
 
 // SetDefaults set defaults on config part
 func (c *MySQL) SetDefaults() {
-	fmt.Printf("SETDEFAULTS BEFORE: %+v\n", c.AutoCreateTables)
 	if c.AutoCreateTables == nil {
 		c.AutoCreateTables = util.BoolTruePointer()
 	}
-	fmt.Printf("SETDEFAULTS AFTER: %+v\n", *c.AutoCreateTables)
 }
