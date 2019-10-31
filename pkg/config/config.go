@@ -86,14 +86,14 @@ type FilePath struct {
 type CSV struct {
 	// FilePath struct fields which are inherited by this struct.
 	// The fields of the FilePath struct must be written directly to this struct.
-	FilePath
+	FilePath `yaml:",inline"`
 }
 
 // GoChart GoChart Output config options
 type GoChart struct {
 	// FilePath struct fields which are inherited by this struct.
 	// The fields of the FilePath struct must be written directly to this struct.
-	FilePath
+	FilePath `yaml:",inline"`
 	// Types of charts to produce from the testers output data
 	Types []string `yaml:"types" validate:"required,min=1"`
 }
@@ -102,14 +102,14 @@ type GoChart struct {
 type Dump struct {
 	// FilePath struct fields which are inherited by this struct.
 	// The fields of the FilePath struct must be written directly to this struct.
-	FilePath
+	FilePath `yaml:",inline"`
 }
 
 // Excelize Excelize Output config options. TODO implement
 type Excelize struct {
 	// FilePath struct fields which are inherited by this struct.
 	// The fields of the FilePath struct must be written directly to this struct.
-	FilePath
+	FilePath `yaml:",inline"`
 	// After what amount of rows the Excel file should be saved (default: `1`)
 	SaveAfterRows int `yaml:"saveAfterRows,omitempty" validate:"required,min=1"`
 }
@@ -118,7 +118,7 @@ type Excelize struct {
 type SQLite struct {
 	// FilePath struct fields which are inherited by this struct.
 	// The fields of the FilePath struct must be written directly to this struct.
-	FilePath
+	FilePath `yaml:",inline"`
 	// Pattern used for templating the name of the table used in the SQLite database, the tables are created automatically
 	TableNamePattern string `yaml:"tableNamePattern"`
 }
