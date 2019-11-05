@@ -2,7 +2,7 @@ PROJECTNAME ?= ancientt
 DESCRIPTION ?= ancientt - A tool to automate network testing tools, like iperf3, in dynamic environments such as Kubernetes and more to come dynamic environments.
 HOMEPAGE    ?= https://github.com/cloudical-io/ancientt
 
-GO_SUPPORTED_VERSIONS ?= 1.12|1.13
+GO_SUPPORTED_VERSIONS ?= 1.13
 
 DOCKER  := docker
 GO      := go

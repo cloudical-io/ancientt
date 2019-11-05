@@ -1,6 +1,6 @@
 module github.com/cloudical-io/ancientt
 
-go 1.12
+go 1.13
 
 require (
 	github.com/360EntSecGroup-Skylar/excelize/v2 v2.0.1
