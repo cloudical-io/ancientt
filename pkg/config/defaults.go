@@ -84,6 +84,15 @@ func (c *RunnerAnsible) SetDefaults() {
 		c.Timeouts.TaskCommandTimeout = 45 * time.Second
 	}
 
+	if c.CommandRetries == nil || *c.CommandRetries == 0 {
+		defVal := 10
+		c.CommandRetries = &defVal
+	}
+	if c.ParallelHostFactCalls == nil || *c.ParallelHostFactCalls == 0 {
+		defVal := 7
+		c.ParallelHostFactCalls = &defVal
+	}
+
 	if c.Groups == nil {
 		c.Groups = &AnsibleGroups{}
 	}

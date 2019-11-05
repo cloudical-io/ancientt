@@ -16,6 +16,7 @@ package ansible
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/cloudical-io/ancientt/pkg/config"
@@ -27,12 +28,16 @@ import (
 )
 
 func TestGetHostsForTest(t *testing.T) {
+	var lock sync.Mutex
 	run := 1
 	mockexec := exectest.MockExecutor{
 		MockExecuteCommandWithOutputByte: func(ctx context.Context, actionName string, command string, arg ...string) ([]byte, error) {
+			lock.Lock()
 			defer func() {
 				run++
+				lock.Unlock()
 			}()
+
 			switch run {
 			case 1:
 				return []byte(`{

@@ -92,37 +92,93 @@ func (a *Ansible) GetHostsForTest(test *config.Test) (*testers.Hosts, error) {
 		return nil, err
 	}
 
-	clients := map[string]*testers.Host{}
-	for _, client := range inv.GetHostsForGroup(a.config.Groups.Clients) {
-		addresses, err := a.getHostNetworkAddress(client)
-		if err != nil {
-			return nil, err
-		}
+	servers := inv.GetHostsForGroup(a.config.Groups.Server)
+	clients := inv.GetHostsForGroup(a.config.Groups.Clients)
 
-		clients[client] = &testers.Host{
-			Name:      client,
-			Labels:    map[string]string{},
-			Addresses: addresses,
-		}
+	hosts := map[string]*testers.Host{}
+
+	var lock sync.Mutex
+	var wg sync.WaitGroup
+	inCh := make(chan string)
+	retCh := make(chan error)
+
+	cmdCtx, cmdCancel := context.WithCancel(context.Background())
+	defer cmdCancel()
+
+	// Spanw requested amount of workers
+	for i := 0; i < *a.config.ParallelHostFactCalls; i++ {
+		wg.Add(1)
+		go func(in chan string, retCh chan error) {
+			defer wg.Done()
+			for host := range in {
+				// Create a new timeout context per command run
+				addresses, err := a.getHostNetworkAddress(cmdCtx, host)
+				if err != nil {
+					retCh <- err
+					return
+				}
+
+				lock.Lock()
+				hosts[host] = &testers.Host{
+					Name:      host,
+					Labels:    map[string]string{},
+					Addresses: addresses,
+				}
+				lock.Unlock()
+				retCh <- nil
+			}
+			retCh <- nil
+		}(inCh, retCh)
 	}
 
-	servers := map[string]*testers.Host{}
-	for _, server := range inv.GetHostsForGroup(a.config.Groups.Server) {
-		addresses, err := a.getHostNetworkAddress(server)
-		if err != nil {
-			return nil, err
+	go func() {
+		// Run retrieval of Ansible host facts in parallel
+		uniqHosts := util.UniqueStringSlice(servers, clients)
+		for _, h := range uniqHosts {
+			inCh <- h
 		}
+		close(inCh)
+		// wait for "callers" to end, before closing the return channel
+		wg.Wait()
+		close(retCh)
+	}()
 
-		servers[server] = &testers.Host{
-			Name:      server,
-			Labels:    map[string]string{},
-			Addresses: addresses,
+	var errs []string
+	for err := range retCh {
+		if err != nil {
+			errs = append(errs, err.Error())
 		}
 	}
+	// If we encountered errors return errors
+	if len(errs) > 0 {
+		retErr := fmt.Errorf("errors in retrieving ansible host facts. %+v", strings.Join(errs, " "))
+		return nil, retErr
+	}
 
-	hosts := &testers.Hosts{
-		Clients: clients,
-		Servers: servers,
+	sHosts, err := getHosts(servers, hosts)
+	if err != nil {
+		return nil, err
+	}
+	cHosts, err := getHosts(clients, hosts)
+	if err != nil {
+		return nil, err
+	}
+
+	return &testers.Hosts{
+		Servers: sHosts,
+		Clients: cHosts,
+	}, nil
+}
+
+func getHosts(in []string, list map[string]*testers.Host) (map[string]*testers.Host, error) {
+	hosts := map[string]*testers.Host{}
+
+	for _, h := range in {
+		if v, ok := list[h]; ok {
+			hosts[h] = v
+		} else {
+			return nil, fmt.Errorf("server %q not found in ansible hosts list, this should not have happened", h)
+		}
 	}
 
 	return hosts, nil
@@ -159,8 +215,10 @@ type networkInterfaceAddress struct {
 	Address string `json:"address"`
 }
 
-func (a *Ansible) getHostNetworkAddress(host string) (*testers.IPAddresses, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), a.config.Timeouts.CommandTimeout)
+func (a *Ansible) getHostNetworkAddress(bctx context.Context, host string) (*testers.IPAddresses, error) {
+	a.logger.WithField("hostname", host).Debug("retrieving ansible host facts")
+
+	ctx, cancel := context.WithTimeout(bctx, a.config.Timeouts.CommandTimeout)
 	defer cancel()
 
 	out, err := a.executor.ExecuteCommandWithOutputByte(ctx, "runner:ansible: list hosts from inventory", a.config.AnsibleCommand, []string{
@@ -196,6 +254,8 @@ func (a *Ansible) getHostNetworkAddress(host string) (*testers.IPAddresses, erro
 	if facts.AnsibleFacts.AnsibleDefaultIPv4.Address == "" && facts.AnsibleFacts.AnsibleDefaultIPv6.Address == "" {
 		return nil, fmt.Errorf("no default IP addresses for ansible host %s", host)
 	}
+
+	a.logger.WithField("hostname", host).Debug("retrieved ansible host facts")
 
 	return addresses, nil
 }
@@ -290,7 +350,8 @@ func (a *Ansible) runTasks(round int, mainTask *testers.Task, plannedTime time.T
 				fmt.Printf("EXITERR: %+v - %+v - %+v\n", exiterr, exiterr.Pid(), exiterr.ProcessState)
 
 				if err := syscall.Kill(-exiterr.Pid(), syscall.SIGKILL); err != nil {
-					log.Println("failed to kill: ", err)
+					logger.WithFields(logrus.Fields{"hostname": mainTask.Host, "error": err}).
+						Error("failed to kill")
 				}
 			}
 			// Ignore any error after the main task is stopped
@@ -311,7 +372,7 @@ func (a *Ansible) runTasks(round int, mainTask *testers.Task, plannedTime time.T
 	checkCtx, checkCancel := context.WithTimeout(context.Background(), a.config.Timeouts.TaskCommandTimeout)
 	defer checkCancel()
 
-	tries := 5
+	tries := *a.config.CommandRetries
 	for i := 0; i <= tries; i++ {
 		err := a.executor.ExecuteCommand(checkCtx, fmt.Sprintf("runner:ansible: check if main task is running (try: %d/%d)", i, tries), a.config.AnsibleCommand, []string{
 			fmt.Sprintf("--inventory=%s", a.config.InventoryFilePath),
@@ -331,7 +392,8 @@ func (a *Ansible) runTasks(round int, mainTask *testers.Task, plannedTime time.T
 
 	if ready {
 		for i, task := range mainTask.SubTasks {
-			logger.Infof("running sub task %d of %d", i+1, len(mainTask.SubTasks))
+			logger.WithField("hostname", task.Host).
+				Infof("running sub task %d of %d", i+1, len(mainTask.SubTasks))
 
 			wg.Add(1)
 			go func(task *testers.Task) {
@@ -343,7 +405,8 @@ func (a *Ansible) runTasks(round int, mainTask *testers.Task, plannedTime time.T
 				// Template command and args for each task
 				if err := cmdtemplate.Template(task, templateVars); err != nil {
 					erro := fmt.Errorf("failed to template task command and / or args. %+v", err)
-					logger.Errorf("error during createPodsForTasks. %+v", erro)
+					logger.WithFields(logrus.Fields{"hostname": task.Host, "error": erro}).
+						Error("error during createPodsForTasks")
 					mainTask.Status.AddFailedClient(task.Host, erro)
 					return
 				}
@@ -357,7 +420,8 @@ func (a *Ansible) runTasks(round int, mainTask *testers.Task, plannedTime time.T
 					fmt.Sprintf("--args=%s %s", task.Command, strings.Join(task.Args, " ")),
 				}...)
 				if err != nil {
-					logger.Error(err)
+					logger.WithField("hostname", task.Host).
+						Error(err)
 					mainTask.Status.AddFailedClient(task.Host, err)
 					return
 				}
