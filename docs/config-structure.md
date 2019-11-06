@@ -70,6 +70,7 @@ CSV CSV Output config options
 
 | Field | Description | Scheme | Required | Validation |
 | ----- | ----------- | ------ | -------- | ---------- |
+| separator | Separator which rune to use as a separator in the CSV file (default: `;`). | *rune | true |  |
 
 [Back to TOC](#table-of-contents)
 
