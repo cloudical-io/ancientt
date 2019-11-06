@@ -153,3 +153,11 @@ func (c *MySQL) SetDefaults() {
 		c.AutoCreateTables = util.BoolTruePointer()
 	}
 }
+
+// SetDefaults set defaults on config part
+func (c *CSV) SetDefaults() {
+	if c.Separator == nil {
+		semiColon := ';'
+		c.Separator = &semiColon
+	}
+}

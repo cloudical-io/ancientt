@@ -87,6 +87,8 @@ type CSV struct {
 	// FilePath struct fields which are inherited by this struct.
 	// The fields of the FilePath struct must be written directly to this struct.
 	FilePath `yaml:",inline"`
+	// Separator which rune to use as a separator in the CSV file (default: `;`).
+	Separator *rune `yaml:"separator"`
 }
 
 // GoChart GoChart Output config options

@@ -83,6 +83,7 @@ func (c CSV) Do(data outputs.Data) error {
 		}
 
 		writer = csv.NewWriter(file)
+		writer.Comma = *c.config.Separator
 		c.writers[outPath] = writer
 		writeHeaders = true
 	}
