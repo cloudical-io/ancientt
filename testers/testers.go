@@ -43,15 +43,15 @@ type Hosts struct {
 
 // Host host information, like labels and addresses (will most of the time be filled by the runners.Runner)
 type Host struct {
-	Name      string
-	Labels    map[string]string
-	Addresses *IPAddresses
+	Name      string            `json:"name"`
+	Labels    map[string]string `json:"labels"`
+	Addresses *IPAddresses      `json:"addresses"`
 }
 
 // IPAddresses list of IPv4 and IPv6 addresses a host has
 type IPAddresses struct {
-	IPv4 []string
-	IPv6 []string
+	IPv4 []string `json:"ipv4"`
+	IPv6 []string `json:"ipv6"`
 }
 
 // Plan contains the information needed to execute the plan

@@ -8,6 +8,8 @@ runner:
       clients: "clients"
     ansibleCommand: ansible
     ansibleInventoryCommand: ansible-inventory
+    commandRetries: 10
+    parallelHostFactCalls: 7
 tests:
 - name: iperf3-all-to-all
   type: iperf3
@@ -36,4 +38,3 @@ tests:
     additionalFlags:
       clients: []
       server: []
-

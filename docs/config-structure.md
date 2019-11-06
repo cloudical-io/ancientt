@@ -70,7 +70,6 @@ CSV CSV Output config options
 
 | Field | Description | Scheme | Required | Validation |
 | ----- | ----------- | ------ | -------- | ---------- |
-| FilePath | FilePath struct fields which are inherited by this struct. The fields of the FilePath struct must be written directly to this struct. | [FilePath](#filepath) | false |  |
 
 [Back to TOC](#table-of-contents)
 
@@ -92,7 +91,6 @@ Dump Dump Output config options
 
 | Field | Description | Scheme | Required | Validation |
 | ----- | ----------- | ------ | -------- | ---------- |
-| FilePath | FilePath struct fields which are inherited by this struct. The fields of the FilePath struct must be written directly to this struct. | [FilePath](#filepath) | false |  |
 
 [Back to TOC](#table-of-contents)
 
@@ -102,7 +100,6 @@ Excelize Excelize Output config options. TODO implement
 
 | Field | Description | Scheme | Required | Validation |
 | ----- | ----------- | ------ | -------- | ---------- |
-| FilePath | FilePath struct fields which are inherited by this struct. The fields of the FilePath struct must be written directly to this struct. | [FilePath](#filepath) | false |  |
 | saveAfterRows | After what amount of rows the Excel file should be saved (default: `1`) | int | false | required,min=1 |
 
 [Back to TOC](#table-of-contents)
@@ -124,7 +121,6 @@ GoChart GoChart Output config options
 
 | Field | Description | Scheme | Required | Validation |
 | ----- | ----------- | ------ | -------- | ---------- |
-| FilePath | FilePath struct fields which are inherited by this struct. The fields of the FilePath struct must be written directly to this struct. | [FilePath](#filepath) | false |  |
 | types | Types of charts to produce from the testers output data | []string | true | required,min=1 |
 
 [Back to TOC](#table-of-contents)
@@ -256,6 +252,8 @@ RunnerAnsible Ansible Runner config options
 | ansibleCommand | Path to the ansible command (if empty will be searched for in `PATH`; default: `ansble`) | string | false |  |
 | ansibleInventoryCommand | Path to the ansible-inventory command (if empty will be searched for in `PATH`; default: `ansble-inventory`) | string | false |  |
 | timeouts | Timeout settings for ansible command runs | *[AnsibleTimeouts](#ansibletimeouts) | false |  |
+| commandRetries | CommandRetries amount of tries before to fail waiting for the server (main) task to start (default: `10`) | *int | false |  |
+| parallelHostFactCalls | ParallelHostFactCalls the amount of host facts calls to make in parallel (default: `7`) | *int | false |  |
 
 [Back to TOC](#table-of-contents)
 
@@ -292,7 +290,6 @@ SQLite SQLite Output config options
 
 | Field | Description | Scheme | Required | Validation |
 | ----- | ----------- | ------ | -------- | ---------- |
-| FilePath | FilePath struct fields which are inherited by this struct. The fields of the FilePath struct must be written directly to this struct. | [FilePath](#filepath) | false |  |
 | tableNamePattern | Pattern used for templating the name of the table used in the SQLite database, the tables are created automatically | string | true |  |
 
 [Back to TOC](#table-of-contents)

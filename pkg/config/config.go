@@ -205,6 +205,10 @@ type RunnerAnsible struct {
 	AnsibleInventoryCommand string `yaml:"ansibleInventoryCommand,omitempty"`
 	// Timeout settings for ansible command runs
 	Timeouts *AnsibleTimeouts `yaml:"timeouts,omitempty"`
+	// CommandRetries amount of tries before to fail waiting for the server (main) task to start (default: `10`)
+	CommandRetries *int `yaml:"commandRetries,omitempty"`
+	// ParallelHostFactCalls the amount of host facts calls to make in parallel (default: `7`)
+	ParallelHostFactCalls *int `yaml:"parallelHostFactCalls,omitempty"`
 }
 
 // AnsibleGroups server and clients host group names in the used inventory file(s)

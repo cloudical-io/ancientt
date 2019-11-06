@@ -7,7 +7,6 @@ env:
 go:
   - '1.13'
 
-
 script:
   - make test
   - make build
