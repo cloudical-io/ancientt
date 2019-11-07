@@ -149,6 +149,8 @@ IPerf3 IPerf3 config structure for testers.Tester config
 | Field | Description | Scheme | Required | Validation |
 | ----- | ----------- | ------ | -------- | ---------- |
 | additionalFlags | Additional flags for client and server | [AdditionalFlags](#additionalflags) | false |  |
+| duration | Duration Time in seconds the IPerf3 test should transmit / receive (default: `10`). In case of the Ansible Runner, you need to increase the `taskCommandTimeout` when increasing the Duration. The `taskCommandTimeout` should then be set to `Duration` + some extra, e.g., 10 seconds. | *int | false | required,min=1 |
+| interval | Interval Interval in which IPerf3 will print / return periodic throughput reports (default: `1`). | *int | false | required,min=1 |
 | udp | If UDP should be used for the IPerf3 test | *bool | false |  |
 
 [Back to TOC](#table-of-contents)

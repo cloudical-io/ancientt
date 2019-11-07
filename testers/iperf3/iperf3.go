@@ -14,6 +14,8 @@ limitations under the License.
 package iperf3
 
 import (
+	"fmt"
+
 	"github.com/cloudical-io/ancientt/pkg/config"
 	"github.com/cloudical-io/ancientt/testers"
 	"github.com/sirupsen/logrus"
@@ -148,6 +150,8 @@ func (ip IPerf3) buildIPerf3ClientCommand(server *testers.Host, client *testers.
 	// Base command and args
 	cmd := "iperf3"
 	args := []string{
+		fmt.Sprintf("--time=%d", ip.config.Duration),
+		fmt.Sprintf("--interval=%d", ip.config.Interval),
 		"--json",
 		"--port={{ .ServerPort }}",
 		"--client={{ .ServerAddressV4 }}",
