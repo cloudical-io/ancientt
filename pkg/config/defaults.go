@@ -125,6 +125,16 @@ func (c *RunOptions) SetDefaults() {
 
 // SetDefaults set defaults config part
 func (c *IPerf3) SetDefaults() {
+	if c.Duration == nil {
+		defValue := 10
+		c.Duration = &defValue
+	}
+
+	if c.Interval == nil {
+		defValue := 1
+		c.Interval = &defValue
+	}
+
 	if c.UDP == nil {
 		c.UDP = util.BoolFalsePointer()
 	}
