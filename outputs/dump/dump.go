@@ -57,7 +57,7 @@ func NewDumpOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output, e
 func (d Dump) Do(data outputs.Data) error {
 	dataTable, ok := data.Data.(outputs.Table)
 	if !ok {
-		return fmt.Errorf("data not in table for dump output")
+		return fmt.Errorf("data not in data table format for dump output")
 	}
 
 	filename, err := outputs.GetFilenameFromPattern(d.config.FilePath.NamePattern, "", data, nil)

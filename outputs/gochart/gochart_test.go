@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package excelize
+package gochart
 
 import (
 	"fmt"
@@ -21,30 +21,39 @@ import (
 
 	"github.com/cloudical-io/ancientt/outputs/tests"
 	"github.com/cloudical-io/ancientt/pkg/config"
+	"github.com/cloudical-io/ancientt/pkg/util"
 	"github.com/creasty/defaults"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestDo(t *testing.T) {
-	table := tests.GenerateMockTableData(2)
+	table := tests.GenerateMockTableData(3)
 
 	tempDir := os.TempDir()
-	outName := fmt.Sprintf("ancientt-test-%s.xlsx", t.Name())
+	outName := fmt.Sprintf("ancientt-test-%s.png", t.Name())
 	tmpOutFile := path.Join(tempDir, outName)
-	defer os.Remove(tmpOutFile)
+	//defer os.Remove(tmpOutFile)
 
 	outCfg := &config.Output{
-		Excelize: &config.Excelize{
+		GoChart: &config.GoChart{
 			FilePath: config.FilePath{
 				FilePath:    tempDir,
 				NamePattern: outName,
+			},
+			Graphs: []*config.GoChartGraph{
+				{
+					TimeColumn:              "interval",
+					RightY:                  "isthisfloat64",
+					LeftY:                   "iamafloat64part2",
+					WithSimpleMovingAverage: util.BoolTruePointer(),
+				},
 			},
 		},
 	}
 	require.Nil(t, defaults.Set(outCfg))
 
-	e, err := NewExcelizeOutput(nil, outCfg)
+	e, err := NewGoChartOutput(nil, outCfg)
 	assert.Nil(t, err)
 	err = e.Do(table)
 	assert.Nil(t, err)
@@ -52,8 +61,4 @@ func TestDo(t *testing.T) {
 	fInfo, err := os.Stat(tmpOutFile)
 	require.Nil(t, err)
 	require.NotNil(t, fInfo)
-
-	// For now just check that the file size is bigger than 0
-	assert.True(t, fInfo.Size() > 0)
-	// TODO Add more sophisticated validation of file content
 }

@@ -87,7 +87,7 @@ func (a *Ansible) GetHostsForTest(test *config.Test) (*testers.Hosts, error) {
 		return nil, err
 	}
 
-	inv, err := ansible.Parse(out)
+	inv, err := ansible.Parse(cleanAnsibleOutput(out))
 	if err != nil {
 		return nil, err
 	}

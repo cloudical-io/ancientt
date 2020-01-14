@@ -1,0 +1,57 @@
+sequenceDiagram
+    participant User
+    participant Ancientt
+    participant Runner
+    participant Tester
+    participant Parser
+    participant Output
+    participant Data
+
+    Note over User,Ancientt: Config provided by User
+    User->>Ancientt: Start
+    Ancientt->>Runner: Get host information
+    loop Gather host info
+        Runner->>Runner: Get Target information
+    end
+    Runner->>Ancientt: Return host information
+    Ancientt->>Tester: Get target plan
+    Tester->>Tester: Generate run plan from host information
+    Tester->>Ancientt: Create and return run plan
+    Ancientt->>User: Prompt user for confirmation
+    alt cancels
+        User->>Ancientt: Responds with "No"
+        Ancientt->>Ancientt: Terminate execution
+    else accepts
+        User->>Ancientt: Responds with "Yes"
+        Ancientt->>Runner: Execute plan
+        loop Execute plan
+            Runner->>Runner: Execute CMD(s) on target(s)
+            Runner->>Runner: Receive output / results from target(s)
+            Runner->>Parser: Send results for parsing
+            alt more tests / targets to go?
+                Runner->>Runner: Continue with next test / target
+            else done
+                Runner->>Runner: Close parser channel
+                Runner->>Ancientt: Return
+            end
+            loop Parse results
+                Parser->>Parser: Parse incoming Runner output
+                Parser-->Data: Put data into `Data` interface format
+                Parser->>Output: Send `Data` to Outputs
+                Output->>Data: Apply user transformations
+                Data-->Data: Transform results
+            end
+        end
+        loop process data
+            Parser->>Output: Receive Data
+            Output->>Output: Process results
+            Output->>Output: Write data in output format
+            Note right of Output: If applicable, keep<br>list of written files
+            alt data channel is open
+                Output->>Ancientt: Continue / Wait for incoming data
+            else data chanel is closed
+                Output->>Ancientt: Return
+            end
+        end
+        Ancientt->>User: Output success / error info
+    end

@@ -38,6 +38,7 @@ type GoChart struct {
 	outputs.Output
 	logger *log.Entry
 	config *config.GoChart
+	files  map[string]struct{}
 }
 
 // NewGoChartOutput return a new GoChart tester instance
@@ -45,78 +46,171 @@ func NewGoChartOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output
 	goChart := GoChart{
 		logger: log.WithFields(logrus.Fields{"output": NameGoChart}),
 		config: outCfg.GoChart,
+		files:  map[string]struct{}{},
 	}
 	if goChart.config.NamePattern == "" {
-		goChart.config.NamePattern = "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Header }}-{{ .Extra.Type }}.png"
+		goChart.config.NamePattern = "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Axises }}.png"
 	}
 	return goChart, nil
 }
 
 // Do make GoChart charts
 func (gc GoChart) Do(data outputs.Data) error {
-	dataTable, ok := data.Data.(outputs.Table)
-	if !ok {
-		return fmt.Errorf("data not in table for csv output")
+	if _, ok := data.Data.(outputs.Table); !ok {
+		return fmt.Errorf("data not in data table format for gochart output")
 	}
 
 	// Iterate over wanted graph types
-	// TODO Allow certain header columns to be selected per graphType
-	for _, graphType := range gc.config.Types {
-		for _, column := range dataTable.Headers {
-			for _, row := range column.Rows {
-				filename, err := outputs.GetFilenameFromPattern(gc.config.FilePath.NamePattern, "", data, map[string]interface{}{
-					"Type":   graphType,
-					"Header": row.Value,
-				})
-				if err != nil {
-					return err
-				}
-
-				outPath := filepath.Join(gc.config.FilePath.FilePath, filename)
-				_ = outPath
-
-				graph := chart.Chart{Series: []chart.Series{chart.ContinuousSeries{}}}
-
-				// TODO create graphs per column
-
-				// Iterate over header columns
-
-				// Iterate over data columns
-				for _, column := range dataTable.Columns {
-					rowCells := []string{}
-					for _, row := range column.Rows {
-						rowCells = append(rowCells, fmt.Sprintf("%v", row.Value))
-					}
-					if len(rowCells) == 0 {
-						continue
-					}
-
-				}
-
-				//XValues: []float64{1.0, 2.0, 3.0, 4.0},
-				//YValues: []float64{1.0, 2.0, 3.0, 4.0},
-
-				buffer := bytes.NewBuffer([]byte{})
-				if err := graph.Render(chart.PNG, buffer); err != nil {
-					return err
-				}
-
-				if err := util.WriteNewTruncFile(filename, buffer.Bytes()); err != nil {
-					return err
-				}
-			}
+	for _, graph := range gc.config.Graphs {
+		err := gc.drawAxisChart(graph, data)
+		if err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-// OutputFiles return a list of output files
-func (gc GoChart) OutputFiles() []string {
-	return []string{}
+func (gc *GoChart) drawAxisChart(chartOpts *config.GoChartGraph, data outputs.Data) error {
+	dataTable, ok := data.Data.(outputs.Table)
+	if !ok {
+		return fmt.Errorf("data not in table format for gochart output")
+	}
+
+	if len(dataTable.Headers) == 0 {
+		gc.logger.Warning("no table headers found in data table result, returning")
+		return nil
+	}
+
+	timeKey := chartOpts.TimeColumn
+
+	var leftYKey string
+	if chartOpts.LeftY != "" {
+		leftYKey = chartOpts.LeftY
+	}
+	rightYKey := chartOpts.RightY
+
+	graph := chart.Chart{
+		Series: []chart.Series{},
+		XAxis: chart.XAxis{
+			Name: timeKey,
+		},
+		YAxis: chart.YAxis{
+			Name: rightYKey,
+		},
+	}
+
+	axises := rightYKey
+	if chartOpts.LeftY != "" && leftYKey != "" {
+		axises += "_" + leftYKey
+	}
+	filename, err := outputs.GetFilenameFromPattern(gc.config.FilePath.NamePattern, "", data, map[string]interface{}{
+		"Axises": axises,
+	})
+	if err != nil {
+		return err
+	}
+	outPath := filepath.Join(gc.config.FilePath.FilePath, filename)
+
+	vals := map[string][]float64{}
+	for _, search := range []string{chartOpts.TimeColumn, chartOpts.RightY, chartOpts.LeftY} {
+		headIndex, err := dataTable.GetHeaderIndexByName(search)
+		if err != nil {
+			return err
+		}
+
+		for _, row := range dataTable.Rows {
+			// Skip empty rows
+			if len(row) == 0 {
+				continue
+			}
+			if len(row)-1 < headIndex {
+				return fmt.Errorf("unable to find header with index %d (search: %q)", headIndex, search)
+			}
+			val, err := util.CastNumberToFloat64(row[headIndex].Value)
+			if err != nil {
+				return err
+			}
+			vals[search] = append(vals[search], val)
+		}
+	}
+
+	series := chart.ContinuousSeries{
+		Name: rightYKey,
+		Style: chart.Style{
+			StrokeColor: chart.GetDefaultColor(1).WithAlpha(64),
+			FillColor:   chart.GetDefaultColor(1).WithAlpha(64),
+		},
+		XValues: vals[timeKey],
+		YValues: vals[rightYKey],
+	}
+	graph.Series = append(graph.Series, series)
+	gc.additionalSeries(chartOpts, &graph, &series)
+
+	if chartOpts.LeftY != "" {
+		if _, ok := vals[leftYKey]; ok {
+			series = chart.ContinuousSeries{
+				Name: leftYKey,
+				Style: chart.Style{
+					StrokeColor: chart.GetDefaultColor(4).WithAlpha(64),
+					FillColor:   chart.GetDefaultColor(4).WithAlpha(64),
+				},
+				YAxis:   chart.YAxisSecondary,
+				XValues: vals[timeKey],
+				YValues: vals[leftYKey],
+			}
+			graph.Series = append(graph.Series, series)
+			gc.additionalSeries(chartOpts, &graph, &series)
+		}
+	}
+
+	graph.Elements = []chart.Renderable{
+		chart.Legend(&graph),
+	}
+
+	gc.files[outPath] = struct{}{}
+
+	buffer := bytes.NewBuffer([]byte{})
+	if err := graph.Render(chart.PNG, buffer); err != nil {
+		return fmt.Errorf("failed to render graph to PNG file. %+v", err)
+	}
+
+	if err := util.WriteNewTruncFile(outPath, buffer.Bytes()); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// Close NOOP, as graph pictures are written once (= closed immediately)
+func (gc *GoChart) additionalSeries(chartOpts *config.GoChartGraph, graph *chart.Chart, series *chart.ContinuousSeries) {
+	graph.Series = append(graph.Series, chart.LastValueAnnotationSeries(series), chart.LastValueAnnotationSeries(series))
+
+	if chartOpts.WithLinearRegression != nil && *chartOpts.WithLinearRegression {
+		linearRegresSeries := &chart.LinearRegressionSeries{
+			Name:        fmt.Sprintf("%q - LinearRegress", series.Name),
+			InnerSeries: series,
+		}
+		graph.Series = append(graph.Series, linearRegresSeries)
+	}
+	if chartOpts.WithSimpleMovingAverage != nil && *chartOpts.WithSimpleMovingAverage {
+		smaSeries := &chart.SMASeries{
+			Name:        fmt.Sprintf("%q - SimpleMovingAvg", series.Name),
+			InnerSeries: series,
+		}
+		graph.Series = append(graph.Series, smaSeries)
+	}
+}
+
+// OutputFiles return a list of output files
+func (gc GoChart) OutputFiles() []string {
+	list := []string{}
+	for file := range gc.files {
+		list = append(list, file)
+	}
+	return list
+}
+
+// Close NOOP, as graph pictures are written once and closed immediately, no need to do anything here
 func (gc GoChart) Close() error {
 	return nil
 }

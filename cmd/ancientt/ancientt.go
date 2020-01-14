@@ -343,6 +343,7 @@ func doOutputs(outputsAssembled map[string]outputs.Output, test *config.Test, do
 				outputName := outputItem.Name
 
 				if err := outputsAssembled[outputName].Do(data); err != nil {
+					// TODO Run all ouputs and concat errors
 					return fmt.Errorf("error in output Do() func. %+v", err)
 				}
 			}

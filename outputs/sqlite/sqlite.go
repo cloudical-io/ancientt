@@ -84,7 +84,7 @@ func NewSQLiteOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output,
 func (s SQLite) Do(data outputs.Data) error {
 	dataTable, ok := data.Data.(outputs.Table)
 	if !ok {
-		return fmt.Errorf("data not in table for sqlite output")
+		return fmt.Errorf("data not in data table format for sqlite output")
 	}
 
 	filename, err := outputs.GetFilenameFromPattern(s.config.FilePath.NamePattern, "", data, nil)
@@ -113,25 +113,19 @@ func (s SQLite) Do(data outputs.Data) error {
 
 	if createTable {
 		// Iterate over headers
-		headerColumns := []string{}
-		for _, column := range dataTable.Headers {
-			for _, row := range column.Rows {
-				headerColumns = append(headerColumns, util.CastToString(row.Value))
-			}
-			if len(headerColumns) == 0 {
-				continue
-			}
-
+		headers := []string{}
+		for _, row := range dataTable.Headers {
+			headers = append(headers, util.CastToString(row.Value))
 		}
 
 		// Iterate over data columns to get the first row of data.
 		// The first row of data is needed to set the types on the to be created SQLite table
-		dataColumn := []interface{}{}
-		for _, column := range dataTable.Columns {
-			for _, row := range column.Rows {
-				dataColumn = append(dataColumn, row.Value)
+		dataRows := []interface{}{}
+		for _, row := range dataTable.Rows {
+			for _, r := range row {
+				dataRows = append(dataRows, r.Value)
 			}
-			if len(dataColumn) == 0 {
+			if len(dataRows) == 0 {
 				continue
 			}
 			// Break after first round as we only need the first row!
@@ -142,24 +136,24 @@ func (s SQLite) Do(data outputs.Data) error {
 		if err != nil {
 			return fmt.Errorf("couldn't begin transaction in sqlite database. %+v", err)
 		}
-		tx.Exec(s.buildCreateTableQuery(tableName, headerColumns, dataColumn))
+		tx.Exec(s.buildCreateTableQuery(tableName, headers, dataRows))
 		if err := tx.Commit(); err != nil {
 			return fmt.Errorf("couldn't create table in sqlite database. %+v", err)
 		}
 	}
 
 	// Iterate over data columns
-	for _, column := range dataTable.Columns {
-		dataColumn := []interface{}{}
-		for _, row := range column.Rows {
-			dataColumn = append(dataColumn, row.Value)
+	for _, row := range dataTable.Rows {
+		dataRows := []interface{}{}
+		for _, r := range row {
+			dataRows = append(dataRows, r.Value)
 		}
-		if len(dataColumn) == 0 {
+		if len(dataRows) == 0 {
 			continue
 		}
 
-		query := s.buildInsertQuery(tableName, len(dataColumn))
-		if _, err := db.Exec(query, dataColumn...); err != nil {
+		query := s.buildInsertQuery(tableName, len(dataRows))
+		if _, err := db.Exec(query, dataRows...); err != nil {
 			return fmt.Errorf("couldn't insert data in sqlite database. %+v", err)
 		}
 	}

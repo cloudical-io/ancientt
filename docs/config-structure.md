@@ -15,6 +15,7 @@ This Document documents the types introduced by Ancientt for configuration to be
 * [Excelize](#excelize)
 * [FilePath](#filepath)
 * [GoChart](#gochart)
+* [GoChartGraph](#gochartgraph)
 * [Hosts](#hosts)
 * [IPerf3](#iperf3)
 * [KubernetesHosts](#kuberneteshosts)
@@ -30,6 +31,7 @@ This Document documents the types introduced by Ancientt for configuration to be
 * [SQLite](#sqlite)
 * [Test](#test)
 * [TestHosts](#testhosts)
+* [Transformation](#transformation)
 
 ## AdditionalFlags
 
@@ -122,7 +124,21 @@ GoChart GoChart Output config options
 
 | Field | Description | Scheme | Required | Validation |
 | ----- | ----------- | ------ | -------- | ---------- |
-| types | Types of charts to produce from the testers output data | []string | true | required,min=1 |
+| graphs | Graphs definitions of graphs to produce from the testers output data | []*[GoChartGraph](#gochartgraph) | true | required,min=1 |
+
+[Back to TOC](#table-of-contents)
+
+## GoChartGraph
+
+GoChartGraph Type and columns for a one or two Y-axis chart (+ X-axis) to be generated based on this information.
+
+| Field | Description | Scheme | Required | Validation |
+| ----- | ----------- | ------ | -------- | ---------- |
+| timeColumn | TimeColumn column with the time / interval to use for the X-axis | string | true | required |
+| leftY | LeftY name of the column / data column to use for the the left Y axis | []string | false |  |
+| rightY | RightY name of the column / data column to use for the the right Y axis | []string | true | required |
+| withLinearRegression | WithLinearRegression if a linear regression series should be added to each data series (default: `false`). | *bool | false |  |
+| withSimpleMovingAverage | WithSimpleMovingAverage if a simple moving average should be added to each data series(default: `false`). | *bool | false |  |
 
 [Back to TOC](#table-of-contents)
 
@@ -207,13 +223,14 @@ Output Output config structure pointing to the other config options for each out
 
 | Field | Description | Scheme | Required | Validation |
 | ----- | ----------- | ------ | -------- | ---------- |
-| name | Name of this output | string | true |  |
+| name | Name of this output | string | true | required,min=3 |
 | csv | CSV output options | *[CSV](#csv) | true |  |
 | goChart | GoChart output options | *[GoChart](#gochart) | true |  |
 | dump | Dump output options | *[Dump](#dump) | true |  |
 | excelize | Excelize output options | *[Excelize](#excelize) | true |  |
 | sqlite | SQLite output options | *[SQLite](#sqlite) | true |  |
 | mysql | MySQL output options | *[MySQL](#mysql) | true |  |
+| transformations | Transformations transformations to be applied to the output data for the chosen output | []*[Transformation](#transformation) | false |  |
 
 [Back to TOC](#table-of-contents)
 
@@ -307,6 +324,7 @@ Test Config options for each Test
 | type | The tester to use, e.g., for `iperf3` set to `iperf3` and so on | string | true |  |
 | runOptions | Options for the execution of the test | [RunOptions](#runoptions) | false |  |
 | outputs | List of Outputs to use for processing data from the testers. | [][Output](#output) | true | required,min=1 |
+| transformations | Transformations transformations to be applied to Output data | []*[Transformation](#transformation) | false |  |
 | hosts | Hosts selection for client and server | [TestHosts](#testhosts) | true |  |
 | iperf3 | IPerf3 test options | *[IPerf3](#iperf3) | true |  |
 
@@ -320,5 +338,18 @@ TestHosts list of clients and servers hosts for use in the test(s)
 | ----- | ----------- | ------ | -------- | ---------- |
 | clients | Static list of hosts to use as clients | [][Hosts](#hosts) | true | required,min=1 |
 | servers | Static list of hosts to use as server | [][Hosts](#hosts) | true | required,min=1 |
+
+[Back to TOC](#table-of-contents)
+
+## Transformation
+
+Transformation data transformation instructions
+
+| Field | Description | Scheme | Required | Validation |
+| ----- | ----------- | ------ | -------- | ---------- |
+| key | Key name of the (data) column to use for the transformation | string | true | required |
+| action | Action name of the transformation action to run on the Key | Action | true | required,min=3 |
+| from | To target name of the column (e.g., save result of transformation in other column) | string | false |  |
+| modifier | Modifier value to use for the given action (e.g., action `divide` and `value: 1000000000` would cause a division on the targeted value) | float64 | false |  |
 
 [Back to TOC](#table-of-contents)

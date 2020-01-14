@@ -84,7 +84,7 @@ func NewMySQLOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output, 
 func (m MySQL) Do(data outputs.Data) error {
 	dataTable, ok := data.Data.(outputs.Table)
 	if !ok {
-		return fmt.Errorf("data not in table for mysql output")
+		return fmt.Errorf("data not in data table format for mysql output")
 	}
 
 	tableName, err := outputs.GetFilenameFromPattern(m.config.TableNamePattern, "", data, nil)
@@ -104,22 +104,22 @@ func (m MySQL) Do(data outputs.Data) error {
 		m.dbCons[dbPath] = db
 	}
 
-	if err := m.createTable(db, dataTable, tableName); err != nil {
+	if err := m.createTable(db, &dataTable, tableName); err != nil {
 		return err
 	}
 
 	// Iterate over data columns
-	for _, column := range dataTable.Columns {
-		dataColumn := []interface{}{}
-		for _, row := range column.Rows {
-			dataColumn = append(dataColumn, row.Value)
+	for _, row := range dataTable.Rows {
+		cells := []interface{}{}
+		for _, r := range row {
+			cells = append(cells, r.Value)
 		}
-		if len(dataColumn) == 0 {
+		if len(cells) == 0 {
 			continue
 		}
 
-		query := m.buildInsertQuery(tableName, len(dataColumn))
-		if _, err := db.Exec(query, dataColumn...); err != nil {
+		query := m.buildInsertQuery(tableName, len(cells))
+		if _, err := db.Exec(query, cells...); err != nil {
 			return fmt.Errorf("couldn't insert data in mysql database. %+v", err)
 		}
 	}
@@ -127,27 +127,21 @@ func (m MySQL) Do(data outputs.Data) error {
 	return nil
 }
 
-func (m MySQL) createTable(db *sqlx.DB, dataTable outputs.Table, tableName string) error {
+func (m MySQL) createTable(db *sqlx.DB, dataTable *outputs.Table, tableName string) error {
 	// Iterate over headers
-	headerColumns := []string{}
-	for _, column := range dataTable.Headers {
-		for _, row := range column.Rows {
-			headerColumns = append(headerColumns, util.CastToString(row.Value))
-		}
-		if len(headerColumns) == 0 {
-			continue
-		}
-
+	headers := []string{}
+	for _, row := range dataTable.Headers {
+		headers = append(headers, util.CastToString(row.Value))
 	}
 
-	// Iterate over data columns to get the first row of data.
+	// Iterate over data row to get the first row of data.
 	// The first row of data is needed to set the types on the to be created MySQL table
-	dataColumn := []interface{}{}
-	for _, column := range dataTable.Columns {
-		for _, row := range column.Rows {
-			dataColumn = append(dataColumn, row.Value)
+	cells := []interface{}{}
+	for _, row := range dataTable.Rows {
+		for _, r := range row {
+			cells = append(cells, r.Value)
 		}
-		if len(dataColumn) == 0 {
+		if len(cells) == 0 {
 			continue
 		}
 		// Break after first round as we only need the first row!
@@ -163,7 +157,7 @@ func (m MySQL) createTable(db *sqlx.DB, dataTable outputs.Table, tableName strin
 			if err != nil {
 				return fmt.Errorf("couldn't begin transaction in mysql database. %+v", err)
 			}
-			tx.Exec(m.buildCreateTableQuery(tableName, headerColumns, dataColumn))
+			tx.Exec(m.buildCreateTableQuery(tableName, headers, cells))
 			if err := tx.Commit(); err != nil {
 				return fmt.Errorf("couldn't create table in mysql database. %+v", err)
 			}

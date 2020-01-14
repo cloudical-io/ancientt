@@ -60,7 +60,7 @@ func NewCSVOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output, er
 func (c CSV) Do(data outputs.Data) error {
 	dataTable, ok := data.Data.(outputs.Table)
 	if !ok {
-		return fmt.Errorf("data not in table for csv output")
+		return fmt.Errorf("data not in Table interface format for csv output")
 	}
 
 	filename, err := outputs.GetFilenameFromPattern(c.config.FilePath.NamePattern, "", data, nil)
@@ -92,32 +92,26 @@ func (c CSV) Do(data outputs.Data) error {
 
 	if writeHeaders {
 		// Iterate over header columns
-		for _, column := range dataTable.Headers {
-			rowCells := []string{}
-			for _, row := range column.Rows {
-				rowCells = append(rowCells, util.CastToString(row.Value))
-			}
-			if len(rowCells) == 0 {
-				continue
-			}
-
-			if err := writer.Write(rowCells); err != nil {
-				return err
-			}
+		headers := []string{}
+		for _, row := range dataTable.Headers {
+			headers = append(headers, util.CastToString(row.Value))
+		}
+		if err := writer.Write(headers); err != nil {
+			return err
 		}
 	}
 
 	// Iterate over data columns
-	for _, column := range dataTable.Columns {
-		rowCells := []string{}
-		for _, row := range column.Rows {
-			rowCells = append(rowCells, util.CastToString(row.Value))
+	for _, row := range dataTable.Rows {
+		cells := []string{}
+		for _, r := range row {
+			cells = append(cells, util.CastToString(r.Value))
 		}
-		if len(rowCells) == 0 {
+		if len(cells) == 0 {
 			continue
 		}
 
-		if err := writer.Write(rowCells); err != nil {
+		if err := writer.Write(cells); err != nil {
 			return err
 		}
 	}

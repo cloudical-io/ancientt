@@ -59,7 +59,7 @@ type Hosts struct {
 // Output Output config structure pointing to the other config options for each output
 type Output struct {
 	// Name of this output
-	Name string `yaml:"name"`
+	Name string `yaml:"name" validate:"required,min=3"`
 	// CSV output options
 	CSV *CSV `yaml:"csv"`
 	// GoChart output options
@@ -72,6 +72,8 @@ type Output struct {
 	SQLite *SQLite `yaml:"sqlite"`
 	// MySQL output options
 	MySQL *MySQL `yaml:"mysql"`
+	// Transformations transformations to be applied to the output data for the chosen output
+	Transformations []*Transformation `yaml:"transformations,omitempty"`
 }
 
 // FilePath file path and name pattern for outputs file generation
@@ -80,6 +82,43 @@ type FilePath struct {
 	FilePath string `yaml:"filePath" validate:"required,min=1"`
 	// File name pattern templated from various availables during output generation
 	NamePattern string `yaml:"namePattern" validate:"required,min=1"`
+}
+
+// TransformationAction Transformation action value
+type TransformationAction string
+
+const (
+	// TransformationActionAdd Transformation add action
+	TransformationActionAdd TransformationAction = "add"
+	// TransformationActionReplace Transformation replace action
+	TransformationActionReplace TransformationAction = "replace"
+	// TransformationActionDelete Transformation delete action
+	TransformationActionDelete TransformationAction = "delete"
+)
+
+// IsValidTransformationAction function to check if a TransformationAction is valid
+// ("in range of available transformationactions")
+func IsValidTransformationAction(a TransformationAction) bool {
+	switch a {
+	case TransformationActionAdd:
+	case TransformationActionReplace:
+	case TransformationActionDelete:
+	default:
+		return false
+	}
+	return true
+}
+
+// Transformation data transformation instructions
+type Transformation struct {
+	// Key name of the (data) column to use for the transformation
+	Key string `yaml:"key" validate:"required"`
+	// Action name of the transformation action to run on the Key
+	Action TransformationAction `yaml:"action" validate:"required,min=3"`
+	// To target name of the column (e.g., save result of transformation in other column)
+	To string `yaml:"from,omitempty"`
+	// Modifier value to use for the given action (e.g., action `divide` and `value: 1000000000` would cause a division on the targeted value)
+	Modifier *float64 `yaml:"modifier,omitempty"`
 }
 
 // CSV CSV Output config options
@@ -96,8 +135,22 @@ type GoChart struct {
 	// FilePath struct fields which are inherited by this struct.
 	// The fields of the FilePath struct must be written directly to this struct.
 	FilePath `yaml:",inline"`
-	// Types of charts to produce from the testers output data
-	Types []string `yaml:"types" validate:"required,min=1"`
+	// Graphs definitions of graphs to produce from the testers output data
+	Graphs []*GoChartGraph `yaml:"graphs" validate:"required,min=1"`
+}
+
+// GoChartGraph Type and columns for a one or two Y-axis chart (+ X-axis) to be generated based on this information.
+type GoChartGraph struct {
+	// TimeColumn column with the time / interval to use for the X-axis
+	TimeColumn string `yaml:"timeColumn" validate:"required"`
+	// LeftY name of the column / data column to use for the the left Y axis
+	LeftY string `yaml:"leftY,omitempty"`
+	// RightY name of the column / data column to use for the the right Y axis
+	RightY string `yaml:"rightY" validate:"required"`
+	// WithLinearRegression if a linear regression series should be added to each data series (default: `false`).
+	WithLinearRegression *bool `yaml:"withLinearRegression,omitempty"`
+	// WithSimpleMovingAverage if a simple moving average should be added to each data series(default: `false`).
+	WithSimpleMovingAverage *bool `yaml:"withSimpleMovingAverage,omitempty"`
 }
 
 // Dump Dump Output config options
@@ -243,6 +296,8 @@ type Test struct {
 	RunOptions RunOptions `yaml:"runOptions,omitempty"`
 	// List of Outputs to use for processing data from the testers.
 	Outputs []Output `yaml:"outputs" validate:"required,min=1"`
+	// Transformations transformations to be applied to Output data
+	Transformations []*Transformation `yaml:"transformations,omitempty"`
 	// Hosts selection for client and server
 	Hosts TestHosts `yaml:"hosts"`
 	// IPerf3 test options
