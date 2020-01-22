@@ -109,16 +109,32 @@ func IsValidTransformationAction(a TransformationAction) bool {
 	return true
 }
 
+// ModifierAction action to use with a modifier (float64)
+type ModifierAction string
+
+const (
+	// ModifierActionMultiply Modifier multiply action
+	ModifierActionMultiply ModifierAction = "multiply"
+	// ModifierActionDivison Modifier divison action
+	ModifierActionDivison ModifierAction = "division"
+	// ModifierActionAddition Modifier addition action
+	ModifierActionAddition ModifierAction = "addition"
+	// ModifierActionSubstract Modifier substract action
+	ModifierActionSubstract ModifierAction = "substract"
+)
+
 // Transformation data transformation instructions
 type Transformation struct {
-	// Key name of the (data) column to use for the transformation
-	Key string `yaml:"key" validate:"required"`
-	// Action name of the transformation action to run on the Key
+	// Source name of the (data) column to use for the transformation
+	Source string `yaml:"key" validate:"required"`
+	// Action transformation action to use on the Source key
 	Action TransformationAction `yaml:"action" validate:"required,min=3"`
-	// To target name of the column (e.g., save result of transformation in other column)
-	To string `yaml:"from,omitempty"`
-	// Modifier value to use for the given action (e.g., action `divide` and `value: 1000000000` would cause a division on the targeted value)
+	// Destination used for the "replace" TransformationAction for targetting the key to overwrite
+	Destination string `yaml:"from,omitempty"`
+	// Modifier value to use in combination with the ModifierAction to modify the values (e.g., settin git to `1000` and ModifierAction to `divison` will divise the value by 1000)
 	Modifier *float64 `yaml:"modifier,omitempty"`
+	// ModifierAction action to run on the values together with the Modifier
+	ModifierAction ModifierAction `yaml:"modifierAction"`
 }
 
 // CSV CSV Output config options
@@ -349,10 +365,11 @@ type IPerf3 struct {
 	// Additional flags for client and server
 	AdditionalFlags AdditionalFlags `yaml:"additionalFlags,omitempty"`
 	// Duration Time in seconds the IPerf3 test should transmit / receive (default: `10`).
-	// In case of the Ansible Runner, you need to increase the `taskCommandTimeout` when
-	// increasing the Duration. The `taskCommandTimeout` should then be set to `Duration` + some extra, e.g., 10 seconds.
+	// In case of the Ansible Runner, you need to increase the Ansible runners `timeouts.taskCommandTimeout` option when
+	// increasing the Duration. The Ansible Runner `timeouts.taskCommandTimeout` option should be set to `Duration + some extra time`
+	// (e.g., 10 seconds).
 	Duration *int `yaml:"duration,omitempty" validate:"required,min=1"`
-	// Interval Interval in which IPerf3 will print / return periodic throughput reports (default: `1`).
+	// Interval Interval in seconds which IPerf3 will print / return periodic throughput reports (default: `1`).
 	Interval *int `yaml:"interval,omitempty" validate:"required,min=1"`
 	// If UDP should be used for the IPerf3 test
 	UDP *bool `yaml:"udp,omitempty"`

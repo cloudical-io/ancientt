@@ -55,7 +55,7 @@ func NewExcelizeOutput(cfg *config.Config, outCfg *config.Output) (outputs.Outpu
 		files:  map[string]*fileState{},
 	}
 	if excelize.config.FilePath.NamePattern == "" {
-		excelize.config.FilePath.NamePattern = "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.xlsx"
+		excelize.config.FilePath.NamePattern = "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}.xlsx"
 	}
 	if excelize.config.SaveAfterRows == 0 {
 		excelize.config.SaveAfterRows = 200
@@ -103,7 +103,7 @@ func (e Excelize) Do(data outputs.Data) error {
 	}
 
 	if fState.row == 1 {
-		if err := e.inputData(fState.row, [][]outputs.Row{dataTable.Headers}, fState); err != nil {
+		if err := e.inputData(fState.row, [][]*outputs.Row{dataTable.Headers}, fState); err != nil {
 			return err
 		}
 	}
@@ -119,14 +119,18 @@ func (e Excelize) Do(data outputs.Data) error {
 	return nil
 }
 
-func (e Excelize) inputData(startRow int, rows [][]outputs.Row, fState *fileState) error {
+func (e Excelize) inputData(startRow int, rows [][]*outputs.Row, fState *fileState) error {
 	// Iterate over data columns to get the first row of data.
 	for i, row := range rows {
 		fState.row++
 
 		// Set each cell value
-		for j, row := range row {
-			if err := fState.file.SetCellValue("Sheet1", fmt.Sprintf("%s%d", util.IntToChar(j+1), startRow+i), row.Value); err != nil {
+		for j, r := range row {
+			if r == nil {
+				continue
+			}
+
+			if err := fState.file.SetCellValue("Sheet1", fmt.Sprintf("%s%d", util.IntToChar(j+1), startRow+i), r.Value); err != nil {
 				// TODO Return a final concated error after the whole data has been written
 				e.logger.WithFields(logrus.Fields{"filepath": fState.file.Path}).Errorf("unable to set cell value in excelize file. %+v", err)
 			}

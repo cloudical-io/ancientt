@@ -40,8 +40,8 @@ type DataFormat interface {
 // Table Data format for data in Table form
 type Table struct {
 	DataFormat
-	Headers []Row
-	Rows    [][]Row
+	Headers []*Row
+	Rows    [][]*Row
 }
 
 // Row Row of the Table data format
@@ -53,43 +53,43 @@ type Row struct {
 func (d Table) Transform(ts []*config.Transformation) error {
 	// Iterate over each transformation
 	for _, t := range ts {
-		i, err := d.GetHeaderIndexByName(t.Key)
+		index, err := d.GetHeaderIndexByName(t.Source)
 		if err != nil {
 			return err
 		}
-		if i == -1 && t.Action != config.TransformationActionAdd {
+		if index == -1 {
 			return nil
 		}
 
 		switch t.Action {
 		case config.TransformationActionAdd:
-			d.Headers = append(d.Headers, Row{
-				Value: t.Key,
+			d.Headers = append(d.Headers, &Row{
+				Value: t.Destination,
 			})
-			i = len(d.Headers) - 1
 		case config.TransformationActionDelete:
-			d.Headers[i].Value = nil
+			d.Headers[index] = nil
 		case config.TransformationActionReplace:
-			d.Headers[i].Value = t.To
+			toHeader := t.Destination
+			if toHeader == "" {
+				toHeader = t.Source
+			}
+			d.Headers[index].Value = toHeader
 		}
 
-		for _, r := range d.Rows {
-			if len(r) >= i {
+		for i := range d.Rows {
+			if len(d.Rows[i]) < index {
 				continue
-			}
-
-			if t.Modifier != nil {
-				// TODO use modifier here to generate the new value if set
-				// r[i].Value
 			}
 
 			switch t.Action {
 			case config.TransformationActionAdd:
-				r = append(r, r[i])
+				d.Rows[i] = append(d.Rows[i], &Row{
+					Value: d.modifyValue(d.Rows[i][index].Value, t),
+				})
 			case config.TransformationActionDelete:
-				r[i].Value = nil
+				d.Rows[i][index] = nil
 			case config.TransformationActionReplace:
-				r[i].Value = r[i]
+				d.Rows[i][index].Value = d.modifyValue(d.Rows[i][index].Value, t)
 			}
 		}
 	}
@@ -97,9 +97,36 @@ func (d Table) Transform(ts []*config.Transformation) error {
 	return nil
 }
 
+func (d *Table) modifyValue(in interface{}, t *config.Transformation) interface{} {
+	value, ok := in.(float64)
+	if !ok {
+		valInt, ok := in.(int64)
+		if !ok {
+			return in
+		}
+		value = float64(valInt)
+	}
+
+	switch t.ModifierAction {
+	case config.ModifierActionAddition:
+		return value + *t.Modifier
+	case config.ModifierActionSubstract:
+		return value - *t.Modifier
+	case config.ModifierActionDivison:
+		return value / *t.Modifier
+	case config.ModifierActionMultiply:
+		return value * *t.Modifier
+	}
+
+	return in
+}
+
 // CheckIfHeaderExists check if a header exists by name in the Table
 func (d *Table) CheckIfHeaderExists(name interface{}) (int, bool) {
 	for k, c := range d.Headers {
+		if c == nil {
+			continue
+		}
 		if c.Value == name {
 			return k, true
 		}
@@ -110,10 +137,13 @@ func (d *Table) CheckIfHeaderExists(name interface{}) (int, bool) {
 
 // GetHeaderIndexByName return the header index for a given key (name) string
 func (d *Table) GetHeaderIndexByName(name string) (int, error) {
-	for i, h := range d.Headers {
-		val, ok := h.Value.(string)
+	for i := range d.Headers {
+		if d.Headers[i] == nil {
+			continue
+		}
+		val, ok := d.Headers[i].Value.(string)
 		if !ok {
-			return -1, fmt.Errorf("failed to cast result header into string, header: %+v", h.Value)
+			return -1, fmt.Errorf("failed to cast result header into string, header: %+v", d.Headers[i].Value)
 		}
 		if val == name {
 			return i, nil

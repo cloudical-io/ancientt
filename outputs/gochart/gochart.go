@@ -119,15 +119,16 @@ func (gc *GoChart) drawAxisChart(chartOpts *config.GoChartGraph, data outputs.Da
 			return err
 		}
 
-		for _, row := range dataTable.Rows {
+		for _, r := range dataTable.Rows {
 			// Skip empty rows
-			if len(row) == 0 {
+			if len(r) == 0 {
 				continue
 			}
-			if len(row)-1 < headIndex {
-				return fmt.Errorf("unable to find header with index %d (search: %q)", headIndex, search)
+			if len(r)-1 < headIndex || r[headIndex] == nil {
+				return fmt.Errorf("unable to find header with index %d or nil (search: %q)", headIndex, search)
 			}
-			val, err := util.CastNumberToFloat64(row[headIndex].Value)
+
+			val, err := util.CastNumberToFloat64(r[headIndex].Value)
 			if err != nil {
 				return err
 			}

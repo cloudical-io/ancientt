@@ -112,6 +112,9 @@ func (m MySQL) Do(data outputs.Data) error {
 	for _, row := range dataTable.Rows {
 		cells := []interface{}{}
 		for _, r := range row {
+			if r == nil {
+				continue
+			}
 			cells = append(cells, r.Value)
 		}
 		if len(cells) == 0 {
@@ -130,8 +133,11 @@ func (m MySQL) Do(data outputs.Data) error {
 func (m MySQL) createTable(db *sqlx.DB, dataTable *outputs.Table, tableName string) error {
 	// Iterate over headers
 	headers := []string{}
-	for _, row := range dataTable.Headers {
-		headers = append(headers, util.CastToString(row.Value))
+	for _, r := range dataTable.Headers {
+		if r == nil {
+			continue
+		}
+		headers = append(headers, util.CastToString(r.Value))
 	}
 
 	// Iterate over data row to get the first row of data.
@@ -139,6 +145,9 @@ func (m MySQL) createTable(db *sqlx.DB, dataTable *outputs.Table, tableName stri
 	cells := []interface{}{}
 	for _, row := range dataTable.Rows {
 		for _, r := range row {
+			if r == nil {
+				continue
+			}
 			cells = append(cells, r.Value)
 		}
 		if len(cells) == 0 {

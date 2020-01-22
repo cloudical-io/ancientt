@@ -37,7 +37,7 @@ const (
 	SQLiteFloatType = "FLOAT"
 	SQLiteBoolType  = "BOOLEAN"
 
-	defaultNamePattern      = "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.sqlite3"
+	defaultNamePattern      = "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}.sqlite3"
 	defaultTableNamePattern = "ancientt{{ .TestStartTime }}{{ .Data.Tester }}{{ .Data.ServerHost }}{{ .Data.ClientHost }}"
 
 	createTableBeginQuery = "CREATE TABLE IF NOT EXISTS `%s` (\n"
@@ -114,8 +114,11 @@ func (s SQLite) Do(data outputs.Data) error {
 	if createTable {
 		// Iterate over headers
 		headers := []string{}
-		for _, row := range dataTable.Headers {
-			headers = append(headers, util.CastToString(row.Value))
+		for _, r := range dataTable.Headers {
+			if r == nil {
+				continue
+			}
+			headers = append(headers, util.CastToString(r.Value))
 		}
 
 		// Iterate over data columns to get the first row of data.
@@ -123,6 +126,9 @@ func (s SQLite) Do(data outputs.Data) error {
 		dataRows := []interface{}{}
 		for _, row := range dataTable.Rows {
 			for _, r := range row {
+				if r == nil {
+					continue
+				}
 				dataRows = append(dataRows, r.Value)
 			}
 			if len(dataRows) == 0 {

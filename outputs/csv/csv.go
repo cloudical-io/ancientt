@@ -51,7 +51,7 @@ func NewCSVOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output, er
 		writers: map[string]*csv.Writer{},
 	}
 	if c.config.FilePath.NamePattern == "" {
-		c.config.FilePath.NamePattern = "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv"
+		c.config.FilePath.NamePattern = "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}.csv"
 	}
 	return c, nil
 }
@@ -93,8 +93,11 @@ func (c CSV) Do(data outputs.Data) error {
 	if writeHeaders {
 		// Iterate over header columns
 		headers := []string{}
-		for _, row := range dataTable.Headers {
-			headers = append(headers, util.CastToString(row.Value))
+		for _, r := range dataTable.Headers {
+			if r == nil {
+				continue
+			}
+			headers = append(headers, util.CastToString(r.Value))
 		}
 		if err := writer.Write(headers); err != nil {
 			return err
@@ -105,6 +108,9 @@ func (c CSV) Do(data outputs.Data) error {
 	for _, row := range dataTable.Rows {
 		cells := []string{}
 		for _, r := range row {
+			if r == nil {
+				continue
+			}
 			cells = append(cells, util.CastToString(r.Value))
 		}
 		if len(cells) == 0 {
