@@ -15,6 +15,7 @@ package kubernetes
 
 import (
 	"github.com/cloudical-io/ancientt/pkg/k8sutil"
+	"github.com/cloudical-io/ancientt/pkg/util"
 	"github.com/cloudical-io/ancientt/testers"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,9 +52,10 @@ func (k Kubernetes) getPodSpec(pName string, taskName string, task *testers.Task
 			NodeSelector: map[string]string{
 				corev1.LabelHostname: task.Host.Name,
 			},
-			HostNetwork:   hostNetwork,
-			RestartPolicy: corev1.RestartPolicyOnFailure,
-			Tolerations:   k.config.Hosts.Tolerations,
+			HostNetwork:                   hostNetwork,
+			RestartPolicy:                 corev1.RestartPolicyOnFailure,
+			Tolerations:                   k.config.Hosts.Tolerations,
+			TerminationGracePeriodSeconds: util.Int64Pointer(5),
 		},
 	}
 

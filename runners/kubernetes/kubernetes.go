@@ -125,7 +125,12 @@ func (k *Kubernetes) k8sNodesToHosts() ([]*testers.Host, error) {
 		}
 
 		// Check if the taints on the node match the given tolerations
-		if (k.config.Hosts != nil && len(k.config.Hosts.Tolerations) > 0) && !k8sutil.NodeIsTolerable(node, k.config.Hosts.Tolerations) {
+		tolerations := []corev1.Toleration{}
+		if k.config.Hosts != nil {
+			tolerations = k.config.Hosts.Tolerations
+		}
+
+		if !k8sutil.NodeIsTolerable(node, tolerations) {
 			continue
 		}
 
@@ -165,7 +170,7 @@ func (k *Kubernetes) Execute(plan *testers.Plan, parser chan<- parsers.Input) er
 			k.logger.Infof("running task round %d of %d", i+1, len(tasks))
 
 			// Create the Pods for the server task and client tasks
-			if err := k.createPodsForTasks(round, task, plan.TestStartTime, plan.Tester, util.GetTaskName(plan.Tester, plan.TestStartTime), parser); err != nil {
+			if err := k.createPodsForTasks(round, task, plan, parser); err != nil {
 				if !*plan.RunOptions.ContinueOnError {
 					return err
 				}
@@ -204,13 +209,15 @@ func (k *Kubernetes) prepareKubernetes() error {
 }
 
 // createPodsForTasks create the Pods that are needed for the task(s)
-func (k *Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, plannedTime time.Time, tester string, taskName string, parser chan<- parsers.Input) error {
+func (k *Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, plan *testers.Plan, parser chan<- parsers.Input) error {
 	logger := k.logger.WithFields(logrus.Fields{"round": round})
 
 	var wg sync.WaitGroup
 
+	taskName := util.GetTaskName(plan.Tester, plan.TestStartTime)
+
 	// Create server Pod first
-	serverPodName := util.GetPNameFromTask(round, mainTask.Host.Name, mainTask.Command, mainTask.Args, util.PNameRoleServer)
+	serverPodName := util.GetPNameFromTask(round, mainTask.Host.Name, mainTask.Command, util.PNameRoleServer, plan.TestStartTime)
 
 	// Create initial cmdtemplate.Variables
 	templateVars := cmdtemplate.Variables{
@@ -275,7 +282,7 @@ func (k *Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, plann
 
 			testTime := time.Now()
 
-			pName := util.GetPNameFromTask(round, task.Host.Name, task.Command, task.Args, util.PNameRoleClient)
+			pName := util.GetPNameFromTask(round, task.Host.Name, task.Command, util.PNameRoleClient, plan.TestStartTime)
 
 			// Template command and args for each task
 			if err := cmdtemplate.Template(task, templateVars); err != nil {
@@ -312,7 +319,7 @@ func (k *Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, plann
 			}
 
 			logger.WithFields(logrus.Fields{"pod": pName}).Debug("about to pushLogsToParser")
-			if err := k.pushLogsToParser(parser, plannedTime, testTime, round, tester, mainTask.Host.Name, task.Host.Name, pName); err != nil {
+			if err := k.pushLogsToParser(parser, plan.TestStartTime, testTime, round, plan.Tester, mainTask.Host.Name, task.Host.Name, pName); err != nil {
 				erro := fmt.Errorf("failed to push pod %s/%s logs to parser. %+v", k.config.Namespace, pName, err)
 				logger.Errorf("error during createPodsForTasks. %+v", erro)
 				mainTask.Status.AddFailedClient(task.Host, erro)
