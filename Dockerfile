@@ -6,8 +6,7 @@ COPY . .
 RUN go get -v ./... && \
     go install -v ./...
 
-# TODO Use fixed tag
-FROM galexrt/container-toolbox:latest
+FROM galexrt/container-toolbox:v20200211
 LABEL maintainer="Alexander Trost <galexrt@googlemail.com> and Michal Janus <michal.janus@cloudical.io>"
 
 COPY --from=go-build /go/bin/app /bin/ancientt
