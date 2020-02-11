@@ -12,29 +12,39 @@ runner:
     hosts:
       ignoreSchedulingDisabled: true
       tolerations: []
+    # If the Pods should be run with `hostNetwork: true` option
+    hostNetwork: false
 tests:
 - name: iperf3-one-rand-to-one-rand
   type: iperf3
+  transformations:
+  - source: "bits_per_second"
+    destination: "gigabits_per_second"
+    action: "add"
+    modifier: 100000000
+    modifierAction: "division"
   outputs:
   - name: csv
     csv:
       filePath: /tmp
-      namePattern: 'ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv'
-#  - name: sqlite
-#    sqlite:
-#      filePath: /tmp
-#      namePattern: 'ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.sqlite3'
-#      tableNamePattern: 'ancientt{{ .TestStartTime }}{{ .Data.Tester }}{{ .Data.ServerHost }}{{ .Data.ClientHost }}'
-#  - name: mysql
-#    mysql:
-#      dsn: "username:password@127.0.0.1/mydb"
-#      tableNamePattern: 'ancientt{{ .TestStartTime }}{{ .Data.Tester }}{{ .Data.ServerHost }}{{ .Data.ClientHost }}'
-#      autoCreateTables: true
-#  - name: excelize
-#    excelize:
-#      filePath: /tmp
-#      namePattern: "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.xlsx"
-#      saveAfterRows: 200 outputs mysql: added AutoCreateTables option
+      namePattern: 'ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}.csv'
+      # If you want one CSV per server and client host test run, you can use the following:
+      #namePattern: 'ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv'
+  #- name: sqlite
+  #  sqlite:
+  #    filePath: /tmp
+  #    namePattern: 'ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}.sqlite3'
+  #    tableNamePattern: 'ancientt{{ .TestStartTime }}{{ .Data.Tester }}'
+  #- name: mysql
+  #  mysql:
+  #    dsn: "username:password@127.0.0.1/mydb"
+  #    tableNamePattern: 'ancientt{{ .TestStartTime }}{{ .Data.Tester }}'
+  #    autoCreateTables: true
+  #- name: excelize
+  #  excelize:
+  #    filePath: /tmp
+  #    namePattern: "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}.xlsx"
+  #    saveAfterRows: 200 outputs mysql: added AutoCreateTables option
   runOptions:
     continueOnError: true
     rounds: 1
@@ -46,11 +56,8 @@ tests:
   # Each entry will be merged into one list
   hosts:
     clients:
-    #- name: all-hosts
-    #  all: true
-    - name: one-randomly-selected-server
-      random: true
-      count: 1
+    - name: all-host
+      all: true
     #  hostSelector:
     #    nope: foo
     #- name: all-hosts
@@ -61,7 +68,7 @@ tests:
     servers:
     - name: one-randomly-selected-server
       random: true
-      count: 1
+      count: 2
     #  hostSelector:
     #    nope: foo
     #- name: different-hosts-1
@@ -71,12 +78,14 @@ tests:
     #    network-tests-run-here: "true"
     #  antiAffinity:
     #    - openstack-region # This makes sure hosts with each different "openstack-region" are picked
-    #- name: specific-hosts
+    #- name: specific-host-list
     #  hosts:
     #    - serverabc123
     #    - serverxyz789
   iperf3:
     udp: false
+    duration: 10
+    interval: 1
     additionalFlags:
       clients: []
       server: []

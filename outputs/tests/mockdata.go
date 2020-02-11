@@ -14,34 +14,40 @@ limitations under the License.
 package tests
 
 import (
-	"github.com/cloudical-io/ancientt/outputs"
+	"math/rand"
 	"time"
+
+	"github.com/cloudical-io/ancientt/outputs"
 )
 
+// GenerateMockTableData generate some mock DataTable data for testing purposes
 func GenerateMockTableData(length int) outputs.Data {
 	table := outputs.Table{
-		Headers: []outputs.Column{
-			outputs.Column{
-				Rows: []outputs.Row{
-					outputs.Row{Value: "isthisfloat64"},
-					outputs.Row{Value: "isthisinteger64"},
-					outputs.Row{Value: "isittrue"},
-					outputs.Row{Value: "data"},
-				},
-			},
+		Headers: []*outputs.Row{
+			&outputs.Row{Value: "isthisfloat64"},
+			&outputs.Row{Value: "iamafloat64part2"},
+			&outputs.Row{Value: "isthisinteger64"},
+			&outputs.Row{Value: "isittrue"},
+			&outputs.Row{Value: "data"},
+			&outputs.Row{Value: "interval"},
 		},
-		Columns: []outputs.Column{},
+		Rows: [][]*outputs.Row{},
 	}
-	column := outputs.Column{
-		Rows: []outputs.Row{
-			outputs.Row{Value: float64(123.456789)},
-			outputs.Row{Value: int64(35671233)},
-			outputs.Row{Value: true},
-			outputs.Row{Value: "data"},
-		},
-	}
+
+	s := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(s)
+
 	for i := 0; i < length; i++ {
-		table.Columns = append(table.Columns, column)
+		f := float64(i)
+		r := []*outputs.Row{
+			&outputs.Row{Value: (r.Float64() * f) + f},
+			&outputs.Row{Value: (r.Float64() * f) + f},
+			&outputs.Row{Value: int64(r.Intn(99999))},
+			&outputs.Row{Value: true},
+			&outputs.Row{Value: "data"},
+			&outputs.Row{Value: i},
+		}
+		table.Rows = append(table.Rows, r)
 	}
 
 	return outputs.Data{

@@ -14,10 +14,19 @@ tests:
 - name: iperf3-all-to-all
   type: iperf3
   outputs:
+  - name: gochart
+    goChart:
+      filePath: .
+      namePattern: "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}-{{ .Extra.Rows }}.png"
+      graphs:
+      - timeColumn: start
+        dataRows:
+          - bits_per_second,retransmits
+        withLinearRegression: true
   - name: csv
     csv:
       filePath: .
-      namePattern: 'ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv'
+      namePattern: 'ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}.csv'
   runOptions:
     continueOnError: true
     rounds: 1

@@ -16,7 +16,6 @@ package outputs
 import (
 	"bytes"
 	"html/template"
-	"time"
 
 	"github.com/cloudical-io/ancientt/pkg/config"
 )
@@ -33,38 +32,6 @@ type Output interface {
 	OutputFiles() []string
 	// Close run "cleanup" / close tasks, e.g., close file handles and others
 	Close() error
-}
-
-// Data structured parsed data
-type Data struct {
-	TestStartTime  time.Time
-	TestTime       time.Time
-	Tester         string
-	ServerHost     string
-	ClientHost     string
-	AdditionalInfo string
-	Data           DataFormat
-}
-
-// DataFormat DataFormat interface that must be implemented by data formats, e.g., Table.
-type DataFormat interface {
-}
-
-// Table Data format for data in Table form
-type Table struct {
-	DataFormat
-	Headers []Column
-	Columns []Column
-}
-
-// Column Column of the Table data format
-type Column struct {
-	Rows []Row
-}
-
-// Row Row of the Table data format
-type Row struct {
-	Value interface{}
 }
 
 // GetFilenameFromPattern get filename from given pattern, data and extra data for templating.

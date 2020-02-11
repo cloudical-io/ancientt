@@ -24,3 +24,8 @@ func BoolFalsePointer() *bool {
 	out := false
 	return &out
 }
+
+// FloatPointer return a pointer to a given float
+func FloatPointer(in float64) *float64 {
+	return &in
+}

@@ -171,3 +171,13 @@ func (c *CSV) SetDefaults() {
 		c.Separator = &semiColon
 	}
 }
+
+// SetDefaults set defaults on confg part
+func (c *GoChartGraph) SetDefaults() {
+	if c.WithLinearRegression == nil {
+		c.WithLinearRegression = util.BoolFalsePointer()
+	}
+	if c.WithSimpleMovingAverage == nil {
+		c.WithSimpleMovingAverage = util.BoolTruePointer()
+	}
+}

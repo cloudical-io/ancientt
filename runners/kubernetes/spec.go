@@ -27,7 +27,7 @@ const (
 
 func (k Kubernetes) getPodSpec(pName string, taskName string, task *testers.Task) *corev1.Pod {
 	hostNetwork := false
-	if *k.config.HostNetwork {
+	if k.config.HostNetwork != nil && *k.config.HostNetwork {
 		hostNetwork = true
 	}
 

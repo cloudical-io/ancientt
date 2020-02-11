@@ -36,3 +36,25 @@ func CastToString(val interface{}) string {
 	}
 	return fmt.Sprintf("%v", val)
 }
+
+// CastNumberToFloat64 cast a number from interface{} to float64
+func CastNumberToFloat64(in interface{}) (float64, error) {
+	switch in.(type) {
+	case float64:
+		return in.(float64), nil
+	case float32:
+		return in.(float64), nil
+	case int:
+		return float64(in.(int)), nil
+	case int8:
+		return float64(in.(int8)), nil
+	case int16:
+		return float64(in.(int16)), nil
+	case int32:
+		return float64(in.(int32)), nil
+	case int64:
+		return float64(in.(int64)), nil
+	default:
+		return 0.0, fmt.Errorf("non number character can't be casted to float64")
+	}
+}

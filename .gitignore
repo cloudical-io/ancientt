@@ -26,6 +26,9 @@ tags
 ## Persistent undo
 [._]*.un~
 
+## Ignore node_modules for mermaid cli
+/node_modules/
+
 # Ancientt project related files
 /ancientt
 /testdefinition.yaml

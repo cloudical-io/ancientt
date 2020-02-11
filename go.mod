@@ -29,9 +29,9 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.3.0
-	github.com/wcharczuk/go-chart v2.0.1+incompatible
+	github.com/wcharczuk/go-chart v2.0.2-0.20190910040548-3a7bc5543113+incompatible
 	golang.org/x/crypto v0.0.0-20190513172903-22d7a77e9e5f // indirect
-	golang.org/x/image v0.0.0-20190703141733-d6a02ce849c9 // indirect
+	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8 // indirect
 	golang.org/x/text v0.3.1 // indirect
 	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect

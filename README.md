@@ -14,7 +14,7 @@ A tool to automate network testing tools, like iperf3, in dynamic environments s
   * Kubernetes (a kubeconfig connected to a cluster)
 * Results of the network tests can be output in different formats:
   * CSV
-  * Dump (uses `pp.Sprint()` ([GitHub k0kubun/pp](https://github.com/k0kubun/pp), dump pretty print library))
+  * Dump (uses `pp.Sprint()` ([GitHub k0kubun/pp](https://github.com/k0kubun/pp), pretty print library))
   * Excel files (Excelize)
   * go-chart Charts (WIP)
   * MySQL
@@ -51,7 +51,7 @@ See [Demos](docs/demos.md).
 
 ### Dependencies
 
-`go mod` is used to manage the depeendencies.
+`go mod` is used to manage the dependencies.
 
 ### Building
 

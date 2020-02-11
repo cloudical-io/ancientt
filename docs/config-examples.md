@@ -26,11 +26,19 @@ runner:
 tests:
 - name: iperf3-one-rand-to-one-rand
   type: iperf3
+  transformations:
+  - source: "bits_per_second"
+    destination: "gigabits_per_second"
+    action: "add"
+    modifier: 100000000
+    modifierAction: "division"
   outputs:
   - name: csv
     csv:
       filePath: .
-      namePattern: 'ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv'
+      namePattern: 'ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}.csv'
+      # If you want one CSV per server and client host test run, you can use the following:
+      #namePattern: 'ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}-{{ .Data.ServerHost }}_{{ .Data.ClientHost }}.csv'
   runOptions:
     continueOnError: true
     # If you wanna do the test(s) more than once in one go, set to higher than 1
@@ -50,6 +58,8 @@ tests:
       all: true
   iperf3:
     udp: false
+    duration: 10
+    interval: 1
     additionalFlags:
       clients: []
       server: []

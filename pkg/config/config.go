@@ -59,7 +59,7 @@ type Hosts struct {
 // Output Output config structure pointing to the other config options for each output
 type Output struct {
 	// Name of this output
-	Name string `yaml:"name"`
+	Name string `yaml:"name" validate:"required,min=3"`
 	// CSV output options
 	CSV *CSV `yaml:"csv"`
 	// GoChart output options
@@ -72,6 +72,8 @@ type Output struct {
 	SQLite *SQLite `yaml:"sqlite"`
 	// MySQL output options
 	MySQL *MySQL `yaml:"mysql"`
+	// Transformations transformations to be applied to the output data for the chosen output
+	Transformations []*Transformation `yaml:"transformations,omitempty"`
 }
 
 // FilePath file path and name pattern for outputs file generation
@@ -80,6 +82,59 @@ type FilePath struct {
 	FilePath string `yaml:"filePath" validate:"required,min=1"`
 	// File name pattern templated from various availables during output generation
 	NamePattern string `yaml:"namePattern" validate:"required,min=1"`
+}
+
+// TransformationAction Transformation action value
+type TransformationAction string
+
+const (
+	// TransformationActionAdd Transformation add action
+	TransformationActionAdd TransformationAction = "add"
+	// TransformationActionReplace Transformation replace action
+	TransformationActionReplace TransformationAction = "replace"
+	// TransformationActionDelete Transformation delete action
+	TransformationActionDelete TransformationAction = "delete"
+)
+
+// IsValidTransformationAction function to check if a TransformationAction is valid
+// ("in range of available transformationactions")
+func IsValidTransformationAction(a TransformationAction) bool {
+	switch a {
+	case TransformationActionAdd:
+	case TransformationActionReplace:
+	case TransformationActionDelete:
+	default:
+		return false
+	}
+	return true
+}
+
+// ModifierAction action to use with a modifier (float64)
+type ModifierAction string
+
+const (
+	// ModifierActionMultiply Modifier multiply action
+	ModifierActionMultiply ModifierAction = "multiply"
+	// ModifierActionDivison Modifier divison action
+	ModifierActionDivison ModifierAction = "division"
+	// ModifierActionAddition Modifier addition action
+	ModifierActionAddition ModifierAction = "addition"
+	// ModifierActionSubstract Modifier substract action
+	ModifierActionSubstract ModifierAction = "substract"
+)
+
+// Transformation data transformation instructions
+type Transformation struct {
+	// Source name of the (data) column to use for the transformation
+	Source string `yaml:"key" validate:"required"`
+	// Action transformation action to use on the Source key
+	Action TransformationAction `yaml:"action" validate:"required,min=3"`
+	// Destination used for the "replace" TransformationAction for targetting the key to overwrite
+	Destination string `yaml:"from,omitempty"`
+	// Modifier value to use in combination with the ModifierAction to modify the values (e.g., settin git to `1000` and ModifierAction to `divison` will divise the value by 1000)
+	Modifier *float64 `yaml:"modifier,omitempty"`
+	// ModifierAction action to run on the values together with the Modifier
+	ModifierAction ModifierAction `yaml:"modifierAction"`
 }
 
 // CSV CSV Output config options
@@ -96,8 +151,22 @@ type GoChart struct {
 	// FilePath struct fields which are inherited by this struct.
 	// The fields of the FilePath struct must be written directly to this struct.
 	FilePath `yaml:",inline"`
-	// Types of charts to produce from the testers output data
-	Types []string `yaml:"types" validate:"required,min=1"`
+	// Graphs definitions of graphs to produce from the testers output data
+	Graphs []*GoChartGraph `yaml:"graphs" validate:"required,min=1"`
+}
+
+// GoChartGraph Type and columns for a one or two Y-axis chart (+ X-axis) to be generated based on this information.
+type GoChartGraph struct {
+	// TimeColumn column with the time / interval to use for the X-axis
+	TimeColumn string `yaml:"timeColumn" validate:"required"`
+	// LeftY name of the column / data column to use for the the left Y axis
+	LeftY string `yaml:"leftY,omitempty"`
+	// RightY name of the column / data column to use for the the right Y axis
+	RightY string `yaml:"rightY" validate:"required"`
+	// WithLinearRegression if a linear regression series should be added to each data series (default: `false`).
+	WithLinearRegression *bool `yaml:"withLinearRegression,omitempty"`
+	// WithSimpleMovingAverage if a simple moving average should be added to each data series(default: `false`).
+	WithSimpleMovingAverage *bool `yaml:"withSimpleMovingAverage,omitempty"`
 }
 
 // Dump Dump Output config options
@@ -243,6 +312,8 @@ type Test struct {
 	RunOptions RunOptions `yaml:"runOptions,omitempty"`
 	// List of Outputs to use for processing data from the testers.
 	Outputs []Output `yaml:"outputs" validate:"required,min=1"`
+	// Transformations transformations to be applied to Output data
+	Transformations []*Transformation `yaml:"transformations,omitempty"`
 	// Hosts selection for client and server
 	Hosts TestHosts `yaml:"hosts"`
 	// IPerf3 test options
@@ -294,10 +365,11 @@ type IPerf3 struct {
 	// Additional flags for client and server
 	AdditionalFlags AdditionalFlags `yaml:"additionalFlags,omitempty"`
 	// Duration Time in seconds the IPerf3 test should transmit / receive (default: `10`).
-	// In case of the Ansible Runner, you need to increase the `taskCommandTimeout` when
-	// increasing the Duration. The `taskCommandTimeout` should then be set to `Duration` + some extra, e.g., 10 seconds.
+	// In case of the Ansible Runner, you need to increase the Ansible runners `timeouts.taskCommandTimeout` option when
+	// increasing the Duration. The Ansible Runner `timeouts.taskCommandTimeout` option should be set to `Duration + some extra time`
+	// (e.g., 10 seconds).
 	Duration *int `yaml:"duration,omitempty" validate:"required,min=1"`
-	// Interval Interval in which IPerf3 will print / return periodic throughput reports (default: `1`).
+	// Interval Interval in seconds which IPerf3 will print / return periodic throughput reports (default: `1`).
 	Interval *int `yaml:"interval,omitempty" validate:"required,min=1"`
 	// If UDP should be used for the IPerf3 test
 	UDP *bool `yaml:"udp,omitempty"`
