@@ -27,6 +27,7 @@ import (
 
 	// Parsers
 	_ "github.com/cloudical-io/ancientt/parsers/iperf3"
+	_ "github.com/cloudical-io/ancientt/parsers/pingparsing"
 
 	// Runners
 	_ "github.com/cloudical-io/ancientt/runners/ansible"
@@ -35,4 +36,5 @@ import (
 
 	// Testers
 	_ "github.com/cloudical-io/ancientt/testers/iperf3"
+	_ "github.com/cloudical-io/ancientt/testers/pingparsing"
 )

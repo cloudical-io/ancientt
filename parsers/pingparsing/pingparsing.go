@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Cloudical Deutschland GmbH. All rights reserved.
+Copyright 2020 Cloudical Deutschland GmbH. All rights reserved.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package iperf3
+package pingparsing
 
 import (
 	"bytes"
@@ -22,36 +22,36 @@ import (
 	"github.com/cloudical-io/ancientt/outputs"
 	"github.com/cloudical-io/ancientt/parsers"
 	"github.com/cloudical-io/ancientt/pkg/config"
-	models "github.com/cloudical-io/ancientt/pkg/models/iperf3"
+	models "github.com/cloudical-io/ancientt/pkg/models/pingparsing"
 	"github.com/cloudical-io/ancientt/pkg/util"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
 
-// NameIPerf3 IPerf3 tester name
-const NameIPerf3 = "iperf3"
+// NamePingParsing PingParsing tester name
+const NamePingParsing = "pingparsing"
 
 func init() {
-	parsers.Factories[NameIPerf3] = NewIPerf3Tester
+	parsers.Factories[NamePingParsing] = NewPingParsingTester
 }
 
-// IPerf3 IPerf3 tester structure
-type IPerf3 struct {
+// PingParsing PingParsing tester structure
+type PingParsing struct {
 	parsers.Parser
 	logger *log.Entry
 	config *config.Test
 }
 
-// NewIPerf3Tester return a new IPerf3 tester instance
-func NewIPerf3Tester(cfg *config.Config, test *config.Test) (parsers.Parser, error) {
-	return IPerf3{
-		logger: log.WithFields(logrus.Fields{"parers": NameIPerf3}),
+// NewPingParsingTester return a new PingParsing tester instance
+func NewPingParsingTester(cfg *config.Config, test *config.Test) (parsers.Parser, error) {
+	return PingParsing{
+		logger: log.WithFields(logrus.Fields{"parers": NamePingParsing}),
 		config: test,
 	}, nil
 }
 
-// Parse parse IPerf3 JSON responses
-func (p IPerf3) Parse(doneCh chan struct{}, inCh <-chan parsers.Input, dataCh chan<- outputs.Data) error {
+// Parse parse PingParsing JSON responses
+func (p PingParsing) Parse(doneCh chan struct{}, inCh <-chan parsers.Input, dataCh chan<- outputs.Data) error {
 	for {
 		select {
 		case <-doneCh:
@@ -72,7 +72,7 @@ func (p IPerf3) Parse(doneCh chan struct{}, inCh <-chan parsers.Input, dataCh ch
 	}
 }
 
-func (p IPerf3) parse(input parsers.Input, dataCh chan<- outputs.Data) error {
+func (p PingParsing) parse(input parsers.Input, dataCh chan<- outputs.Data) error {
 	var logs *bytes.Buffer
 	if input.DataStream != nil {
 		logs = new(bytes.Buffer)
@@ -91,61 +91,69 @@ func (p IPerf3) parse(input parsers.Input, dataCh chan<- outputs.Data) error {
 	}
 
 	// Parse JSON response
-	result := &models.ClientResult{}
-	if err := json.Unmarshal(logs.Bytes(), result); err != nil {
+	results := models.ClientResults{}
+	if err := json.Unmarshal(logs.Bytes(), &results); err != nil {
 		return err
 	}
 
-	intervalTable := outputs.Table{
+	table := outputs.Table{
 		Headers: []*outputs.Row{
 			&outputs.Row{Value: "test_time"},
 			&outputs.Row{Value: "round"},
 			&outputs.Row{Value: "tester"},
 			&outputs.Row{Value: "server_host"},
 			&outputs.Row{Value: "client_host"},
-			&outputs.Row{Value: "socket"},
-			&outputs.Row{Value: "start"},
-			&outputs.Row{Value: "end"},
-			&outputs.Row{Value: "seconds"},
-			&outputs.Row{Value: "bytes"},
-			&outputs.Row{Value: "bits_per_second"},
-			&outputs.Row{Value: "retransmits"},
-			&outputs.Row{Value: "snd_cwnd"},
-			&outputs.Row{Value: "rtt"},
-			&outputs.Row{Value: "rttvar"},
-			&outputs.Row{Value: "pmtu"},
-			&outputs.Row{Value: "omitted"},
-			&outputs.Row{Value: "iperf3_version"},
-			&outputs.Row{Value: "system_info"},
+			&outputs.Row{Value: "target"},
+			&outputs.Row{Value: "destination"},
+			&outputs.Row{Value: "packet_transmit"},
+			&outputs.Row{Value: "packet_receive"},
+			&outputs.Row{Value: "packet_loss_rate"},
+			&outputs.Row{Value: "packet_loss_count"},
+			&outputs.Row{Value: "rtt_min"},
+			&outputs.Row{Value: "rtt_avg"},
+			&outputs.Row{Value: "rtt_max"},
+			&outputs.Row{Value: "rtt_mdev"},
+			&outputs.Row{Value: "packet_duplicate_rate"},
+			&outputs.Row{Value: "packet_duplicate_count"},
+			&outputs.Row{Value: "timestamp"},
+			&outputs.Row{Value: "icmp_seq"},
+			&outputs.Row{Value: "ttl"},
+			&outputs.Row{Value: "time"},
+			&outputs.Row{Value: "duplicate"},
 			&outputs.Row{Value: "additional_info"},
 		},
 		Rows: [][]*outputs.Row{},
 	}
 
-	for _, interval := range result.Intervals {
-		for _, stream := range interval.Streams {
-			intervalTable.Rows = append(intervalTable.Rows, []*outputs.Row{
-				&outputs.Row{Value: input.TestTime.Format(util.TimeDateFormat)},
-				&outputs.Row{Value: input.Round},
-				&outputs.Row{Value: input.Tester},
-				&outputs.Row{Value: input.ServerHost},
-				&outputs.Row{Value: input.ClientHost},
-				&outputs.Row{Value: stream.Socket},
-				&outputs.Row{Value: stream.Start},
-				&outputs.Row{Value: stream.End},
-				&outputs.Row{Value: stream.Seconds},
-				&outputs.Row{Value: stream.Bytes},
-				&outputs.Row{Value: stream.BitsPerSecond},
-				&outputs.Row{Value: stream.Retransmits},
-				&outputs.Row{Value: stream.SndCwnd},
-				&outputs.Row{Value: stream.RTT},
-				&outputs.Row{Value: stream.RTTVar},
-				&outputs.Row{Value: stream.PMTU},
-				&outputs.Row{Value: stream.Omitted},
-				&outputs.Row{Value: result.Start.Version},
-				&outputs.Row{Value: result.Start.SystemInfo},
+	for name, r := range results {
+		base := []*outputs.Row{
+			&outputs.Row{Value: input.TestTime.Format(util.TimeDateFormat)},
+			&outputs.Row{Value: input.Round},
+			&outputs.Row{Value: input.Tester},
+			&outputs.Row{Value: input.ServerHost},
+			&outputs.Row{Value: input.ClientHost},
+			&outputs.Row{Value: name},
+			&outputs.Row{Value: r.Destination},
+			&outputs.Row{Value: r.PacketTransmit},
+			&outputs.Row{Value: r.PacketReceive},
+			&outputs.Row{Value: r.PacketLossRate},
+			&outputs.Row{Value: r.PacketLossCount},
+			&outputs.Row{Value: r.RTTMin},
+			&outputs.Row{Value: r.RTTAvg},
+			&outputs.Row{Value: r.RTTMax},
+			&outputs.Row{Value: r.RTTMDev},
+			&outputs.Row{Value: r.PacketDuplicateRate},
+			&outputs.Row{Value: r.PacketDuplicateCount},
+		}
+		for _, e := range r.ICMPReplies {
+			table.Rows = append(table.Rows, append(base, []*outputs.Row{
+				&outputs.Row{Value: e.Timestamp},
+				&outputs.Row{Value: e.ICMPSeq},
+				&outputs.Row{Value: e.TTL},
+				&outputs.Row{Value: e.Time},
+				&outputs.Row{Value: e.Duplicate},
 				&outputs.Row{Value: input.AdditionalInfo},
-			})
+			}...))
 		}
 	}
 
@@ -159,7 +167,7 @@ func (p IPerf3) parse(input parsers.Input, dataCh chan<- outputs.Data) error {
 		ServerHost:     input.ServerHost,
 		ClientHost:     input.ClientHost,
 		Tester:         input.Tester,
-		Data:           intervalTable,
+		Data:           table,
 	}
 
 	p.logger.Debug("sending parsed data to dataCh")

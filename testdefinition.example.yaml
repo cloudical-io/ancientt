@@ -3,7 +3,7 @@ runner:
   name: kubernetes
   kubernetes:
     #kubeconfig: .kube/config
-    image: 'quay.io/galexrt/container-toolbox:latest'
+    image: 'quay.io/galexrt/container-toolbox:v20200211-232657-672'
     namespace: ancientt
     timeouts:
       deleteTimeout: 20

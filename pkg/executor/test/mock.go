@@ -29,6 +29,9 @@ type MockExecutor struct {
 	MockExecuteCommand               func(ctx context.Context, actionName string, command string, arg ...string) error
 	MockExecuteCommandWithOutput     func(ctx context.Context, actionName string, command string, arg ...string) (string, error)
 	MockExecuteCommandWithOutputByte func(ctx context.Context, actionName string, command string, arg ...string) ([]byte, error)
+	MockSetEnv                       func(e []string)
+
+	env []string
 }
 
 // ExecuteCommand execute a given command with its arguments but don't return any output
@@ -75,4 +78,15 @@ func (ce MockExecutor) ExecuteCommandWithOutputByte(ctx context.Context, actionN
 	log.WithField("action", actionName).Debug(string(out))
 
 	return out, nil
+}
+
+// SetEnv set env for command execution
+func (ce MockExecutor) SetEnv(e []string) {
+	log.WithField("action", "setEnv()").Debugf("%+v", ce.env)
+	if ce.MockSetEnv != nil {
+		ce.MockSetEnv(e)
+		return
+	}
+
+	ce.env = e
 }

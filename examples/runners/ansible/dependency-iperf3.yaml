@@ -1,8 +1,8 @@
 ---
 - hosts: all
   remote_user: root
-  tasks: 
-    - name: install dependencies for ACNTT
+  tasks:
+    - name: Install dependencies for Ancientt
       package: 
         name: "{{ item }}"
         state: present 

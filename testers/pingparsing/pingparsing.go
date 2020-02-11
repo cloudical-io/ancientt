@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Cloudical Deutschland GmbH. All rights reserved.
+Copyright 2020 Cloudical Deutschland GmbH. All rights reserved.
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package iperf3
+package pingparsing
 
 import (
 	"fmt"
@@ -22,51 +22,40 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// NameIPerf3 IPerf3 tester name
-const NameIPerf3 = "iperf3"
+// NamePingParsing PingParsing tester name
+const NamePingParsing = "pingparsing"
 
 func init() {
-	testers.Factories[NameIPerf3] = NewIPerf3Tester
+	testers.Factories[NamePingParsing] = NewPingParsingTester
 }
 
-// IPerf3 IPerf3 tester structure
-type IPerf3 struct {
+// PingParsing PingParsing tester structure
+type PingParsing struct {
 	testers.Tester
 	logger *log.Entry
-	config *config.IPerf3
+	config *config.PingParsing
 }
 
-// NewIPerf3Tester return a new IPerf3 tester instance
-func NewIPerf3Tester(cfg *config.Config, test *config.Test) (testers.Tester, error) {
+// NewPingParsingTester return a new PingParsing tester instance
+func NewPingParsingTester(cfg *config.Config, test *config.Test) (testers.Tester, error) {
 	if test == nil {
 		test = &config.Test{
-			IPerf3: &config.IPerf3{},
+			PingParsing: &config.PingParsing{},
 		}
 	}
 
-	return IPerf3{
-		logger: log.WithFields(logrus.Fields{"tester": NameIPerf3}),
-		config: test.IPerf3,
+	return PingParsing{
+		logger: log.WithFields(logrus.Fields{"tester": NamePingParsing}),
+		config: test.PingParsing,
 	}, nil
 }
 
-// Plan return a plan to run IPerf3 from the given config.Test and Environment information (hosts)
-func (t IPerf3) Plan(env *testers.Environment, test *config.Test) (*testers.Plan, error) {
+// Plan
+func (t PingParsing) Plan(env *testers.Environment, test *config.Test) (*testers.Plan, error) {
 	plan := &testers.Plan{
 		Tester:          test.Type,
 		AffectedServers: map[string]*testers.Host{},
 		Commands:        make([][]*testers.Task, test.RunOptions.Rounds),
-	}
-
-	var ports testers.Ports
-	if t.config.UDP != nil && *t.config.UDP {
-		ports = testers.Ports{
-			UDP: []int32{5601},
-		}
-	} else {
-		ports = testers.Ports{
-			TCP: []int32{5601},
-		}
 	}
 
 	for i := 0; i < test.RunOptions.Rounds; i++ {
@@ -89,10 +78,11 @@ func (t IPerf3) Plan(env *testers.Environment, test *config.Test) (*testers.Plan
 				plan.AffectedServers[server.Name] = server
 			}
 
-			// Set the server that will run the iperf3 server in the "main" command
+			// Setting a server is not really needed, but we set it to `sleep 99999`
+			// for compatibility with Runners such as Kubernetes where the IP is only
+			// available when a Server Pod is running
 			round.Host = server
-			round.Command, round.Args = t.buildIPerf3ServerCommand(server)
-			round.Ports = ports
+			round.Command, round.Args = t.buildPingParsingServerCommand(server)
 
 			// Now go over each client and generate their Task
 			for _, client := range env.Hosts.Clients {
@@ -101,13 +91,12 @@ func (t IPerf3) Plan(env *testers.Environment, test *config.Test) (*testers.Plan
 					plan.AffectedServers[client.Name] = client
 				}
 
-				// Build the IPerf3 command
-				cmd, args := t.buildIPerf3ClientCommand(server, client)
+				// Build the PingParsing command
+				cmd, args := t.buildPingParsingClientCommand(server, client)
 				round.SubTasks = append(round.SubTasks, &testers.Task{
 					Host:    client,
 					Command: cmd,
 					Args:    args,
-					Ports:   ports,
 				})
 			}
 			plan.Commands[i] = append(plan.Commands[i], round)
@@ -124,46 +113,24 @@ func (t IPerf3) Plan(env *testers.Environment, test *config.Test) (*testers.Plan
 	return plan, nil
 }
 
-// buildIPerf3ServerCommand generate IPer3 server command
-func (t IPerf3) buildIPerf3ServerCommand(server *testers.Host) (string, []string) {
-	// Base command and args
-	cmd := "iperf3"
-	args := []string{
-		"--json",
-		"--port={{ .ServerPort }}",
-		"--server",
-	}
-
-	// Add --udp flag when UDP should be used
-	if t.config.UDP != nil && *t.config.UDP {
-		args = append(args, "--udp")
-	}
-
-	// Append additional server flags to args array
-	args = append(args, t.config.AdditionalFlags.Server...)
-
-	return cmd, args
+// buildPingParsingServerCommand
+func (t PingParsing) buildPingParsingServerCommand(server *testers.Host) (string, []string) {
+	return "sleep", []string{"9999999"}
 }
 
-// buildIPerf3ClientCommand generate IPer3 client command
-func (t IPerf3) buildIPerf3ClientCommand(server *testers.Host, client *testers.Host) (string, []string) {
+// buildPingParsingClientCommand
+func (t PingParsing) buildPingParsingClientCommand(server *testers.Host, client *testers.Host) (string, []string) {
 	// Base command and args
-	cmd := "iperf3"
+	cmd := "pingparsing"
 	args := []string{
-		fmt.Sprintf("--time=%d", *t.config.Duration),
-		fmt.Sprintf("--interval=%d", *t.config.Interval),
-		"--json",
-		"--port={{ .ServerPort }}",
-		"--client={{ .ServerAddressV4 }}",
+		"--icmp-reply",
+		"--timestamp=datetime",
+		fmt.Sprintf("-c=%d", *t.config.Count),
+		fmt.Sprintf("-w=%s", *t.config.Deadline),
+		fmt.Sprintf("--timeout=%s", *t.config.Timeout),
+		fmt.Sprintf("-I=%s", t.config.Interface),
+		"{{ .ServerAddressV4 }}",
 	}
-
-	// Add --udp flag when UDP should be used
-	if t.config.UDP != nil && *t.config.UDP {
-		args = append(args, "--udp")
-	}
-
-	// Append additional client flags to args array
-	args = append(args, t.config.AdditionalFlags.Clients...)
 
 	return cmd, args
 }

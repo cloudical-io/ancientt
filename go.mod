@@ -5,11 +5,12 @@ go 1.13
 require (
 	github.com/360EntSecGroup-Skylar/excelize/v2 v2.0.1
 	github.com/DATA-DOG/go-sqlmock v1.3.3
+	github.com/aws/aws-sdk-go v1.29.0
 	github.com/blend/go-sdk v2.0.0+incompatible // indirect
 	github.com/creasty/defaults v1.3.0
 	github.com/go-playground/locales v0.12.1 // indirect
 	github.com/go-playground/universal-translator v0.16.0 // indirect
-	github.com/go-sql-driver/mysql v1.4.1
+	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/googleapis/gnostic v0.1.0 // indirect
@@ -28,7 +29,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.3.2
-	github.com/stretchr/testify v1.3.0
+	github.com/stretchr/testify v1.4.0
 	github.com/wcharczuk/go-chart v2.0.2-0.20190910040548-3a7bc5543113+incompatible
 	golang.org/x/crypto v0.0.0-20190513172903-22d7a77e9e5f // indirect
 	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8 // indirect
