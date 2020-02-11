@@ -316,8 +316,10 @@ type Test struct {
 	Transformations []*Transformation `yaml:"transformations,omitempty"`
 	// Hosts selection for client and server
 	Hosts TestHosts `yaml:"hosts"`
-	// IPerf3 test options
+	// IPerf3 tester options
 	IPerf3 *IPerf3 `yaml:"iperf3"`
+	// PingParsing tester options
+	PingParsing *PingParsing `yaml:"pingParsing"`
 }
 
 // RunMode custom run mode const type for
@@ -373,4 +375,25 @@ type IPerf3 struct {
 	Interval *int `yaml:"interval,omitempty" validate:"required,min=1"`
 	// If UDP should be used for the IPerf3 test
 	UDP *bool `yaml:"udp,omitempty"`
+}
+
+// PingParsing PingParsing config structure for testers.Tester config
+type PingParsing struct {
+	// Count How many pings should be sent (default: `10`)
+	Count *int `yaml:"count"  validate:"required,min=1"`
+	// Deadline Quote from pingparsing help output:
+	// "Timeout before ping exits. valid time units are: d/day/days, h/hour/hours, m/min/mins/minute/minutes, s/sec/secs/second/seconds, ms/msec/msecs/millisecond/milliseconds,
+	// us/usec/usecs/microsecond/microseconds. if no unit string found, considered seconds as the time unit. see also ping(8) [-w deadline] option description. note: meaning of the
+	// 'deadline' may differ system to system."
+	// (default: `15s`)
+	Deadline *time.Duration `yaml:"deadline,omitempty"`
+	// Timeout Quote from the pingparsing help output:
+	// "Time to wait for a response per packet. Valid time units are: d/day/days, h/hour/hours, m/min/mins/minute/minutes, s/sec/secs/second/seconds,
+	// ms/msec/msecs/millisecond/milliseconds, us/usec/usecs/microsecond/microseconds. if no unit string found, considered milliseconds as the time unit. Attempt to send packets with
+	// milliseconds granularity in default. If the system does not support timeout in milliseconds, round up as seconds. Use system default if not specified. This option will be
+	// ignored if the system does not support timeout itself. See also ping(8) [-W timeout] option description. note: meaning of the 'timeout' may differ system to system."
+	// (default: `10s`)
+	Timeout *time.Duration `yaml:"timeout,omitempty"`
+	// Interface network interface to use for sending the pings.
+	Interface string `yaml:"interface,omitempty"`
 }

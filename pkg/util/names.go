@@ -14,7 +14,6 @@ limitations under the License.
 package util
 
 import (
-	"crypto/sha1"
 	"fmt"
 	"time"
 )
@@ -31,9 +30,8 @@ const (
 
 // GetPNameFromTask get a "persistent" name for a task
 // This is done by calculating the checksums of the used names.
-func GetPNameFromTask(round int, hostname string, command string, args []string, role PNameRole) string {
-	data := fmt.Sprintf("%d-%s-%s", round, hostname, args)
-	return fmt.Sprintf("ancientt-%s-%s-%x", role, command, sha1.Sum([]byte(data)))
+func GetPNameFromTask(round int, hostname string, command string, role PNameRole, testStartTime time.Time) string {
+	return fmt.Sprintf("ancientt-%s-%s-%d", role, command, testStartTime.UnixNano())
 }
 
 // GetTaskName get a task name

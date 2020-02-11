@@ -13,6 +13,12 @@ runner:
 tests:
 - name: iperf3-all-to-all
   type: iperf3
+  transformations:
+  - source: "bits_per_second"
+    destination: "gigabits_per_second"
+    action: "add"
+    modifier: 100000000
+    modifierAction: "division"
   outputs:
   - name: gochart
     goChart:

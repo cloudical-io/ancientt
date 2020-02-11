@@ -23,6 +23,7 @@ This Document documents the types introduced by Ancientt for configuration to be
 * [KubernetesTimeouts](#kubernetestimeouts)
 * [MySQL](#mysql)
 * [Output](#output)
+* [PingParsing](#pingparsing)
 * [RunOptions](#runoptions)
 * [Runner](#runner)
 * [RunnerAnsible](#runneransible)
@@ -234,6 +235,19 @@ Output Output config structure pointing to the other config options for each out
 
 [Back to TOC](#table-of-contents)
 
+## PingParsing
+
+PingParsing PingParsing config structure for testers.Tester config
+
+| Field | Description | Scheme | Required | Validation |
+| ----- | ----------- | ------ | -------- | ---------- |
+| count | Count How many pings should be sent (default: `10`) | *int | true | required,min=1 |
+| deadline | Deadline Quote from pingparsing help output: \"Timeout before ping exits. valid time units are: d/day/days, h/hour/hours, m/min/mins/minute/minutes, s/sec/secs/second/seconds, ms/msec/msecs/millisecond/milliseconds, us/usec/usecs/microsecond/microseconds. if no unit string found, considered seconds as the time unit. see also ping(8) [-w deadline] option description. note: meaning of the 'deadline' may differ system to system.\" (default: `15s`) | *time.Duration | false |  |
+| timeout | Timeout Quote from the pingparsing help output: \"Time to wait for a response per packet. Valid time units are: d/day/days, h/hour/hours, m/min/mins/minute/minutes, s/sec/secs/second/seconds, ms/msec/msecs/millisecond/milliseconds, us/usec/usecs/microsecond/microseconds. if no unit string found, considered milliseconds as the time unit. Attempt to send packets with milliseconds granularity in default. If the system does not support timeout in milliseconds, round up as seconds. Use system default if not specified. This option will be ignored if the system does not support timeout itself. See also ping(8) [-W timeout] option description. note: meaning of the 'timeout' may differ system to system.\" (default: `10s`) | *time.Duration | false |  |
+| interface | Interface network interface to use for sending the pings. | string | false |  |
+
+[Back to TOC](#table-of-contents)
+
 ## RunOptions
 
 RunOptions options for running the tasks
@@ -326,7 +340,8 @@ Test Config options for each Test
 | outputs | List of Outputs to use for processing data from the testers. | [][Output](#output) | true | required,min=1 |
 | transformations | Transformations transformations to be applied to Output data | []*[Transformation](#transformation) | false |  |
 | hosts | Hosts selection for client and server | [TestHosts](#testhosts) | true |  |
-| iperf3 | IPerf3 test options | *[IPerf3](#iperf3) | true |  |
+| iperf3 | IPerf3 tester options | *[IPerf3](#iperf3) | true |  |
+| pingParsing | PingParsing tester options | *[PingParsing](#pingparsing) | true |  |
 
 [Back to TOC](#table-of-contents)
 

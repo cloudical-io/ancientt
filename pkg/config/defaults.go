@@ -123,7 +123,7 @@ func (c *RunOptions) SetDefaults() {
 	}
 }
 
-// SetDefaults set defaults config part
+// SetDefaults set defaults on config part
 func (c *IPerf3) SetDefaults() {
 	if c.Duration == nil {
 		defValue := 10
@@ -137,6 +137,24 @@ func (c *IPerf3) SetDefaults() {
 
 	if c.UDP == nil {
 		c.UDP = util.BoolFalsePointer()
+	}
+}
+
+// SetDefaults set defaults on config part
+func (c *PingParsing) SetDefaults() {
+	if c.Count == nil {
+		defValue := 10
+		c.Count = &defValue
+	}
+
+	if c.Deadline == nil {
+		defValue := 15 * time.Second
+		c.Deadline = &defValue
+	}
+
+	if c.Timeout == nil {
+		defValue := 10 * time.Second
+		c.Timeout = &defValue
 	}
 }
 

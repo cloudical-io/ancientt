@@ -6,7 +6,7 @@ COPY . .
 RUN go get -v ./... && \
     go install -v ./...
 
-FROM galexrt/container-toolbox:v20200211
+FROM galexrt/container-toolbox:v20200211-232657-672
 LABEL maintainer="Alexander Trost <galexrt@googlemail.com> and Michal Janus <michal.janus@cloudical.io>"
 
 COPY --from=go-build /go/bin/app /bin/ancientt

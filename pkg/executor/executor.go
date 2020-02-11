@@ -29,12 +29,14 @@ type Executor interface {
 	ExecuteCommand(ctx context.Context, actionName string, command string, arg ...string) error
 	ExecuteCommandWithOutput(ctx context.Context, actionName string, command string, arg ...string) (string, error)
 	ExecuteCommandWithOutputByte(ctx context.Context, actionName string, command string, arg ...string) ([]byte, error)
+	SetEnv([]string)
 }
 
 // CommandExecutor Executor implementation
 type CommandExecutor struct {
 	Executor
 	logger *log.Entry
+	env    []string
 }
 
 // NewCommandExecutor create and return a new CommandExecutor
@@ -95,4 +97,9 @@ func (ce CommandExecutor) ExecuteCommandWithOutputByte(ctx context.Context, acti
 	}
 
 	return out, nil
+}
+
+// SetEnv set env for command execution
+func (ce CommandExecutor) SetEnv(e []string) {
+	ce.env = e
 }

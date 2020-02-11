@@ -29,3 +29,8 @@ func BoolFalsePointer() *bool {
 func FloatPointer(in float64) *float64 {
 	return &in
 }
+
+// Int64Pointer return a pointer to a given int64
+func Int64Pointer(in int64) *int64 {
+	return &in
+}
