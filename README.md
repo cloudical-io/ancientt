@@ -7,8 +7,9 @@ A tool to automate network testing tools, like iperf3, in dynamic environments s
 **TL;DR** A network test tool, like `iperf3` can be run in, e.g., Kubernetes, cluster from all-to-all Nodes.
 
 * Run network tests with the following projects:
-  * `iperf3`
-  * Soon other tools will be available as well, like `smokeping`.
+  * [`iperf3`](https://iperf.fr/)
+  * [PingParsing](https://github.com/thombashi/pingparsing)
+  * Soon more tools will be available as well, see [GitHub Issues with "testers" Label](https://github.com/cloudical-io/ancientt/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+label%3Atesters+).
 * Tests can be run through the following "runners":
   * Ansible (an inventory file is needed)
   * Kubernetes (a kubeconfig connected to a cluster)
@@ -29,8 +30,10 @@ A config file containing test definitions must be given by flag `--testdefinitio
 Below command will try loading `your-testdefinitions.yaml` as the test definitions config:
 
 ```shell
-# You can also use the short flag `-c
 ancientt --testdefinition your-testdefinitions.yaml
+# You can also use the short flag `-c` instead of `--testdefinition`
+# and also with `-y` run the tests immediately
+ancientt -c your-testdefinitions.yaml -y
 ```
 
 ## Demos
@@ -47,7 +50,7 @@ See [Demos](docs/demos.md).
 
 ## Development
 
-**Golang version**: `v1.13` or higher (tested with `v1.13.3` on `linux/amd64`)
+**Golang version**: `v1.13` or higher (tested with `v1.13.6` on `linux/amd64`)
 
 ### Dependencies
 
