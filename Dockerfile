@@ -1,4 +1,4 @@
-FROM golang:1.13.0-buster AS go-build
+FROM golang:1.15.2-buster AS go-build
 
 WORKDIR /go/src/app
 COPY . .
@@ -6,8 +6,8 @@ COPY . .
 RUN go get -v ./... && \
     go install -v ./...
 
-FROM galexrt/container-toolbox:v20200211-232657-672
-LABEL maintainer="Alexander Trost <galexrt@googlemail.com> and Michal Janus <michal.janus@cloudical.io>"
+FROM galexrt/container-toolbox:v20201001-123802-585
+LABEL maintainer="Alexander Trost <galexrt@googlemail.com>"
 
 COPY --from=go-build /go/bin/app /bin/ancientt
 
