@@ -14,6 +14,7 @@ limitations under the License.
 package kubernetes
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -111,7 +112,8 @@ func (k *Kubernetes) GetHostsForTest(test *config.Test) (*testers.Hosts, error) 
 
 func (k *Kubernetes) k8sNodesToHosts() ([]*testers.Host, error) {
 	hosts := []*testers.Host{}
-	nodes, err := k.k8sclient.CoreV1().Nodes().List(metav1.ListOptions{})
+	ctx := context.TODO()
+	nodes, err := k.k8sclient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +187,8 @@ func (k *Kubernetes) Execute(plan *testers.Plan, parser chan<- parsers.Input) er
 // prepareKubernetes prepares Kubernetes by creating the namespace if it does not exist
 func (k *Kubernetes) prepareKubernetes() error {
 	// Check if namespaces exists, if not try create it
-	if _, err := k.k8sclient.CoreV1().Namespaces().Get(k.config.Namespace, metav1.GetOptions{}); err != nil {
+	ctx := context.TODO()
+	if _, err := k.k8sclient.CoreV1().Namespaces().Get(ctx, k.config.Namespace, metav1.GetOptions{}); err != nil {
 		// If namespace not found, create it
 		if errors.IsNotFound(err) {
 			ns := &corev1.Namespace{
@@ -197,7 +200,8 @@ func (k *Kubernetes) prepareKubernetes() error {
 				},
 			}
 			k.logger.Info("trying to create namespace")
-			if _, err := k.k8sclient.CoreV1().Namespaces().Create(ns); err != nil {
+			ctx := context.TODO()
+			if _, err := k.k8sclient.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{}); err != nil {
 				return fmt.Errorf("failed to create namespace %s. %+v", k.config.Namespace, err)
 			}
 			k.logger.Info("created namespace")
@@ -258,7 +262,8 @@ func (k *Kubernetes) createPodsForTasks(round int, mainTask *testers.Task, plan 
 	}
 
 	// Get server Pod to have the server IP for each client task
-	pod, err = k.k8sclient.CoreV1().Pods(k.config.Namespace).Get(serverPodName, metav1.GetOptions{})
+	ctx := context.TODO()
+	pod, err = k.k8sclient.CoreV1().Pods(k.config.Namespace).Get(ctx, serverPodName, metav1.GetOptions{})
 	if err != nil {
 		erro := fmt.Errorf("failed to get server pod %s/%s. %+v", k.config.Namespace, serverPodName, err)
 		k.logger.Error(erro)
@@ -375,7 +380,8 @@ func (k *Kubernetes) pushLogsToParser(parserInput chan<- parsers.Input, plannedT
 		req := k.k8sclient.CoreV1().Pods(k.config.Namespace).GetLogs(podName, &corev1.PodLogOptions{})
 
 		// Start the log stream
-		podLogs, err := req.Stream()
+		ctx := context.TODO()
+		podLogs, err := req.Stream(ctx)
 		if err != nil {
 			return err
 		}

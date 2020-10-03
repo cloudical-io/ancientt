@@ -14,6 +14,7 @@ limitations under the License.
 package k8sutil
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -33,7 +34,8 @@ func PodRecreate(k8sclient kubernetes.Interface, pod *corev1.Pod, delTimeout int
 	}
 
 	// Create Pod again
-	if _, err := k8sclient.CoreV1().Pods(pod.ObjectMeta.Namespace).Create(pod); err != nil {
+	ctx := context.TODO()
+	if _, err := k8sclient.CoreV1().Pods(pod.ObjectMeta.Namespace).Create(ctx, pod, metav1.CreateOptions{}); err != nil {
 		if !errors.IsAlreadyExists(err) {
 			return err
 		}
@@ -48,7 +50,8 @@ func PodDelete(k8sclient kubernetes.Interface, pod *corev1.Pod, timeout int) err
 	podName := pod.ObjectMeta.Name
 
 	// Delete Pod
-	if err := k8sclient.CoreV1().Pods(namespace).Delete(podName, &metav1.DeleteOptions{}); err != nil {
+	ctx := context.TODO()
+	if err := k8sclient.CoreV1().Pods(namespace).Delete(ctx, podName, metav1.DeleteOptions{}); err != nil {
 		if errors.IsNotFound(err) {
 			return nil
 		}
@@ -57,7 +60,8 @@ func PodDelete(k8sclient kubernetes.Interface, pod *corev1.Pod, timeout int) err
 
 	for i := 0; i < timeout; i++ {
 		// Check if Pod still exists
-		if _, err := k8sclient.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{}); err != nil {
+		ctx := context.TODO()
+		if _, err := k8sclient.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{}); err != nil {
 			if errors.IsNotFound(err) {
 				return nil
 			}
@@ -84,7 +88,8 @@ func PodDeleteByName(k8sclient kubernetes.Interface, namespace string, podName s
 func PodDeleteByLabels(k8sclient kubernetes.Interface, namespace string, selectorLabels map[string]string) error {
 	set := labels.Set(selectorLabels)
 
-	pods, err := k8sclient.CoreV1().Pods(namespace).List(metav1.ListOptions{
+	ctx := context.TODO()
+	pods, err := k8sclient.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: set.AsSelector().String(),
 	})
 	if err != nil {
@@ -100,7 +105,8 @@ func PodDeleteByLabels(k8sclient kubernetes.Interface, namespace string, selecto
 
 	for _, pod := range pods.Items {
 		// Delete Pods by labels
-		if err := k8sclient.CoreV1().Pods(namespace).Delete(pod.ObjectMeta.Name, &metav1.DeleteOptions{}); err != nil {
+		ctx := context.TODO()
+		if err := k8sclient.CoreV1().Pods(namespace).Delete(ctx, pod.ObjectMeta.Name, metav1.DeleteOptions{}); err != nil {
 			if errors.IsNotFound(err) {
 				return nil
 			}
@@ -113,7 +119,8 @@ func PodDeleteByLabels(k8sclient kubernetes.Interface, namespace string, selecto
 // WaitForPodToRun wait for a Pod to be in phase Running. In case of phase Running, return true and no error
 func WaitForPodToRun(k8sclient kubernetes.Interface, namespace string, podName string, timeout int) (bool, error) {
 	for i := 0; i < timeout; i++ {
-		pod, err := k8sclient.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
+		ctx := context.TODO()
+		pod, err := k8sclient.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
 		if err != nil {
 			if !errors.IsAlreadyExists(err) {
 				return false, err
@@ -132,7 +139,8 @@ func WaitForPodToRun(k8sclient kubernetes.Interface, namespace string, podName s
 // WaitForPodToSucceed wait for a Pod to be in phase Succeeded. In case of phase Succeeded, return true and no error
 func WaitForPodToSucceed(k8sclient kubernetes.Interface, namespace string, podName string, timeout int) (bool, error) {
 	for i := 0; i < timeout; i++ {
-		pod, err := k8sclient.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
+		ctx := context.TODO()
+		pod, err := k8sclient.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}
@@ -149,7 +157,8 @@ func WaitForPodToSucceed(k8sclient kubernetes.Interface, namespace string, podNa
 // WaitForPodToRunOrSucceed wait for a Pod to be in phase Running or Succeeded. In case of one of the phases, return true and no error
 func WaitForPodToRunOrSucceed(k8sclient kubernetes.Interface, namespace string, podName string, timeout int) (bool, error) {
 	for i := 0; i < timeout; i++ {
-		pod, err := k8sclient.CoreV1().Pods(namespace).Get(podName, metav1.GetOptions{})
+		ctx := context.TODO()
+		pod, err := k8sclient.CoreV1().Pods(namespace).Get(ctx, podName, metav1.GetOptions{})
 		if err != nil {
 			return false, err
 		}

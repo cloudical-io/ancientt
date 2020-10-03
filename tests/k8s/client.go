@@ -14,6 +14,7 @@ limitations under the License.
 package k8s
 
 import (
+	"context"
 	"fmt"
 
 	v1 "k8s.io/api/core/v1"
@@ -44,9 +45,10 @@ func NewClient(nodes int) (*fake.Clientset, error) {
 				},
 			},
 		}
-		_, err := clientset.CoreV1().Nodes().Create(n)
+		ctx := context.TODO()
+		_, err := clientset.CoreV1().Nodes().Create(ctx, n, metav1.CreateOptions{})
 		if err != nil {
-			// Something is definitely wrong in the fakce cleint
+			// Something is definitely wrong in the fake client
 			return nil, err
 		}
 	}
