@@ -34,7 +34,7 @@ func (c *RunnerKubernetes) SetDefaults() {
 	}
 
 	if c.Image == "" {
-		c.Image = "quay.io/galexrt/container-toolbox:latest"
+		c.Image = "quay.io/galexrt/container-toolbox:20210915-100515-297"
 	}
 
 	if c.Namespace == "" {
