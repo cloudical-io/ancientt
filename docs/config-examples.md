@@ -14,7 +14,7 @@ runner:
   kubernetes:
     # Assuming you are in your home directory
     kubeconfig: .kube/config
-    image: quay.io/galexrt/container-toolbox
+    image: quay.io/galexrt/container-toolbox:20210915-100515-297
     namespace: ancientt
     timeouts:
       deleteTimeout: 20

@@ -299,7 +299,7 @@ RunnerKubernetes Kubernetes Runner config options
 | ----- | ----------- | ------ | -------- | ---------- |
 | inClusterConfig | If the Kubernetes client should use the in-cluster config for the cluster communication | bool | true |  |
 | kubeconfig | Path to your kubeconfig file, if not set the following order will be tried out, `KUBECONFIG` and `$HOME/.kube/config` | string | false |  |
-| image | The image used for the spawned Pods for the tests (default: `quay.io/galexrt/container-toolbox`) | string | false |  |
+| image | The image used for the spawned Pods for the tests (default: `quay.io/galexrt/container-toolbox:20210915-100515-297`) | string | false |  |
 | namespace | Namespace to execute the tests in | string | true | max=63 |
 | hostNetwork | If `hostNetwork` mode should be used for the test Pods | *bool | false |  |
 | timeouts | Timeout settings for operations against the Kubernetes API | *[KubernetesTimeouts](#kubernetestimeouts) | false |  |
