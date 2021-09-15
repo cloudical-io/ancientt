@@ -222,7 +222,7 @@ type RunnerKubernetes struct {
 	InClusterConfig bool `yaml:"inClusterConfig"`
 	// Path to your kubeconfig file, if not set the following order will be tried out, `KUBECONFIG` and `$HOME/.kube/config`
 	Kubeconfig string `yaml:"kubeconfig,omitempty"`
-	// The image used for the spawned Pods for the tests (default: `quay.io/galexrt/container-toolbox:20210915-100515-297`)
+	// The image used for the spawned Pods for the tests (default: `quay.io/galexrt/container-toolbox:v20210915-101121-713`)
 	Image string `yaml:"image,omitempty"`
 	// Namespace to execute the tests in
 	Namespace string `yaml:"namespace" validate:"max=63"`
