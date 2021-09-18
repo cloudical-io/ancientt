@@ -2,6 +2,15 @@
 
 A tool to automate network testing tools, like iperf3, in dynamic environments such as Kubernetes and more to come dynamic environments.
 
+Container Image available from:
+
+* [GHCR.io](https://github.com/users/cloudical-io/packages/container/package/ancientt)
+
+Container Image Tags:
+
+* `main` - Latest build of the `main` branch.
+* `vx.y.z` - Tagged build of the application.
+
 ## Features
 
 **TL;DR** A network test tool, like `iperf3` can be run in, e.g., Kubernetes, cluster from all-to-all Nodes.
@@ -23,17 +32,17 @@ A tool to automate network testing tools, like iperf3, in dynamic environments s
 
 ## Usage
 
-Either [build (`go get`)](#building) or download the Ancientt executable.
+Either [build (`go get`)](#building), download the Ancientt executable from the GitHub release page or use the Container image.
 
 A config file containing test definitions must be given by flag `--testdefinition` (or short flag `-c`) or named `testdefinition.yaml` in the current directory.
 
 Below command will try loading `your-testdefinitions.yaml` as the test definitions config:
 
 ```shell
-ancientt --testdefinition your-testdefinitions.yaml
+$ ancientt --testdefinition your-testdefinitions.yaml
 # You can also use the short flag `-c` instead of `--testdefinition`
 # and also with `-y` run the tests immediately
-ancientt -c your-testdefinitions.yaml -y
+$ ancientt -c your-testdefinitions.yaml -y
 ```
 
 ## Demos
@@ -50,7 +59,7 @@ See [Demos](docs/demos.md).
 
 ## Development
 
-**Golang version**: `v1.15` or higher (tested with `v1.15.2` on `linux/amd64`)
+**Golang version**: `v1.16` or higher (tested with `v1.16.7` on `linux/amd64`)
 
 ### Dependencies
 

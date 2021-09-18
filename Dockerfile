@@ -1,15 +1,22 @@
-FROM golang:1.15.2-buster AS go-build
+FROM ghcr.io/galexrt/container-toolbox:v20210915-101121-713
 
-WORKDIR /go/src/app
-COPY . .
+ARG BUILD_DATE="N/A"
+ARG REVISION="N/A"
 
-RUN go get -v ./... && \
-    go install -v ./...
+ARG ANCIENTT_VERSION="N/A"
 
-FROM galexrt/container-toolbox:v20201001-123802-585
-LABEL maintainer="Alexander Trost <galexrt@googlemail.com>"
+LABEL org.opencontainers.image.authors="Alexander Trost <galexrt@googlemail.com>" \
+    org.opencontainers.image.created="${BUILD_DATE}" \
+    org.opencontainers.image.title="cloudical-io/ancientt" \
+    org.opencontainers.image.description="A tool to automate network testing tools, like iperf3, in dynamic environments such as Kubernetes and more to come dynamic environments." \
+    org.opencontainers.image.documentation="https://github.com/cloudical-io/ancientt/blob/main/README.md" \
+    org.opencontainers.image.url="https://github.com/cloudical-io/ancientt" \
+    org.opencontainers.image.source="https://github.com/cloudical-io/ancientt" \
+    org.opencontainers.image.revision="${REVISION}" \
+    org.opencontainers.image.vendor="cloudical-io" \
+    org.opencontainers.image.version="${ANCIENTT_VERSION}"
 
-COPY --from=go-build /go/bin/app /bin/ancientt
+ADD .build/linux-amd64/ancientt /bin/ancientt
 
 RUN chmod 755 /bin/ancientt
 
