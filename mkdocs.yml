@@ -1,0 +1,56 @@
+site_name: cloudical-io/ancientt Documentation
+repo_url: https://github.com/cloudical-io/ancientt
+site_author: Cloudical Deutschland GmbH
+site_description: "GitHub cloudical-io/ancientt project documentation"
+use_directory_urls: true
+copyright: 'Copyright (c) Cloudical Deutschland GmbH 2021'
+theme:
+  name: material
+  font: false
+  favicon: images/favicon.png
+  logo: images/favicon.png
+  palette:
+    scheme: 'slate'
+    primary: 'deep purple'
+    accent: 'lime'
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - instant
+    - navigation.expand
+plugins:
+  - search
+  # Removed in material mkdocs 6.0
+  # See https://squidfunk.github.io/mkdocs-material/deprecations/#bundled-plugins
+  #- awesome-pages
+  #- git-revision-date-localized
+  - minify:
+      minify_html: true
+      minify_js: true
+      htmlmin_opts:
+        remove_comments: true
+      #js_files: []
+  - redirects:
+      redirect_maps: {}
+markdown_extensions:
+  - attr_list
+  - meta
+  - toc:
+      permalink: true
+  - tables
+  - nl2br
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight:
+      use_pygments: true
+      linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tasklist
+  - pymdownx.keys
+  - pymdownx.magiclink
+  - pymdownx.mark
+  # Style is broken
+  #- pymdownx.progressbar
+  - pymdownx.snippets
+  - pymdownx.superfences
+  #- pymdownx.tabbed
