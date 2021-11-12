@@ -1,7 +1,7 @@
 go:
   version: 1.16
 repository:
-    path: github.com/galexrt/dellhw_exporter
+    path: github.com/cloudical-io/ancientt
 build:
     flags: -a -tags 'netgo static_build'
     ldflags: |
@@ -12,14 +12,14 @@ build:
         -X github.com/prometheus/common/version.BuildUser={{user}}@{{host}}
         -X github.com/prometheus/common/version.BuildDate={{date "20060102-15:04:05"}}
     binaries:
-        - name: dellhw_exporter
-          path: ./cmd/dellhw_exporter
+        - name: ancientt
+          path: ./cmd/ancientt
 tarball:
     files:
         - LICENSE
         - NOTICE
-        - systemd/dellhw_exporter.service
-        - systemd/sysconfig.dellhw_exporter
+        - systemd/ancientt.service
+        - systemd/sysconfig.ancientt
 crossbuild:
     platforms:
         - linux/amd64
