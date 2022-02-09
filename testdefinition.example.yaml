@@ -44,7 +44,7 @@ tests:
   #  excelize:
   #    filePath: /tmp
   #    namePattern: "ancientt-{{ .TestStartTime }}-{{ .Data.Tester }}.xlsx"
-  #    saveAfterRows: 200 outputs mysql: added AutoCreateTables option
+  #    saveAfterRows: 200
   runOptions:
     continueOnError: true
     rounds: 1

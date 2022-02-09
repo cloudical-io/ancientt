@@ -59,7 +59,7 @@ See [Demos](docs/demos.md).
 
 ## Development
 
-**Golang version**: `v1.16` or higher (tested with `v1.16.7` on `linux/amd64`)
+**Golang version**: `v1.17` or higher (tested with `v1.17.6` on `linux/amd64`)
 
 ### Dependencies
 

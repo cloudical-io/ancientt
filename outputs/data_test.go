@@ -26,25 +26,25 @@ import (
 func TestDataTableTransform(t *testing.T) {
 	dataTable := Table{
 		Headers: []*Row{
-			&Row{Value: "bits_per_second"},
-			&Row{Value: "willremain"},
-			&Row{Value: "replacedwithwillremain"},
+			{Value: "bits_per_second"},
+			{Value: "willremain"},
+			{Value: "replacedwithwillremain"},
 		},
 		Rows: [][]*Row{
-			[]*Row{
-				&Row{Value: float64(123.0)},
-				&Row{Value: "nope"},
-				&Row{Value: int64(50)},
+			{
+				{Value: float64(123.0)},
+				{Value: "nope"},
+				{Value: int64(50)},
 			},
-			[]*Row{
-				&Row{Value: int64(15)},
-				&Row{Value: "nope"},
-				&Row{Value: int64(30)},
+			{
+				{Value: int64(15)},
+				{Value: "nope"},
+				{Value: int64(30)},
 			},
-			[]*Row{
-				&Row{Value: int64(15)},
-				&Row{Value: "nope"},
-				&Row{Value: int64(75)},
+			{
+				{Value: int64(15)},
+				{Value: "nope"},
+				{Value: int64(75)},
 			},
 		},
 	}
