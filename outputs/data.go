@@ -50,7 +50,7 @@ type Row struct {
 }
 
 // Transform transformation of table data
-func (d Table) Transform(ts []*config.Transformation) error {
+func (d *Table) Transform(ts []*config.Transformation) error {
 	// Iterate over each transformation
 	for _, t := range ts {
 		index, err := d.GetHeaderIndexByName(t.Source)
@@ -76,20 +76,20 @@ func (d Table) Transform(ts []*config.Transformation) error {
 			d.Headers[index].Value = toHeader
 		}
 
-		for i := range d.Rows {
-			if len(d.Rows[i]) < index {
+		for row := range d.Rows {
+			if len(d.Rows[row]) < index {
 				continue
 			}
 
 			switch t.Action {
 			case config.TransformationActionAdd:
-				d.Rows[i] = append(d.Rows[i], &Row{
-					Value: d.modifyValue(d.Rows[i][index].Value, t),
+				d.Rows[row] = append(d.Rows[row], &Row{
+					Value: d.modifyValue(d.Rows[row][index].Value, t),
 				})
 			case config.TransformationActionDelete:
-				d.Rows[i][index] = nil
+				d.Rows[row][index] = nil
 			case config.TransformationActionReplace:
-				d.Rows[i][index].Value = d.modifyValue(d.Rows[i][index].Value, t)
+				d.Rows[row][index].Value = d.modifyValue(d.Rows[row][index].Value, t)
 			}
 		}
 	}

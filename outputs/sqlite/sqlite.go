@@ -82,7 +82,7 @@ func NewSQLiteOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output,
 
 // Do make SQLite outputs
 func (s SQLite) Do(data outputs.Data) error {
-	dataTable, ok := data.Data.(outputs.Table)
+	dataTable, ok := data.Data.(*outputs.Table)
 	if !ok {
 		return fmt.Errorf("data not in data table format for sqlite output")
 	}

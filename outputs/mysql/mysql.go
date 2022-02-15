@@ -82,7 +82,7 @@ func NewMySQLOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output, 
 
 // Do make MySQL outputs
 func (m MySQL) Do(data outputs.Data) error {
-	dataTable, ok := data.Data.(outputs.Table)
+	dataTable, ok := data.Data.(*outputs.Table)
 	if !ok {
 		return fmt.Errorf("data not in data table format for mysql output")
 	}
@@ -104,7 +104,7 @@ func (m MySQL) Do(data outputs.Data) error {
 		m.dbCons[dbPath] = db
 	}
 
-	if err := m.createTable(db, &dataTable, tableName); err != nil {
+	if err := m.createTable(db, dataTable, tableName); err != nil {
 		return err
 	}
 

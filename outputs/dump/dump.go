@@ -55,7 +55,7 @@ func NewDumpOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output, e
 
 // Do make Dump outputs
 func (d Dump) Do(data outputs.Data) error {
-	dataTable, ok := data.Data.(outputs.Table)
+	dataTable, ok := data.Data.(*outputs.Table)
 	if !ok {
 		return fmt.Errorf("data not in data table format for dump output")
 	}

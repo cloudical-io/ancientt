@@ -65,7 +65,7 @@ func NewExcelizeOutput(cfg *config.Config, outCfg *config.Output) (outputs.Outpu
 
 // Do Inputs the data into the excel sheet, contains all logic necessary to perform this task
 func (e Excelize) Do(data outputs.Data) error {
-	dataTable, ok := data.Data.(outputs.Table)
+	dataTable, ok := data.Data.(*outputs.Table)
 	if !ok {
 		return fmt.Errorf("data not in Table data type for excel output")
 	}

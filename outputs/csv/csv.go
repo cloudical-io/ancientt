@@ -58,7 +58,7 @@ func NewCSVOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output, er
 
 // Do make CSV outputs
 func (c CSV) Do(data outputs.Data) error {
-	dataTable, ok := data.Data.(outputs.Table)
+	dataTable, ok := data.Data.(*outputs.Table)
 	if !ok {
 		return fmt.Errorf("data not in Table interface format for csv output")
 	}

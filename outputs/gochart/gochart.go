@@ -56,7 +56,7 @@ func NewGoChartOutput(cfg *config.Config, outCfg *config.Output) (outputs.Output
 
 // Do make GoChart charts
 func (gc GoChart) Do(data outputs.Data) error {
-	if _, ok := data.Data.(outputs.Table); !ok {
+	if _, ok := data.Data.(*outputs.Table); !ok {
 		return fmt.Errorf("data not in data table format for gochart output")
 	}
 
@@ -72,7 +72,7 @@ func (gc GoChart) Do(data outputs.Data) error {
 }
 
 func (gc *GoChart) drawAxisChart(chartOpts *config.GoChartGraph, data outputs.Data) error {
-	dataTable, ok := data.Data.(outputs.Table)
+	dataTable, ok := data.Data.(*outputs.Table)
 	if !ok {
 		return fmt.Errorf("data not in table format for gochart output")
 	}
