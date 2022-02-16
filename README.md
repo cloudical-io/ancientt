@@ -61,6 +61,13 @@ See [Demos](docs/demos.md).
 
 **Golang version**: `v1.17` or higher (tested with `v1.17.6` on `linux/amd64`)
 
+### Creating Release
+
+1. Add new entry for release to [`CHANGELOG.md`](CHANGELOG.md).
+2. Update [`VERSION`](VERSION) with new version number.
+3. `git commit` and `git push` both changes (e.g., `version: update to VERSION_HERE`).
+4. Now create the git tag and push the tag `git tag VERSION_HERE` followed by `git push --tags`.
+
 ### Dependencies
 
 `go mod` is used to manage the dependencies.
